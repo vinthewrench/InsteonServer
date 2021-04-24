@@ -1,0 +1,528 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2E592E422620C1150041AA34 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E412620C1150041AA34 /* main.cpp */; };
+		2E592E602620C1B00041AA34 /* libFOOServer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E592E532620C1690041AA34 /* libFOOServer.a */; };
+		2E592E682620C2EC0041AA34 /* ServerCmdValidators.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E662620C2EC0041AA34 /* ServerCmdValidators.cpp */; };
+		2E592E6D2620C3990041AA34 /* ServerCommands.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E6B2620C3990041AA34 /* ServerCommands.cpp */; };
+		2E592EAF2620C9380041AA34 /* InsteonMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E8A2620C9370041AA34 /* InsteonMgr.cpp */; };
+		2E592EB02620C9380041AA34 /* DeviceID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E8E2620C9380041AA34 /* DeviceID.cpp */; };
+		2E592EB12620C9380041AA34 /* InsteonDeviceEventMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E922620C9380041AA34 /* InsteonDeviceEventMgr.cpp */; };
+		2E592EB22620C9380041AA34 /* InsteonParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E952620C9380041AA34 /* InsteonParser.cpp */; };
+		2E592EB32620C9380041AA34 /* sleep.c in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E972620C9380041AA34 /* sleep.c */; };
+		2E592EB42620C9380041AA34 /* InsteonDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E992620C9380041AA34 /* InsteonDB.cpp */; };
+		2E592EB52620C9380041AA34 /* InsteonLinking.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E9A2620C9380041AA34 /* InsteonLinking.cpp */; };
+		2E592EB62620C9380041AA34 /* PLMStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EA12620C9380041AA34 /* PLMStream.cpp */; };
+		2E592EB72620C9380041AA34 /* xxhash.c in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EA22620C9380041AA34 /* xxhash.c */; };
+		2E592EB82620C9380041AA34 /* InsteonDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EA32620C9380041AA34 /* InsteonDevice.cpp */; };
+		2E592EB92620C9380041AA34 /* InsteonPLM.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EA52620C9380041AA34 /* InsteonPLM.cpp */; };
+		2E592EBA2620C9380041AA34 /* InsteonCmdQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EA62620C9380041AA34 /* InsteonCmdQueue.cpp */; };
+		2E592EBB2620C9380041AA34 /* InsteonALDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EA72620C9380041AA34 /* InsteonALDB.cpp */; };
+		2E592EBC2620C9380041AA34 /* InsteonValidator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EA92620C9380041AA34 /* InsteonValidator.cpp */; };
+		2E592EBD2620C9380041AA34 /* LogMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EAC2620C9380041AA34 /* LogMgr.cpp */; };
+		2E592EBE2620C9380041AA34 /* DeviceInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EAD2620C9380041AA34 /* DeviceInfo.cpp */; };
+		2E592EBF2620C9380041AA34 /* NotificationCenter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EAE2620C9380041AA34 /* NotificationCenter.cpp */; };
+		2E592EC32620C9660041AA34 /* catagories.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E592EC12620C9410041AA34 /* catagories.txt */; };
+		2E592ED22620CEE00041AA34 /* deviceNames.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E592ED02620CEC10041AA34 /* deviceNames.txt */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		2E592E522620C1690041AA34 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2E592E4D2620C1690041AA34 /* FooServer.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 2EA770C9261E20FC00045F27;
+			remoteInfo = FOOServer;
+		};
+		2E592E542620C1690041AA34 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2E592E4D2620C1690041AA34 /* FooServer.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 2EA77141261FBEC500045F27;
+			remoteInfo = FooServerTest;
+		};
+		2E592E5B2620C1A80041AA34 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2E592E4D2620C1690041AA34 /* FooServer.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 2EA770C8261E20FC00045F27;
+			remoteInfo = FOOServer;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		2E592E2E2620C09C0041AA34 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 12;
+			dstPath = "";
+			dstSubfolderSpec = 16;
+			files = (
+				2E592EC32620C9660041AA34 /* catagories.txt in CopyFiles */,
+				2E592ED22620CEE00041AA34 /* deviceNames.txt in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		2E592E302620C09C0041AA34 /* InsteonServer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = InsteonServer; sourceTree = BUILT_PRODUCTS_DIR; };
+		2E592E412620C1150041AA34 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		2E592E4D2620C1690041AA34 /* FooServer.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = FooServer.xcodeproj; path = ../FooServer/FooServer.xcodeproj; sourceTree = "<group>"; };
+		2E592E662620C2EC0041AA34 /* ServerCmdValidators.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ServerCmdValidators.cpp; sourceTree = "<group>"; };
+		2E592E672620C2EC0041AA34 /* ServerCmdValidators.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ServerCmdValidators.hpp; sourceTree = "<group>"; };
+		2E592E6B2620C3990041AA34 /* ServerCommands.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ServerCommands.cpp; sourceTree = "<group>"; };
+		2E592E6C2620C3990041AA34 /* ServerCommands.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ServerCommands.hpp; sourceTree = "<group>"; };
+		2E592E8A2620C9370041AA34 /* InsteonMgr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InsteonMgr.cpp; sourceTree = "<group>"; };
+		2E592E8B2620C9370041AA34 /* PLMStream.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PLMStream.hpp; sourceTree = "<group>"; };
+		2E592E8C2620C9380041AA34 /* InsteonValidator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InsteonValidator.hpp; sourceTree = "<group>"; };
+		2E592E8D2620C9380041AA34 /* InsteonALDB.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InsteonALDB.hpp; sourceTree = "<group>"; };
+		2E592E8E2620C9380041AA34 /* DeviceID.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DeviceID.cpp; sourceTree = "<group>"; };
+		2E592E8F2620C9380041AA34 /* LogMgr.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LogMgr.hpp; sourceTree = "<group>"; };
+		2E592E912620C9380041AA34 /* xxhash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xxhash.h; sourceTree = "<group>"; };
+		2E592E922620C9380041AA34 /* InsteonDeviceEventMgr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InsteonDeviceEventMgr.cpp; sourceTree = "<group>"; };
+		2E592E932620C9380041AA34 /* InsteonDevice.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InsteonDevice.hpp; sourceTree = "<group>"; };
+		2E592E942620C9380041AA34 /* InsteonMgr.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InsteonMgr.hpp; sourceTree = "<group>"; };
+		2E592E952620C9380041AA34 /* InsteonParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InsteonParser.cpp; sourceTree = "<group>"; };
+		2E592E962620C9380041AA34 /* InsteonPLM.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InsteonPLM.hpp; sourceTree = "<group>"; };
+		2E592E972620C9380041AA34 /* sleep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sleep.c; sourceTree = "<group>"; };
+		2E592E982620C9380041AA34 /* sleep.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sleep.h; sourceTree = "<group>"; };
+		2E592E992620C9380041AA34 /* InsteonDB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InsteonDB.cpp; sourceTree = "<group>"; };
+		2E592E9A2620C9380041AA34 /* InsteonLinking.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InsteonLinking.cpp; sourceTree = "<group>"; };
+		2E592E9B2620C9380041AA34 /* InsteonDB.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InsteonDB.hpp; sourceTree = "<group>"; };
+		2E592E9C2620C9380041AA34 /* NotificationCenter.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = NotificationCenter.hpp; sourceTree = "<group>"; };
+		2E592E9D2620C9380041AA34 /* InsteonMgrDefs.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InsteonMgrDefs.hpp; sourceTree = "<group>"; };
+		2E592E9E2620C9380041AA34 /* InsteonException.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InsteonException.hpp; sourceTree = "<group>"; };
+		2E592E9F2620C9380041AA34 /* InsteonCmdQueue.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InsteonCmdQueue.hpp; sourceTree = "<group>"; };
+		2E592EA02620C9380041AA34 /* InsteonLinking.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InsteonLinking.hpp; sourceTree = "<group>"; };
+		2E592EA12620C9380041AA34 /* PLMStream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PLMStream.cpp; sourceTree = "<group>"; };
+		2E592EA22620C9380041AA34 /* xxhash.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = xxhash.c; sourceTree = "<group>"; };
+		2E592EA32620C9380041AA34 /* InsteonDevice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InsteonDevice.cpp; sourceTree = "<group>"; };
+		2E592EA42620C9380041AA34 /* DeviceInfo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DeviceInfo.hpp; sourceTree = "<group>"; };
+		2E592EA52620C9380041AA34 /* InsteonPLM.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InsteonPLM.cpp; sourceTree = "<group>"; };
+		2E592EA62620C9380041AA34 /* InsteonCmdQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InsteonCmdQueue.cpp; sourceTree = "<group>"; };
+		2E592EA72620C9380041AA34 /* InsteonALDB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InsteonALDB.cpp; sourceTree = "<group>"; };
+		2E592EA82620C9380041AA34 /* DeviceID.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DeviceID.hpp; sourceTree = "<group>"; };
+		2E592EA92620C9380041AA34 /* InsteonValidator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InsteonValidator.cpp; sourceTree = "<group>"; };
+		2E592EAA2620C9380041AA34 /* InsteonDeviceEventMgr.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InsteonDeviceEventMgr.hpp; sourceTree = "<group>"; };
+		2E592EAB2620C9380041AA34 /* InsteonParser.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InsteonParser.hpp; sourceTree = "<group>"; };
+		2E592EAC2620C9380041AA34 /* LogMgr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LogMgr.cpp; sourceTree = "<group>"; };
+		2E592EAD2620C9380041AA34 /* DeviceInfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DeviceInfo.cpp; sourceTree = "<group>"; };
+		2E592EAE2620C9380041AA34 /* NotificationCenter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = NotificationCenter.cpp; sourceTree = "<group>"; };
+		2E592EC12620C9410041AA34 /* catagories.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = catagories.txt; sourceTree = "<group>"; };
+		2E592ED02620CEC10041AA34 /* deviceNames.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = deviceNames.txt; sourceTree = "<group>"; };
+		2E592ED12620CED70041AA34 /* PLMDB_52.18.42.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = PLMDB_52.18.42.txt; sourceTree = "<group>"; };
+		2E592EDC2630831F0041AA34 /* CommonIncludes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CommonIncludes.h; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		2E592E2D2620C09C0041AA34 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2E592E602620C1B00041AA34 /* libFOOServer.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2E592E272620C09C0041AA34 = {
+			isa = PBXGroup;
+			children = (
+				2E592E3D2620C0FC0041AA34 /* src */,
+				2E592E892620C8F50041AA34 /* InsteonMgr */,
+				2E592ECD2620CEA60041AA34 /* assets */,
+				2E592E4D2620C1690041AA34 /* FooServer.xcodeproj */,
+				2E592E312620C09C0041AA34 /* Products */,
+				2E592E5F2620C1B00041AA34 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		2E592E312620C09C0041AA34 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				2E592E302620C09C0041AA34 /* InsteonServer */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		2E592E3D2620C0FC0041AA34 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				2E592E412620C1150041AA34 /* main.cpp */,
+				2E592EDC2630831F0041AA34 /* CommonIncludes.h */,
+				2E592E672620C2EC0041AA34 /* ServerCmdValidators.hpp */,
+				2E592E662620C2EC0041AA34 /* ServerCmdValidators.cpp */,
+				2E592E6C2620C3990041AA34 /* ServerCommands.hpp */,
+				2E592E6B2620C3990041AA34 /* ServerCommands.cpp */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		2E592E4E2620C1690041AA34 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				2E592E532620C1690041AA34 /* libFOOServer.a */,
+				2E592E552620C1690041AA34 /* FooServerTest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		2E592E5F2620C1B00041AA34 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		2E592E892620C8F50041AA34 /* InsteonMgr */ = {
+			isa = PBXGroup;
+			children = (
+				2E592E9D2620C9380041AA34 /* InsteonMgrDefs.hpp */,
+				2E592E942620C9380041AA34 /* InsteonMgr.hpp */,
+				2E592E8A2620C9370041AA34 /* InsteonMgr.cpp */,
+				2E592E9B2620C9380041AA34 /* InsteonDB.hpp */,
+				2E592E992620C9380041AA34 /* InsteonDB.cpp */,
+				2E592E952620C9380041AA34 /* InsteonParser.cpp */,
+				2E592EAB2620C9380041AA34 /* InsteonParser.hpp */,
+				2E592EA52620C9380041AA34 /* InsteonPLM.cpp */,
+				2E592E962620C9380041AA34 /* InsteonPLM.hpp */,
+				2E592EA12620C9380041AA34 /* PLMStream.cpp */,
+				2E592E8B2620C9370041AA34 /* PLMStream.hpp */,
+				2E592EC12620C9410041AA34 /* catagories.txt */,
+				2E592E8E2620C9380041AA34 /* DeviceID.cpp */,
+				2E592EA82620C9380041AA34 /* DeviceID.hpp */,
+				2E592EAD2620C9380041AA34 /* DeviceInfo.cpp */,
+				2E592EA42620C9380041AA34 /* DeviceInfo.hpp */,
+				2E592EA72620C9380041AA34 /* InsteonALDB.cpp */,
+				2E592E8D2620C9380041AA34 /* InsteonALDB.hpp */,
+				2E592EA62620C9380041AA34 /* InsteonCmdQueue.cpp */,
+				2E592E9F2620C9380041AA34 /* InsteonCmdQueue.hpp */,
+				2E592EA32620C9380041AA34 /* InsteonDevice.cpp */,
+				2E592E932620C9380041AA34 /* InsteonDevice.hpp */,
+				2E592E922620C9380041AA34 /* InsteonDeviceEventMgr.cpp */,
+				2E592EAA2620C9380041AA34 /* InsteonDeviceEventMgr.hpp */,
+				2E592E9E2620C9380041AA34 /* InsteonException.hpp */,
+				2E592E9A2620C9380041AA34 /* InsteonLinking.cpp */,
+				2E592EA02620C9380041AA34 /* InsteonLinking.hpp */,
+				2E592EA92620C9380041AA34 /* InsteonValidator.cpp */,
+				2E592E8C2620C9380041AA34 /* InsteonValidator.hpp */,
+				2E592EAC2620C9380041AA34 /* LogMgr.cpp */,
+				2E592E8F2620C9380041AA34 /* LogMgr.hpp */,
+				2E592EAE2620C9380041AA34 /* NotificationCenter.cpp */,
+				2E592E9C2620C9380041AA34 /* NotificationCenter.hpp */,
+				2E592E972620C9380041AA34 /* sleep.c */,
+				2E592E982620C9380041AA34 /* sleep.h */,
+				2E592EA22620C9380041AA34 /* xxhash.c */,
+				2E592E912620C9380041AA34 /* xxhash.h */,
+			);
+			path = InsteonMgr;
+			sourceTree = "<group>";
+		};
+		2E592ECD2620CEA60041AA34 /* assets */ = {
+			isa = PBXGroup;
+			children = (
+				2E592ED02620CEC10041AA34 /* deviceNames.txt */,
+				2E592ED12620CED70041AA34 /* PLMDB_52.18.42.txt */,
+			);
+			path = assets;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		2E592E2F2620C09C0041AA34 /* InsteonServer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2E592E372620C09C0041AA34 /* Build configuration list for PBXNativeTarget "InsteonServer" */;
+			buildPhases = (
+				2E592E2C2620C09C0041AA34 /* Sources */,
+				2E592E2D2620C09C0041AA34 /* Frameworks */,
+				2E592E2E2620C09C0041AA34 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2E592E5C2620C1A80041AA34 /* PBXTargetDependency */,
+			);
+			name = InsteonServer;
+			productName = InsteonServer;
+			productReference = 2E592E302620C09C0041AA34 /* InsteonServer */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		2E592E282620C09C0041AA34 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1240;
+				TargetAttributes = {
+					2E592E2F2620C09C0041AA34 = {
+						CreatedOnToolsVersion = 12.4;
+					};
+				};
+			};
+			buildConfigurationList = 2E592E2B2620C09C0041AA34 /* Build configuration list for PBXProject "InsteonServer" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 2E592E272620C09C0041AA34;
+			productRefGroup = 2E592E312620C09C0041AA34 /* Products */;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 2E592E4E2620C1690041AA34 /* Products */;
+					ProjectRef = 2E592E4D2620C1690041AA34 /* FooServer.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				2E592E2F2620C09C0041AA34 /* InsteonServer */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		2E592E532620C1690041AA34 /* libFOOServer.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libFOOServer.a;
+			remoteRef = 2E592E522620C1690041AA34 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		2E592E552620C1690041AA34 /* FooServerTest */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.executable";
+			path = FooServerTest;
+			remoteRef = 2E592E542620C1690041AA34 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2E592E2C2620C09C0041AA34 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2E592EB02620C9380041AA34 /* DeviceID.cpp in Sources */,
+				2E592EB72620C9380041AA34 /* xxhash.c in Sources */,
+				2E592EB82620C9380041AA34 /* InsteonDevice.cpp in Sources */,
+				2E592EBB2620C9380041AA34 /* InsteonALDB.cpp in Sources */,
+				2E592EB32620C9380041AA34 /* sleep.c in Sources */,
+				2E592E6D2620C3990041AA34 /* ServerCommands.cpp in Sources */,
+				2E592EB12620C9380041AA34 /* InsteonDeviceEventMgr.cpp in Sources */,
+				2E592EBA2620C9380041AA34 /* InsteonCmdQueue.cpp in Sources */,
+				2E592EB62620C9380041AA34 /* PLMStream.cpp in Sources */,
+				2E592EB22620C9380041AA34 /* InsteonParser.cpp in Sources */,
+				2E592EBC2620C9380041AA34 /* InsteonValidator.cpp in Sources */,
+				2E592EAF2620C9380041AA34 /* InsteonMgr.cpp in Sources */,
+				2E592E682620C2EC0041AA34 /* ServerCmdValidators.cpp in Sources */,
+				2E592EB92620C9380041AA34 /* InsteonPLM.cpp in Sources */,
+				2E592EB52620C9380041AA34 /* InsteonLinking.cpp in Sources */,
+				2E592EBF2620C9380041AA34 /* NotificationCenter.cpp in Sources */,
+				2E592EBD2620C9380041AA34 /* LogMgr.cpp in Sources */,
+				2E592EBE2620C9380041AA34 /* DeviceInfo.cpp in Sources */,
+				2E592E422620C1150041AA34 /* main.cpp in Sources */,
+				2E592EB42620C9380041AA34 /* InsteonDB.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2E592E5C2620C1A80041AA34 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = FOOServer;
+			targetProxy = 2E592E5B2620C1A80041AA34 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		2E592E352620C09C0041AA34 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CLANG_WARN__EXIT_TIME_DESTRUCTORS = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_HIDDEN_VIRTUAL_FUNCTIONS = YES;
+				GCC_WARN_NON_VIRTUAL_DESTRUCTOR = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		2E592E362620C09C0041AA34 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CLANG_WARN__EXIT_TIME_DESTRUCTORS = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_HIDDEN_VIRTUAL_FUNCTIONS = YES;
+				GCC_WARN_NON_VIRTUAL_DESTRUCTOR = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		2E592E382620C09C0041AA34 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = PDXWT4JFG9;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_WARN_HIDDEN_VIRTUAL_FUNCTIONS = NO;
+				OTHER_CFLAGS = "";
+				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
+				PRELINK_LIBS = "-pthread";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "../FooServer/src/**";
+			};
+			name = Debug;
+		};
+		2E592E392620C09C0041AA34 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = PDXWT4JFG9;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_WARN_HIDDEN_VIRTUAL_FUNCTIONS = NO;
+				OTHER_CFLAGS = "";
+				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
+				PRELINK_LIBS = "-pthread";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "../FooServer/src/**";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2E592E2B2620C09C0041AA34 /* Build configuration list for PBXProject "InsteonServer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2E592E352620C09C0041AA34 /* Debug */,
+				2E592E362620C09C0041AA34 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2E592E372620C09C0041AA34 /* Build configuration list for PBXNativeTarget "InsteonServer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2E592E382620C09C0041AA34 /* Debug */,
+				2E592E392620C09C0041AA34 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 2E592E282620C09C0041AA34 /* Project object */;
+}
