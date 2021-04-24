@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2E431A162634E6EF000BEAF8 /* libFOOServer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E431A0E2634E6DD000BEAF8 /* libFOOServer.a */; };
 		2E592E422620C1150041AA34 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E412620C1150041AA34 /* main.cpp */; };
-		2E592E602620C1B00041AA34 /* libFOOServer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E592E532620C1690041AA34 /* libFOOServer.a */; };
 		2E592E682620C2EC0041AA34 /* ServerCmdValidators.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E662620C2EC0041AA34 /* ServerCmdValidators.cpp */; };
 		2E592E6D2620C3990041AA34 /* ServerCommands.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E6B2620C3990041AA34 /* ServerCommands.cpp */; };
 		2E592EAF2620C9380041AA34 /* InsteonMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E8A2620C9370041AA34 /* InsteonMgr.cpp */; };
@@ -33,23 +33,23 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		2E592E522620C1690041AA34 /* PBXContainerItemProxy */ = {
+		2E431A0D2634E6DD000BEAF8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 2E592E4D2620C1690041AA34 /* FooServer.xcodeproj */;
+			containerPortal = 2E431A082634E6DD000BEAF8 /* FooServer.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 2EA770C9261E20FC00045F27;
 			remoteInfo = FOOServer;
 		};
-		2E592E542620C1690041AA34 /* PBXContainerItemProxy */ = {
+		2E431A0F2634E6DD000BEAF8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 2E592E4D2620C1690041AA34 /* FooServer.xcodeproj */;
+			containerPortal = 2E431A082634E6DD000BEAF8 /* FooServer.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 2EA77141261FBEC500045F27;
 			remoteInfo = FooServerTest;
 		};
-		2E592E5B2620C1A80041AA34 /* PBXContainerItemProxy */ = {
+		2E431A142634E6E7000BEAF8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 2E592E4D2620C1690041AA34 /* FooServer.xcodeproj */;
+			containerPortal = 2E431A082634E6DD000BEAF8 /* FooServer.xcodeproj */;
 			proxyType = 1;
 			remoteGlobalIDString = 2EA770C8261E20FC00045F27;
 			remoteInfo = FOOServer;
@@ -71,9 +71,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2E431A082634E6DD000BEAF8 /* FooServer.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = FooServer.xcodeproj; path = Submodule/FooServer/FooServer.xcodeproj; sourceTree = "<group>"; };
 		2E592E302620C09C0041AA34 /* InsteonServer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = InsteonServer; sourceTree = BUILT_PRODUCTS_DIR; };
 		2E592E412620C1150041AA34 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		2E592E4D2620C1690041AA34 /* FooServer.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = FooServer.xcodeproj; path = ../FooServer/FooServer.xcodeproj; sourceTree = "<group>"; };
 		2E592E662620C2EC0041AA34 /* ServerCmdValidators.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ServerCmdValidators.cpp; sourceTree = "<group>"; };
 		2E592E672620C2EC0041AA34 /* ServerCmdValidators.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ServerCmdValidators.hpp; sourceTree = "<group>"; };
 		2E592E6B2620C3990041AA34 /* ServerCommands.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ServerCommands.cpp; sourceTree = "<group>"; };
@@ -125,20 +125,37 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2E592E602620C1B00041AA34 /* libFOOServer.a in Frameworks */,
+				2E431A162634E6EF000BEAF8 /* libFOOServer.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2E431A072634E6D2000BEAF8 /* Submodules */ = {
+			isa = PBXGroup;
+			children = (
+				2E431A082634E6DD000BEAF8 /* FooServer.xcodeproj */,
+			);
+			name = Submodules;
+			sourceTree = "<group>";
+		};
+		2E431A092634E6DD000BEAF8 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				2E431A0E2634E6DD000BEAF8 /* libFOOServer.a */,
+				2E431A102634E6DD000BEAF8 /* FooServerTest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		2E592E272620C09C0041AA34 = {
 			isa = PBXGroup;
 			children = (
 				2E592E3D2620C0FC0041AA34 /* src */,
 				2E592E892620C8F50041AA34 /* InsteonMgr */,
 				2E592ECD2620CEA60041AA34 /* assets */,
-				2E592E4D2620C1690041AA34 /* FooServer.xcodeproj */,
+				2E431A072634E6D2000BEAF8 /* Submodules */,
 				2E592E312620C09C0041AA34 /* Products */,
 				2E592E5F2620C1B00041AA34 /* Frameworks */,
 			);
@@ -163,15 +180,6 @@
 				2E592E6B2620C3990041AA34 /* ServerCommands.cpp */,
 			);
 			path = src;
-			sourceTree = "<group>";
-		};
-		2E592E4E2620C1690041AA34 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				2E592E532620C1690041AA34 /* libFOOServer.a */,
-				2E592E552620C1690041AA34 /* FooServerTest */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 		2E592E5F2620C1B00041AA34 /* Frameworks */ = {
@@ -248,7 +256,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				2E592E5C2620C1A80041AA34 /* PBXTargetDependency */,
+				2E431A152634E6E7000BEAF8 /* PBXTargetDependency */,
 			);
 			name = InsteonServer;
 			productName = InsteonServer;
@@ -281,8 +289,8 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = 2E592E4E2620C1690041AA34 /* Products */;
-					ProjectRef = 2E592E4D2620C1690041AA34 /* FooServer.xcodeproj */;
+					ProductGroup = 2E431A092634E6DD000BEAF8 /* Products */;
+					ProjectRef = 2E431A082634E6DD000BEAF8 /* FooServer.xcodeproj */;
 				},
 			);
 			projectRoot = "";
@@ -293,18 +301,18 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
-		2E592E532620C1690041AA34 /* libFOOServer.a */ = {
+		2E431A0E2634E6DD000BEAF8 /* libFOOServer.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
 			path = libFOOServer.a;
-			remoteRef = 2E592E522620C1690041AA34 /* PBXContainerItemProxy */;
+			remoteRef = 2E431A0D2634E6DD000BEAF8 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		2E592E552620C1690041AA34 /* FooServerTest */ = {
+		2E431A102634E6DD000BEAF8 /* FooServerTest */ = {
 			isa = PBXReferenceProxy;
 			fileType = "compiled.mach-o.executable";
 			path = FooServerTest;
-			remoteRef = 2E592E542620C1690041AA34 /* PBXContainerItemProxy */;
+			remoteRef = 2E431A0F2634E6DD000BEAF8 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */
@@ -340,10 +348,10 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		2E592E5C2620C1A80041AA34 /* PBXTargetDependency */ = {
+		2E431A152634E6E7000BEAF8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = FOOServer;
-			targetProxy = 2E592E5B2620C1A80041AA34 /* PBXContainerItemProxy */;
+			targetProxy = 2E431A142634E6E7000BEAF8 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -479,7 +487,7 @@
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
 				PRELINK_LIBS = "-pthread";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				USER_HEADER_SEARCH_PATHS = "../FooServer/src/**";
+				USER_HEADER_SEARCH_PATHS = "SubModule/FooServer/src/**";
 			};
 			name = Debug;
 		};
@@ -497,7 +505,7 @@
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
 				PRELINK_LIBS = "-pthread";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				USER_HEADER_SEARCH_PATHS = "../FooServer/src/**";
+				USER_HEADER_SEARCH_PATHS = "SubModule/FooServer/src/**";
 			};
 			name = Release;
 		};
