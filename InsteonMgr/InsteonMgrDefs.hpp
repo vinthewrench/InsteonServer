@@ -16,6 +16,5 @@
 typedef std::function<void(bool didSucceed)> boolCallback_t;
 
 typedef  unsigned long eTag_t;
-typedef  unsigned short groupID_t;
 
 #endif /* InsteonMgrDefs_h */

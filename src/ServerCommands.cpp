@@ -33,701 +33,1132 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <map>
 
 template <typename T> inline std::string int_to_hex(T val, size_t width=sizeof(T)*2)
 {
-	 std::stringstream ss;
-	 ss << std::setfill('0') << std::setw(width) << std::hex << (val|0);
-	 return ss.str();
+	std::stringstream ss;
+	ss << std::setfill('0') << std::setw(width) << std::hex << (val|0);
+	return ss.str();
 }
 
-// MARK: - SERVER FUNCTIONS
-
+// MARK: - SERVER DEFINES
 
 constexpr string_view FOO_VERSION_STRING		= "1.0.0";
 
-constexpr string_view JSON_CMD_SETLEVEL 		= "set";
-constexpr string_view JSON_CMD_SHOWDEVICE 	= "show";
-constexpr string_view JSON_CMD_LIST			 	= "list";
-constexpr string_view JSON_CMD_DATE			 	= "date";
-constexpr string_view JSON_CMD_PLM			 	= "plm";
-constexpr string_view JSON_CMD_STATUS			= "status";
-constexpr string_view JSON_CMD_BEEP				= "beep";
-constexpr string_view JSON_CMD_BACKLIGHT		= "backlight";
+constexpr string_view NOUN_VERSION		 		= "version";
+constexpr string_view NOUN_DATE		 			= "date";
+constexpr string_view NOUN_DEVICES	 			= "devices";
+constexpr string_view NOUN_STATUS		 		= "status";
+constexpr string_view NOUN_PLM			 		= "plm";
+constexpr string_view NOUN_GROUPS			 	= "groups";
+constexpr string_view NOUN_INSTEON_GROUPS		= "insteon.groups";
 
-constexpr string_view JSON_CMD_VERSION			= "version";
-constexpr string_view JSON_CMD_GROUP			= "group";
+
 constexpr string_view JSON_ARG_DEVICEID 		= "deviceID";
 constexpr string_view JSON_ARG_GROUPID 		= "groupID";
 
+constexpr string_view JSON_ARG_BEEP 			= "beep";
 constexpr string_view JSON_ARG_LEVEL 			= "level";
-constexpr string_view JSON_ARG_FUNCTION		= "function";
+constexpr string_view JSON_ARG_BACKLIGHT		= "backlight";
+
 constexpr string_view JSON_ARG_DATE				= "date";
 constexpr string_view JSON_ARG_VERSION			= "version";
 constexpr string_view JSON_ARG_TIMESTAMP		= "timestamp";
 constexpr string_view JSON_ARG_DEVICEIDS 		= "deviceIDs";
-constexpr string_view JSON_ARG_GROUPIDS 		= "groupIDs";
 
 constexpr string_view JSON_ARG_DEVICEINFO 	= "deviceInfo";
-constexpr string_view JSON_ARG_INFO			 	= "info";
 constexpr string_view JSON_ARG_DETAILS 		= "details";
 constexpr string_view JSON_ARG_STATE			= "state";
 constexpr string_view JSON_ARG_STATESTR		= "stateString";
 constexpr string_view JSON_ARG_ETAG				= "ETag";
 constexpr string_view JSON_ARG_FORCE			= "force";
-constexpr string_view JSON_ARG_NAME					= "name";
 constexpr string_view JSON_ARG_DESCRIPTION		= "description";
- 
-constexpr string_view JSON_ARG_DATABASE		= "database";
+constexpr string_view JSON_ARG_NAME				= "name";
+constexpr string_view JSON_ARG_GROUPIDS		= "groupIDs";
+
 constexpr string_view JSON_VAL_ALL				= "all";
 constexpr string_view JSON_VAL_VALID			= "valid";
 constexpr string_view JSON_VAL_DETAILS			= "details";
-constexpr string_view JSON_VAL_CHANGED			= "changed";
 
-static void ListDevicesCommand( ServerCmdQueue* cmdQueue,
-									 json request,  // entire request
-									 TCPClientInfo cInfo,
-									 ServerCmdQueue::cmdCallback_t completion){
 
+// MARK: -
+
+// MARK:  GROUPS NOUN HANDLERS
+
+static bool Groups_NounHandler_GET(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+											  ServerCmdQueue::cmdCallback_t completion) {
 	using namespace rest;
 	using namespace date;
 	using namespace std::chrono;
-
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
 	json reply;
 	
-	ServerCmdArgValidator v;
-	string listFunc;
-	long eTag;
+	auto db = insteon.getDB();
+	vector<DeviceID> deviceIDs;
+	
+	// GET /groups
+	if(path.size() == 1) {;
+		
+		json groupsList;
+		auto groupIDs = db->allGroups();
+		for(auto groupID : groupIDs){
+			json entry;
+			entry[string(JSON_ARG_NAME)] =  db->groupGetName(groupID);
+			vector<DeviceID> deviceIDs = db->groupGetDevices(groupID	);
+			vector<string> deviceList;
+			for(DeviceID deviceID :deviceIDs) {
+				deviceList.push_back(deviceID.string());
+			}
+			entry[string(JSON_ARG_DEVICEIDS)] = deviceList;
+			groupsList[groupID.string()] = entry;
+		}
+		reply[string(JSON_ARG_GROUPIDS)] = groupsList;
+		makeStatusJSON(reply,STATUS_OK);
+		(completion) (reply, STATUS_OK);
+		return true;
+		
+	}
+	// GET /devices/XX.XX.XX
+	else if(path.size() == 2) {
+		
+ 		GroupID groupID =  GroupID(path.at(1));
+		if(!groupID.isValid() ||!db->groupIsValid(groupID))
+			return false;
+		
+		reply[string(JSON_ARG_GROUPID)] = groupID.string();
+		reply[string(JSON_ARG_NAME)] =  db->groupGetName(groupID);
+		vector<DeviceID> deviceIDs = db->groupGetDevices(groupID	);
+		vector<string> deviceList;
+		for(DeviceID deviceID :deviceIDs) {
+			deviceList.push_back(deviceID.string());
+		}
+		reply[string(JSON_ARG_DEVICEIDS)] = deviceList;
+		makeStatusJSON(reply,STATUS_OK);
+		(completion) (reply, STATUS_OK);
+		return true;
+	}
+	else {
+		
+	}
+	
+	return false;
+}
 
-//	JSON_CMD_LIST DATABASE
-	if(v.getStringFromJSON(JSON_ARG_DATABASE, request, listFunc)){
+static bool Groups_NounHandler_PUT(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+											  ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	using namespace date;
+	using namespace std::chrono;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	json reply;
+ 
+	auto db = insteon.getDB();
+	
+	if(path.size() == 2) {
 		
-//		printf("LIST DATABASE %s \n", listFunc.c_str());
+		DeviceIDArgValidator vDeviceID;
+		DeviceLevelArgValidator vLevel;
 		
-		auto state = insteon.currentState();
-		if(state == InsteonMgr::STATE_READY || state == InsteonMgr::STATE_VALIDATING) {
+		string str;
+		int level;
+		
+		GroupID groupID =  GroupID(path.at(1));
+		if(!groupID.isValid() ||!db->groupIsValid(groupID))
+			return false;
+		
+		// add device?
+		if( vDeviceID.getvalueFromJSON(JSON_ARG_DEVICEID, url.body(), str)){
+			DeviceID  deviceID = DeviceID(str);
 			
-			bool showDetails = false;
-			bool onlyChanges = false;
-			auto db = insteon.getDB();
-		
-			vector<DeviceID> deviceIDs;
-
-			if(listFunc == JSON_VAL_ALL) {
-				deviceIDs = db->allDevices();
+			if(deviceID.isNULL())
+				return false;
+			
+			if(db->groupAddDevice(groupID, deviceID)){
+				reply[string(JSON_ARG_GROUPID)] = groupID.string();
+				reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+				
+				makeStatusJSON(reply,STATUS_OK);
+				(completion) (reply, STATUS_OK);
+				
 			}
-			else if(listFunc == JSON_VAL_VALID) {
-				deviceIDs = db->validDevices();
+			else {
+				reply[string(JSON_ARG_GROUPID)] = groupID.string();
+				makeStatusJSON(reply, STATUS_BAD_REQUEST, "Set Failed" );;
+				(completion) (reply, STATUS_BAD_REQUEST);
 			}
-			else if(listFunc == JSON_VAL_DETAILS) {
-				deviceIDs = db->allDevices();
-				showDetails = true;
-			}
-			else if(listFunc == JSON_VAL_CHANGED) {
-				if(v.getLongIntFromJSON(JSON_ARG_ETAG, request, eTag)){
-				deviceIDs = db->devicesUpdateSinceEtag(eTag);
-				onlyChanges = true;
+		}
+		// set group level
+		else if(vLevel.getvalueFromJSON(JSON_ARG_LEVEL, url.body(), level)){
+			
+			bool queued = insteon.setOnLevel(groupID, level,
+														[=]( bool didSucceed){
+				
+				json reply;
+				
+				if(didSucceed){
+					reply[string(JSON_ARG_GROUPID)] = groupID.string();
+					reply[string(JSON_ARG_LEVEL)]  = level;
+					makeStatusJSON(reply,STATUS_OK);
+					(completion) (reply, STATUS_OK);
 				}
 				else {
-					makeStatusJSON(reply, STATUS_BAD_REQUEST, "Missing eTag" );;
+					reply[string(JSON_ARG_GROUPID)] = groupID.string();
+					makeStatusJSON(reply, STATUS_BAD_REQUEST, "Set Failed" );;
 					(completion) (reply, STATUS_BAD_REQUEST);
+				}
+			});
+			
+			if(!queued) {
+				makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
+				(completion) (reply, STATUS_UNAVAILABLE);
+				return true;
+			}
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+static bool Groups_NounHandler_PATCH(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+												 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	using namespace date;
+	using namespace std::chrono;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	
+	json reply;
+	
+	ServerCmdArgValidator v1;
+	auto db = insteon.getDB();
+	
+	if(path.size() == 2) {
+		
+		GroupID groupID =  GroupID(path.at(1));
+		if(!groupID.isValid() ||!db->groupIsValid(groupID))
+			return false;
+		
+		string name;
+		// set name
+		if(v1.getStringFromJSON(JSON_ARG_NAME, url.body(), name)){
+			if(db->groupSetName(groupID, name)) {
+				reply[string(JSON_ARG_GROUPID)] = groupID.string();
+				reply[string(JSON_ARG_NAME)] = name;
+				
+				makeStatusJSON(reply,STATUS_OK);
+				(completion) (reply, STATUS_OK);
+			}
+			else {
+				reply[string(JSON_ARG_GROUPID)] = groupID.string();
+				makeStatusJSON(reply, STATUS_BAD_REQUEST, "Set Failed" );;
+				(completion) (reply, STATUS_BAD_REQUEST);
+			}
+		}
+		
+	}
+	return false;
+	
+}
+
+
+static bool Groups_NounHandler_POST(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+												 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	using namespace date;
+	using namespace std::chrono;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	
+	json reply;
+	
+	ServerCmdArgValidator v1;
+	auto db = insteon.getDB();
+	
+	if(path.size() == 1) {
+		
+		string name;
+		// Create group
+		if(v1.getStringFromJSON(JSON_ARG_NAME, url.body(), name)){
+			
+			GroupID groupID;
+			if(db->groupFind(name, &groupID)){
+				name = db->groupGetName(groupID);
+			}
+			else {
+				if (! db->groupCreate(&groupID, name)) {
+					reply[string(JSON_ARG_NAME)] = name;
+					makeStatusJSON(reply, STATUS_BAD_REQUEST, "Set Failed" );;
+					(completion) (reply, STATUS_BAD_REQUEST);
+					return true;
+				}
+			}
+			
+			reply[string(JSON_ARG_GROUPID)] = groupID.string();
+			reply[string(JSON_ARG_NAME)] = name;
+			makeStatusJSON(reply,STATUS_OK);
+			(completion) (reply, STATUS_OK);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+static bool Groups_NounHandler_DELETE(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+												 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	using namespace date;
+	using namespace std::chrono;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	
+	json reply;
+	
+	ServerCmdArgValidator v1;
+	auto db = insteon.getDB();
+	
+	if(path.size() == 2) {
+		
+		GroupID groupID =  GroupID(path.at(1));
+		if(!groupID.isValid() ||!db->groupIsValid(groupID))
+			return false;
+		
+		if(db->groupDelete(groupID)){
+			makeStatusJSON(reply,STATUS_NO_CONTENT);
+			(completion) (reply, STATUS_NO_CONTENT);
+		}
+		else {
+			reply[string(JSON_ARG_GROUPID)] = groupID.string();
+			makeStatusJSON(reply, STATUS_BAD_REQUEST, "Delete Failed" );;
+			(completion) (reply, STATUS_BAD_REQUEST);
+		}
+		return true;
+		
+	}
+	else if(path.size() == 3) {
+		DeviceIDArgValidator vDeviceID;
+
+		GroupID groupID =  GroupID(path.at(1));
+		if(!groupID.isValid() ||!db->groupIsValid(groupID))
+			return false;
+
+		auto deviceStr = path.at(2);
+		if(!vDeviceID.validateArg(deviceStr))
+			return false;
+			
+		DeviceID	deviceID = DeviceID(deviceStr);
+	
+		if(db->groupRemoveDevice(groupID,deviceID)){
+			makeStatusJSON(reply,STATUS_NO_CONTENT);
+			(completion) (reply, STATUS_NO_CONTENT);
+		}
+		else {
+			reply[string(JSON_ARG_GROUPID)] = groupID.string();
+			reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+			makeStatusJSON(reply, STATUS_BAD_REQUEST, "Delete Failed" );;
+			(completion) (reply, STATUS_BAD_REQUEST);
+		}
+		return true;
+ 
+	}
+
+	return false;
+}
+
+static void Groups_NounHandler(ServerCmdQueue* cmdQueue,
+										 REST_URL url,
+										 TCPClientInfo cInfo,
+										 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	using namespace date;
+	using namespace std::chrono;
+	json reply;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	string noun;
+	
+	bool isValidURL = false;
+	
+	if(path.size() > 0) {
+		noun = path.at(0);
+	}
+	
+	// CHECK noun
+	if(noun != NOUN_GROUPS){
+		(completion) (reply, STATUS_NOT_FOUND);
+		return;
+	}
+	
+	// is server available?
+	auto state = insteon.currentState();
+	if(!( state == InsteonMgr::STATE_READY
+		  || state == InsteonMgr::STATE_VALIDATING)) {
+		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
+		(completion) (reply, STATUS_UNAVAILABLE);
+		return;
+	}
+	
+	switch(url.method()){
+		case HTTP_GET:
+			isValidURL = Groups_NounHandler_GET(cmdQueue,url,cInfo, completion);
+			break;
+			
+		case HTTP_PUT:
+			isValidURL = Groups_NounHandler_PUT(cmdQueue,url,cInfo, completion);
+			break;
+			
+		case HTTP_PATCH:
+			isValidURL = Groups_NounHandler_PATCH(cmdQueue,url,cInfo, completion);
+			break;
+	 
+		case HTTP_POST:
+			isValidURL = Groups_NounHandler_POST(cmdQueue,url,cInfo, completion);
+			break;
+ 
+		case HTTP_DELETE:
+			isValidURL = Groups_NounHandler_DELETE(cmdQueue,url,cInfo, completion);
+			break;
+  
+		default:
+			(completion) (reply, STATUS_INVALID_METHOD);
+			return;
+	}
+	
+	if(!isValidURL) {
+		(completion) (reply, STATUS_NOT_FOUND);
+	}
+	
+}
+// MARK:  INSTEON.GROUPS NOUN HANDLERS
+
+static void InsteonGroups_NounHandler(ServerCmdQueue* cmdQueue,
+										 REST_URL url,
+										 TCPClientInfo cInfo,
+												  ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	using namespace date;
+	using namespace std::chrono;
+	json reply;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	string noun;
+ 
+	if(path.size() > 0) {
+		noun = path.at(0);
+	}
+	
+	// CHECK noun
+	if(noun != NOUN_INSTEON_GROUPS){
+		(completion) (reply, STATUS_NOT_FOUND);
+		return;
+	}
+	
+	// is server available?
+	auto state = insteon.currentState();
+	if(!( state == InsteonMgr::STATE_READY
+		  || state == InsteonMgr::STATE_VALIDATING)) {
+		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
+		(completion) (reply, STATUS_UNAVAILABLE);
+		return;
+	}
+	
+	// CHECK METHOD
+	if(url.method() != HTTP_PUT ) {
+		(completion) (reply, STATUS_INVALID_METHOD);
+		return;
+	}
+	
+	if(path.size() == 2) {
+		
+		DeviceLevelArgValidator vLevel;
+		int level;
+		
+		auto groupStr = path.at(1);
+		
+		if( regex_match(string(groupStr), std::regex("^[A-Fa-f0-9]{2}$"))){
+			uint8_t groupID;
+			if( std::sscanf(groupStr.c_str(), "%hhx", &groupID) == 1){
+				
+				// set level
+				if(vLevel.getvalueFromJSON(JSON_ARG_LEVEL, url.body(), level)){
+					
+					bool queued = InsteonDeviceGroup(groupID).setOnLevel(level,
+																						  [=](bool didSucceed){
+						json reply;
+						if(didSucceed){
+							makeStatusJSON(reply,STATUS_OK);
+							(completion) (reply, STATUS_OK);
+						}
+						else {
+							makeStatusJSON(reply, STATUS_BAD_REQUEST, "Insteon Group Set Failed" );;
+							(completion) (reply, STATUS_BAD_REQUEST);
+						}
+					});
+					
+					if(!queued) {
+						makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
+						(completion) (reply, STATUS_UNAVAILABLE);
+					}
 					return;
 				}
 			}
-
-			if(showDetails){
-				json devicesEntries;
-				for(DeviceID deviceID :deviceIDs) {
-					insteon_dbEntry_t info;
-					if( db->getDeviceInfo(deviceID,  &info)) {
-						
-						string strDeviceID = deviceID.string();
-		
-						json entry;
-						entry[string(JSON_VAL_VALID)] = info.isValidated;
-						entry[string(JSON_ARG_DEVICEINFO)] = info.deviceInfo.string();
-						system_clock::time_point tp = system_clock::from_time_t (info.lastUpdated);
-						auto rfc399 =  date::format("%FT%TZ", tp);
-						entry["lastUpdated"] =  rfc399;
-
-						devicesEntries[strDeviceID] = entry;
-					}
-					
-					reply[string(JSON_ARG_DETAILS)] = devicesEntries;
- 				}
- 
-			}
-			else {
-				vector<string> deviceList;
-
-				for(DeviceID deviceID :deviceIDs) {
-					deviceList.push_back(deviceID.string());
-				}
-				reply[string(JSON_ARG_DEVICEIDS)] = deviceList;
-
-			}
-			
-			makeStatusJSON(reply,STATUS_OK);
-			(completion) (reply, STATUS_OK);
-			return;
-			
-		}
-		else {
-			makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
-			(completion) (reply, STATUS_UNAVAILABLE);
-			return;
 		}
 	}
-//		if(v.getStringFromJSON(JSON_VAL_CHANGED, request, listFunc)){
-//	}
-	else {
-		makeStatusJSON(reply, STATUS_BAD_REQUEST, "List what?" );;
-		(completion) (reply, STATUS_BAD_REQUEST);
-	}
-}
-
-static void SetBacklightLevelCommand( ServerCmdQueue* cmdQueue,
-									 json request,  // entire request
-									 TCPClientInfo cInfo,
-									 ServerCmdQueue::cmdCallback_t completion){
-	using namespace rest;
-	json reply;
 	
-	DeviceIDArgValidator vDeviceID;
-	DeviceLevelArgValidator vLevel;
-	
-	string deviceID;
-	int level;
-	
-	if(vDeviceID.getvalueFromJSON(JSON_ARG_DEVICEID, request, deviceID)){
-		if(vLevel.getvalueFromJSON(JSON_ARG_LEVEL, request, level)){
-			
-			bool queued = insteon.setLEDBrightness(deviceID, level,
-														[=](bool didSucceed){
-				
-				json reply;
-				reply[string(JSON_ARG_DEVICEID)] = deviceID;
-				
-				makeStatusJSON(reply,STATUS_OK);
-				(completion) (reply, STATUS_OK);
-			});
-			
-			if(!queued) {
-				makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
-				(completion) (reply, STATUS_UNAVAILABLE);
-			}
-		}
-		else {
-			makeStatusJSON(reply, STATUS_BAD_REQUEST, "Bad argument for level" );;
-			(completion) (reply, STATUS_BAD_REQUEST);
-		}
-	}
-	else {
-		makeStatusJSON(reply, STATUS_BAD_REQUEST, "Bad argument for deviceID" );;
-		(completion) (reply, STATUS_BAD_REQUEST);
-	}
-}
-
-static void SetLevelCommand( ServerCmdQueue* cmdQueue,
-									 json request,  // entire request
-									 TCPClientInfo cInfo,
-									 ServerCmdQueue::cmdCallback_t completion){
-	using namespace rest;
-	json reply;
-	
-	DeviceIDArgValidator vDeviceID;
-	DeviceLevelArgValidator vLevel;
-	
-	string deviceID;
-	int level;
-	
-	if(vDeviceID.getvalueFromJSON(JSON_ARG_DEVICEID, request, deviceID)){
-		if(vLevel.getvalueFromJSON(JSON_ARG_LEVEL, request, level)){
-			
-			bool queued = insteon.setOnLevel(deviceID, level,
-														[=](eTag_t eTag, bool didSucceed){
-				
-				json reply;
-				reply[string(JSON_ARG_DEVICEID)] = deviceID;
-				reply[string(JSON_ARG_ETAG)] = eTag;
-				reply[string(JSON_ARG_LEVEL)]  = level;
-				
-				makeStatusJSON(reply,STATUS_OK);
-				(completion) (reply, STATUS_OK);
-			});
-			
-			if(!queued) {
-				makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
-				(completion) (reply, STATUS_UNAVAILABLE);
-			}
-		}
-		else {
-			makeStatusJSON(reply, STATUS_BAD_REQUEST, "Bad argument for level" );;
-			(completion) (reply, STATUS_BAD_REQUEST);
-		}
-	}
-	else {
-		makeStatusJSON(reply, STATUS_BAD_REQUEST, "Bad argument for deviceID" );;
-		(completion) (reply, STATUS_BAD_REQUEST);
-	}
-}
-	 
- 
-
-static void ShowDeviceCommand( ServerCmdQueue* cmdQueue,
-									 json request,  // entire request
-										TCPClientInfo cInfo,
-										ServerCmdQueue::cmdCallback_t completion){
-	using namespace rest;
-	json reply;
-	
-	DeviceIDArgValidator vDeviceID;
-	ServerCmdArgValidator v;
-	
-	string strdeviceID;
-	
-	bool forceLookup = false;
-	bool showDetails = false;
-	
-	//	JSON_ARG_FORCE
-	if(vDeviceID.getvalueFromJSON(JSON_ARG_DEVICEID, request, strdeviceID)){
-		
-		DeviceID deviceID = DeviceID(strdeviceID);
-		
-		// get optional forceLookup
-		v.getBoolFromJSON(JSON_ARG_FORCE, request, forceLookup);
-	
-		// get optional details
-		v.getBoolFromJSON(JSON_ARG_DETAILS, request, showDetails);
- 
-		bool queued = insteon.getOnLevel(strdeviceID, forceLookup,
-													[=](uint8_t level, eTag_t eTag, bool didSucceed){
-			
-			auto db = insteon.getDB();
-			
-			insteon_dbEntry_t info;
-		
-			json reply;
-			reply[string(JSON_ARG_DEVICEID)] 	= strdeviceID;
-			reply[string(JSON_ARG_ETAG)] 		= eTag;
-			reply[string(JSON_ARG_LEVEL)]  		= level;
-	 
-			if(showDetails){
-				reply[string(JSON_ARG_NAME)] = deviceID.nameString();
-				if(db->getDeviceInfo(deviceID,  &info)) {
-					
-					reply[string(JSON_VAL_VALID)] = info.isValidated;
-					reply[string(JSON_ARG_DEVICEINFO)] = info.deviceInfo.string();
-					reply[string(JSON_ARG_DESCRIPTION)] = info.deviceInfo.descriptionString();
-				}
-			}
-			makeStatusJSON(reply,STATUS_OK);
-			(completion) (reply, STATUS_OK);
-		});
-		
-		if(!queued) {
-	 		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
-			(completion) (reply, STATUS_UNAVAILABLE);
-		}
-	}
-	else {
-		makeStatusJSON(reply, STATUS_BAD_REQUEST, "Bad argument for deviceID" );;
-		(completion) (reply, STATUS_BAD_REQUEST);
-	}
+	(completion) (reply, STATUS_NOT_FOUND);
 }
 
 
-static void ShowDateCommand(ServerCmdQueue* cmdQueue,
-								  json request,  // entire request
-									 TCPClientInfo cInfo,
-								  ServerCmdQueue::cmdCallback_t completion) {
-	using namespace rest;
-	json reply;
-	string plmFunc;
+// MARK:  DEVICES NOUN HANDLERS
+static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
+												REST_URL url,
+												TCPClientInfo cInfo,
+												ServerCmdQueue::cmdCallback_t completion) {
 	
+	using namespace rest;
 	using namespace date;
 	using namespace std::chrono;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	bool showDetails = false;
+	bool forceLookup = false;
+	
+	json reply;
+	
+	auto db = insteon.getDB();
+	vector<DeviceID> deviceIDs;
+	
+	if(queries.count(string(JSON_VAL_DETAILS))) {
+		string str = queries[string(JSON_VAL_DETAILS)];
+		if( str == "true" ||  str =="1")
+			showDetails = true;
+	}
+	
+	if(queries.count(string(JSON_ARG_FORCE))) {
+		string str = queries[string(JSON_ARG_FORCE)];
+		if( str == "true" ||  str =="1")
+			forceLookup = true;
+	}
+	
+	// GET /devices
+	if(path.size() == 1) {
+		
+		//			 only valid devices?
+		if(queries.count(string(JSON_VAL_VALID))) {
+			string str = queries[string(JSON_VAL_VALID)];
+			if( str == "true" ||  str =="1")
+				deviceIDs = db->validDevices();
+		}
+		else if(headers.count("If-None-Match")) {
+			string str = headers["If-None-Match"];
+			
+			char* p;
+			long eTag = strtol(str.c_str(), &p, 0);
+			if(*p == 0){
+				deviceIDs = db->devicesUpdateSinceEtag(eTag);
+			}
+			else {
+				deviceIDs = db->devicesUpdateSinceEtag(0);
+			}
+		}
+		else
+		{
+			// simple List all devices.
+			deviceIDs = db->allDevices();
+		}
+		
+		if(showDetails){
+			json devicesEntries;
+			for(DeviceID deviceID :deviceIDs) {
+				insteon_dbEntry_t info;
+				if( db->getDeviceInfo(deviceID,  &info)) {
+					
+					string strDeviceID = deviceID.string();
+					
+					json entry;
+					entry[string(JSON_VAL_VALID)] = info.isValidated;
+					entry[string(JSON_ARG_DEVICEINFO)] = info.deviceInfo.string();
+					system_clock::time_point tp = system_clock::from_time_t (info.lastUpdated);
+					auto rfc399 =  date::format("%FT%TZ", tp);
+					entry["lastUpdated"] =  rfc399;
+					devicesEntries[strDeviceID] = entry;
+				}
+				
+				reply[string(JSON_ARG_DETAILS)] = devicesEntries;
+			}
+		}
+		else {
+			vector<string> deviceList;
+			
+			for(DeviceID deviceID :deviceIDs) {
+				deviceList.push_back(deviceID.string());
+			}
+			reply[string(JSON_ARG_DEVICEIDS)] = deviceList;
+		}
+		
+		makeStatusJSON(reply,STATUS_OK);
+		(completion) (reply, STATUS_OK);
+		return true;
+	}
+	
+	// GET /devices/XX.XX.XX
+	else if(path.size() == 2) {
+		DeviceIDArgValidator vDeviceID;
+		
+		auto deviceStr = path.at(1);
+		if(vDeviceID.validateArg(deviceStr)){
+			DeviceID	deviceID = DeviceID(deviceStr);
+			
+			bool queued = insteon.getOnLevel(deviceID, forceLookup,
+														[=](uint8_t level, eTag_t eTag, bool didSucceed){
+				insteon_dbEntry_t info;
+				json reply;
+				
+				if( db->getDeviceInfo(deviceID,  &info)) {
+					
+					reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+					reply[string(JSON_VAL_VALID)] = info.isValidated;
+					reply[string(JSON_ARG_DEVICEINFO)] = info.deviceInfo.string();
+					reply[string(JSON_ARG_ETAG)] = info.eTag;
+					system_clock::time_point tp = system_clock::from_time_t (info.lastUpdated);
+					auto rfc399 =  date::format("%FT%TZ", tp);
+					reply["lastUpdated"] =  rfc399;
+					reply[string(JSON_ARG_LEVEL)]  = level;
+					
+					auto groups = db->groupsContainingDevice(deviceID);
+					if(groups.size() > 0){
+						vector<string> groupList;
+						for(GroupID groupID : groups) {
+							groupList.push_back(groupID.string());
+						}
+			 			reply[string(JSON_ARG_GROUPIDS)] = groupList;
+ 					}
+		
+					makeStatusJSON(reply,STATUS_OK);
+					(completion) (reply, STATUS_OK);
+					return;
+				}
+				else {
+					makeStatusJSON(reply,STATUS_INTERNAL_ERROR);
+					(completion) (reply, STATUS_INTERNAL_ERROR);
+					return;
+				}
+				
+			});
+			
+			if(!queued) {
+				makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
+				(completion) (reply, STATUS_UNAVAILABLE);
+				return true;
+			}
+			return true;
+		}
+	}
+	
+	return false;
+}
 
-	printf("DATE request \n" );
+static bool Devices_NounHandler_DELETE(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+													ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	using namespace date;
+	using namespace std::chrono;
 	
-	const auto tp = time_point_cast<seconds>(system_clock::now());
-	auto rfc399 =  date::format("%FT%TZ", tp);
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
 	
-	reply["date"] =  rfc399;
- 
+	json reply;
+	
+	auto db = insteon.getDB();
+	
+	if(path.size() == 2) {
+		
+		DeviceIDArgValidator vDeviceID;
+		
+		auto deviceStr = path.at(1);
+		if(vDeviceID.validateArg(deviceStr)){
+			DeviceID	deviceID = DeviceID(deviceStr);
+			
+			if( db->isDeviceValidated(deviceID)) {
+				
+				bool queued =  insteon.unlinkDevice(deviceID,
+																[=](bool didSucceed){
+					json reply;
+					if(didSucceed){
+						makeStatusJSON(reply,STATUS_OK);
+						(completion) (reply, STATUS_OK);
+					}
+					else {
+						reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+						makeStatusJSON(reply, STATUS_BAD_REQUEST, "Delete Failed" );;
+						(completion) (reply, STATUS_BAD_REQUEST);
+					}
+				});
+				if(!queued) {
+					makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
+					(completion) (reply, STATUS_UNAVAILABLE);
+				}
+				return true;
+			}
+		}
+	}
+	
+	return false;
+}
+
+static bool Devices_NounHandler_PUT(ServerCmdQueue* cmdQueue,
+												REST_URL url,
+												TCPClientInfo cInfo,
+												ServerCmdQueue::cmdCallback_t completion) {
+	
+	using namespace rest;
+	using namespace date;
+	using namespace std::chrono;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	json reply;
+	
+	auto db = insteon.getDB();
+	vector<DeviceID> deviceIDs;
+	
+	if(path.size() == 2) {
+		
+		DeviceIDArgValidator vDeviceID;
+		DeviceLevelArgValidator vLevel;
+		LEDBrightnessArgValidator vLED;
+		ServerCmdArgValidator v1;
+		
+		auto deviceStr = path.at(1);
+		if(vDeviceID.validateArg(deviceStr)){
+			DeviceID	deviceID = DeviceID(deviceStr);
+			int level;
+			bool shouldBeep = false;
+			
+			if( db->isDeviceValidated(deviceID)) {
+				
+				// set level
+				if(vLevel.getvalueFromJSON(JSON_ARG_LEVEL, url.body(), level)){
+					
+					bool queued = insteon.setOnLevel(deviceID, level,
+																[=](eTag_t eTag, bool didSucceed){
+						json reply;
+						if(didSucceed){
+							reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+							reply[string(JSON_ARG_ETAG)] = eTag;
+							reply[string(JSON_ARG_LEVEL)]  = level;
+							makeStatusJSON(reply,STATUS_OK);
+							(completion) (reply, STATUS_OK);
+						}
+						else {
+							reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+							makeStatusJSON(reply, STATUS_BAD_REQUEST, "Set Failed" );;
+							(completion) (reply, STATUS_BAD_REQUEST);
+						}
+					});
+					
+					if(!queued) {
+						makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
+						(completion) (reply, STATUS_UNAVAILABLE);
+						return false;
+					}
+					return true;
+				}
+				// set backlight
+				else if(vLED.getvalueFromJSON(JSON_ARG_BACKLIGHT, url.body(), level)){
+					
+					bool queued = insteon.setLEDBrightness(deviceID, level,
+																		[=]( bool didSucceed){
+						json reply;
+						if(didSucceed){
+							reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+							reply[string(JSON_ARG_LEVEL)]  = level;
+							makeStatusJSON(reply,STATUS_OK);
+							(completion) (reply, STATUS_OK);
+						}
+						else {
+							reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+							makeStatusJSON(reply, STATUS_BAD_REQUEST, "Set Failed" );;
+							(completion) (reply, STATUS_BAD_REQUEST);
+						}
+					});
+					
+					if(!queued) {
+						makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
+						(completion) (reply, STATUS_UNAVAILABLE);
+						return false;
+					}
+					return true;
+				}
+				
+				//beep
+				
+				else if(v1.getBoolFromJSON(JSON_ARG_BEEP, url.body(), shouldBeep)){
+					
+					InsteonDevice(deviceID).beep([=](bool didSucceed){
+						json reply;
+						
+						reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+						makeStatusJSON(reply,STATUS_OK);
+						(completion) (reply, STATUS_OK);
+					});
+					return true;
+				}
+			}
+		}
+	}
+	
+	return false;
+}
+
+
+
+static void Devices_NounHandler(ServerCmdQueue* cmdQueue,
+										  REST_URL url,
+										  TCPClientInfo cInfo,
+										  ServerCmdQueue::cmdCallback_t completion) {
+	
+	using namespace rest;
+	using namespace date;
+	using namespace std::chrono;
+	json reply;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	string noun;
+	
+	bool isValidURL = false;
+	
+	if(path.size() > 0) {
+		noun = path.at(0);
+	}
+	
+	// CHECK noun
+	if(noun != NOUN_DEVICES){
+		(completion) (reply, STATUS_NOT_FOUND);
+		return;
+	}
+	
+	// is server available?
+	auto state = insteon.currentState();
+	if(!( state == InsteonMgr::STATE_READY
+		  || state == InsteonMgr::STATE_VALIDATING)) {
+		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
+		(completion) (reply, STATUS_UNAVAILABLE);
+		return;
+	}
+	
+	switch(url.method()){
+		case HTTP_GET:
+			isValidURL = Devices_NounHandler_GET(cmdQueue,url,cInfo, completion);
+			break;
+			
+		case HTTP_PUT:
+			isValidURL = Devices_NounHandler_PUT(cmdQueue,url,cInfo, completion);
+			break;
+	
+		case HTTP_DELETE:
+			isValidURL = Devices_NounHandler_DELETE(cmdQueue,url,cInfo, completion);
+			break;
+	 
+		default:
+			(completion) (reply, STATUS_INVALID_METHOD);
+			return;
+	}
+	
+	if(!isValidURL) {
+		(completion) (reply, STATUS_NOT_FOUND);
+	}
+};
+
+
+// MARK:  OTHER REST NOUN HANDLERS
+
+static void Status_NounHandler(ServerCmdQueue* cmdQueue,
+										 REST_URL url,  // entire request
+										 TCPClientInfo cInfo,
+										 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	json reply;
+	
+	// CHECK METHOD
+	if(url.method() != HTTP_GET ) {
+		(completion) (reply, STATUS_INVALID_METHOD);
+		return;
+	}
+	
+	auto path = url.path();
+	string noun;
+	
+	if(path.size() > 0) {
+		noun = path.at(0);
+	}
+	
+	// CHECK sub paths
+	if(noun != NOUN_STATUS){
+		(completion) (reply, STATUS_NOT_FOUND);
+		return;
+	}
+	
+	auto state = insteon.currentState();
+	string stateStr = insteon.currentStateString();
+	
+	reply[string(JSON_ARG_STATE)] =   state;
+	reply[string(JSON_ARG_STATESTR)] =   stateStr;
+	
 	makeStatusJSON(reply,STATUS_OK);
 	(completion) (reply, STATUS_OK);
 }
 
-static void PlmFunctionsCommand(ServerCmdQueue* cmdQueue,
-											json request,  // entire request
+static void Version_NounHandler(ServerCmdQueue* cmdQueue,
+										  REST_URL url,
 										  TCPClientInfo cInfo,
 										  ServerCmdQueue::cmdCallback_t completion) {
+	
 	using namespace rest;
 	json reply;
 	
-	ServerCmdArgValidator v;
-	string plmFunc;
-	
-	if(v.getStringFromJSON(JSON_ARG_FUNCTION, request, plmFunc)){
-		
-		printf("PLM %s \n", plmFunc.c_str());
-		
-		auto state = insteon.currentState();
-		
-		if(plmFunc == JSON_ARG_INFO) {
-			if(state == InsteonMgr::STATE_READY || state == InsteonMgr::STATE_VALIDATING) {
-				DeviceID deviceID;
-				DeviceInfo deviceInfo;
-				json reply;
-				
-				if(insteon.plmInfo(&deviceID, &deviceInfo)){
-					
-					reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
-					reply[string(JSON_ARG_DEVICEINFO)] = deviceInfo.string();
-					makeStatusJSON(reply,STATUS_OK);
-					(completion) (reply, STATUS_OK);
-					return;
-					
-				}
-				
-			}
-		}
-		
-		makeStatusJSON(reply, STATUS_BAD_REQUEST, "invalid request" );;
-		(completion) (reply, STATUS_BAD_REQUEST);
+	// CHECK METHOD
+	if(url.method() != HTTP_GET ) {
+		(completion) (reply, STATUS_INVALID_METHOD);
 		return;
-		
 	}
-	else {
-		makeStatusJSON(reply, STATUS_BAD_REQUEST, "No argument for function" );;
-		(completion) (reply, STATUS_BAD_REQUEST);
+	
+	auto path = url.path();
+	string noun;
+	
+	if(path.size() > 0) {
+		noun = path.at(0);
 	}
-}
-
-static void GroupFunctionsCommand(ServerCmdQueue* cmdQueue,
-											json request,  // entire request
-											 TCPClientInfo cInfo,
-										  ServerCmdQueue::cmdCallback_t completion) {
-	using namespace rest;
-	json reply;
 	
-	
-		auto dump = request.dump(4);
-		dump = replaceAll(dump, "\n","\r\n" );
-		cout << dump << "\n";
-
-	ServerCmdArgValidator v;
-	DeviceIDArgValidator vDeviceID;
-
-	string groupFunc;
-	auto db = insteon.getDB();
-
-	if(v.getStringFromJSON(JSON_ARG_FUNCTION, request, groupFunc)){
-	
-		if(groupFunc == JSON_CMD_LIST) {
-			json groupsList;
-			
-			auto groupIDs = db->allGroups();
-			for(auto groupID : groupIDs){
-				
-				json entry;
-				entry[string(JSON_ARG_NAME)] =  db->groupGetName(groupID);
-				vector<DeviceID> deviceIDs = db->groupGetDevices(groupID	);
-				vector<string> deviceList;
-				for(DeviceID deviceID :deviceIDs) {
-					deviceList.push_back(deviceID.string());
-				}
-				entry[string(JSON_ARG_DEVICEIDS)] = deviceList;
-				groupsList[to_string(groupID)] = entry;
-			}
-			reply[string(JSON_ARG_GROUPIDS)] = groupsList;
-			makeStatusJSON(reply,STATUS_OK);
-			(completion) (reply, STATUS_OK);
-			return;
-		}
-		else if(groupFunc == JSON_ARG_DETAILS) {
-	
-		}
-		else {
-			
-		}
-		
-		makeStatusJSON(reply, STATUS_BAD_REQUEST, "invalid request" );;
-		(completion) (reply, STATUS_BAD_REQUEST);
+	// CHECK sub paths
+	if(noun != NOUN_VERSION){
+		(completion) (reply, STATUS_NOT_FOUND);
 		return;
-
-//		printf("Group %s \n", groupFunc.c_str());
-//
-//		string key = string(JSON_ARG_DEVICEIDS);
-//
-//		if( request.contains(key)
-//			&& request.at(key).is_array()){
-//
-//			auto deviceIDs = request.at(key);
-//
-//			for(auto val : deviceIDs){
-//				if(val.is_string()){
-//					string deviceID = val;
-//
-//					if(vDeviceID.validateArg(deviceID)) {
-//						printf("add: %s\n",deviceID.c_str());
-//					}
-//					else {
-//						// flag error
-//					}
-//				}
-//
-//			}
-//		}
-//
-//		makeStatusJSON(reply,STATUS_OK);
-//		(completion) (reply, STATUS_OK);
-//		return;
-		
 	}
-	else {
-		makeStatusJSON(reply, STATUS_BAD_REQUEST, "No argument for function" );;
-		(completion) (reply, STATUS_BAD_REQUEST);
-	}
-}
-
-
-static void VersionCommand(ServerCmdQueue* cmdQueue,
-											json request,  // entire request
-										TCPClientInfo cInfo,
-										  ServerCmdQueue::cmdCallback_t completion) {
-	using namespace rest;
-	json reply;
 	
 	reply[string(JSON_ARG_VERSION)] =   FOO_VERSION_STRING;
 	reply[string(JSON_ARG_TIMESTAMP)]	=  string(__DATE__) + " " + string(__TIME__);
 	
 	makeStatusJSON(reply,STATUS_OK);
 	(completion) (reply, STATUS_OK);
-}
+};
 
-static void StatusCommand(ServerCmdQueue* cmdQueue,
-											json request,  // entire request
-										TCPClientInfo cInfo,
-										  ServerCmdQueue::cmdCallback_t completion) {
+static void Date_NounHandler(ServerCmdQueue* cmdQueue,
+									  REST_URL url,
+									  TCPClientInfo cInfo,
+									  ServerCmdQueue::cmdCallback_t completion) {
+	
 	using namespace rest;
 	json reply;
-
-	auto state = insteon.currentState();
-	string stateStr = insteon.currentStateString();
-
-	reply[string(JSON_ARG_STATE)] =   state;
-	reply[string(JSON_ARG_STATESTR)] =   stateStr;
-	 
+	string plmFunc;
+	
+	using namespace date;
+	using namespace std::chrono;
+	
+	// CHECK METHOD
+	if(url.method() != HTTP_GET ) {
+		(completion) (reply, STATUS_INVALID_METHOD);
+		return;
+	}
+	
+	auto path = url.path();
+	string noun;
+	
+	if(path.size() > 0) {
+		noun = path.at(0);
+	}
+	
+	// CHECK sub paths
+	if(noun != NOUN_DATE){
+		(completion) (reply, STATUS_NOT_FOUND);
+		return;
+	}
+	
+	
+	const auto tp = time_point_cast<seconds>(system_clock::now());
+	auto rfc399 =  date::format("%FT%TZ", tp);
+	
+	reply["date"] =  rfc399;
+	
 	makeStatusJSON(reply,STATUS_OK);
 	(completion) (reply, STATUS_OK);
 }
- 
-static void BeepCommand(ServerCmdQueue* cmdQueue,
-											json request,  // entire request
-										TCPClientInfo cInfo,
-										  ServerCmdQueue::cmdCallback_t completion) {
+
+
+
+static void PLM_NounHandler(ServerCmdQueue* cmdQueue,
+									 REST_URL url,
+									 TCPClientInfo cInfo,
+									 ServerCmdQueue::cmdCallback_t completion) {
+	
 	using namespace rest;
 	json reply;
 	
-	DeviceIDArgValidator vDeviceID;
-	string deviceID;
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	string noun;
 	
-	if(vDeviceID.getvalueFromJSON(JSON_ARG_DEVICEID, request, deviceID)){
-		
-		InsteonDevice(deviceID).beep([=](bool didSucceed){
- 			json reply;
-
-			reply[string(JSON_ARG_DEVICEID)] = deviceID;
-
- 			makeStatusJSON(reply,STATUS_OK);
-			(completion) (reply, STATUS_OK);
-			});
+	bool isValidURL = false;
+	
+	if(path.size() > 0) {
+		noun = path.at(0);
+	}
+	
+	// CHECK noun
+	if(noun != NOUN_PLM){
+		(completion) (reply, STATUS_NOT_FOUND);
 		return;
 	}
+	auto method = url.method();
+	
+	if(method == HTTP_GET){
+		
+		DeviceID deviceID;
+		DeviceInfo deviceInfo;
+		
+		isValidURL = true;
+		
+		if( insteon.plmInfo(&deviceID, &deviceInfo) ){
+			json reply;
+			
+			reply[string(JSON_ARG_DEVICEID)] = 	deviceID.string();
+			reply[string(JSON_ARG_DEVICEINFO)] =	deviceInfo.string();
+			
+			makeStatusJSON(reply,STATUS_OK);
+			(completion) (reply, STATUS_OK);
+			return;
+		}
+		else {
+			makeStatusJSON(reply,STATUS_INTERNAL_ERROR);
+			(completion) (reply, STATUS_INTERNAL_ERROR);
+			return;
+			
+		}
+	}  //else if(method == HTTP_GET){
+	
 	else {
-		makeStatusJSON(reply, STATUS_BAD_REQUEST, "Bad argument for deviceID" );;
-		(completion) (reply, STATUS_BAD_REQUEST);
+		(completion) (reply, STATUS_INVALID_METHOD);
+		return;
 	}
-}
+//
+//	if(!isValidURL) {
+//		(completion) (reply, STATUS_NOT_FOUND);
+//	}
+	
+};
 
- 
 // MARK: - COMMAND LINE FUNCTIONS
 
-static bool SETcmdHandler( stringvector 		line,
-								  CmdLineMgr* 		mgr,
-								  boolCallback_t 	cb){
-	
+static bool VersionCmdHandler( stringvector line,
+										CmdLineMgr* mgr,
+										boolCallback_t	cb){
 	using namespace rest;
-	string errorStr;
-	string command = line[0];
-	string deviceID;
-	string onlevel;
-	 
-	uint8_t dimLevel = 0;
-
-	DeviceIDArgValidator v1;
- 
-	if(	line.size() > 1)
-		deviceID = line[1];
+	TCPClientInfo cInfo = mgr->getClientInfo();
+	//
+	//	for (auto& t : cInfo.headers()){
+	//		printf("%s = %s\n", t.first.c_str(), t.second.c_str());
+	//	}
 	
-	if(	line.size() > 2)
-		onlevel = line[2];
-	
-	if(	deviceID.empty()) {
-		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects deviceID.";
-	}
-	else if(command == "dim" && onlevel.empty()) {
-		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects level.";
-	}
-	else if(!v1.validateArg(deviceID)){
-		errorStr =  "\x1B[36;1;4m"  + deviceID + "\x1B[0m is not a valid DeviceID.";
-	}
-	else if(!InsteonDevice::stringToLevel(string(onlevel), &dimLevel)){
- 		errorStr =  "\x1B[36;1;4m"  + onlevel + "\x1B[0m is not a valid device level.";
-	}
-	else {
+	// simulate URL
+	REST_URL url("GET /version\n\n");
+	ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
 		
-		json request;
-		request[kREST_command] =  JSON_CMD_SETLEVEL ;
-		request[string(JSON_ARG_DEVICEID)] =  line[1];
+		bool success = didSucceed(reply);
 		
-		if(command == "turn-on") {
-			request[string(JSON_ARG_LEVEL)] = 255;
-		}
-		else if(command == "turn-off") {
-			request[string(JSON_ARG_LEVEL)] = 0;
-		}
-		else if(command == "dim"){
- 			request[string(JSON_ARG_LEVEL)] =  dimLevel;
-		}
-		
-//		auto dump = request.dump(4);
-//		dump = replaceAll(dump, "\n","\r\n" );
-//		cout << dump << "\n";
-//
-		ServerCmdQueue* cmdQueue = ServerCmdQueue::shared();
-		TCPClientInfo cInfo = mgr->getClientInfo();
-
-		cmdQueue->queueCommand(request, cInfo, [=] (json reply, httpStatusCodes_t code) {
+		if(success) {
+			std::ostringstream oss;
 			
-			bool success = didSucceed(reply);
-			
-			if(success) {
-				mgr->sendReply( "OK \n\r");
-			}
-			else {
-				string error = errorMessage(reply);
-				mgr->sendReply( error + "\n\r");
+			if(reply.count(JSON_ARG_VERSION) ) {
+				string ver = reply[string(JSON_ARG_VERSION)];
+				oss << ver << " ";
 			}
 			
-			(cb) (success);
-		});
+			if(reply.count(JSON_ARG_TIMESTAMP) ) {
+				string timestamp = reply[string(JSON_ARG_TIMESTAMP)];
+				oss <<  timestamp;
+			}
+			
+			oss << "\r\n";
+			mgr->sendReply(oss.str());
+			
+		}
+		else {
+			string error = errorMessage(reply);
+			mgr->sendReply( error + "\n\r");
+		}
 		
-		return true;
-	}
+		(cb) (success);
+		
+	});
 	
-	mgr->sendReply(errorStr + "\n\r");
-	return false;
+	return true;
 };
 
-
-static bool BackLightCmdHandler( stringvector 		line,
-								  CmdLineMgr* 		mgr,
-								  boolCallback_t 	cb){
-	
-	using namespace rest;
-	string errorStr;
-	string command = line[0];
-	string deviceID;
-	string onlevel;
-	 
-	uint8_t dimLevel = 0;
-
-	DeviceIDArgValidator v1;
- 
-	if(	line.size() > 1)
-		deviceID = line[1];
-	
-	if(	line.size() > 2)
-		onlevel = line[2];
-	
-	if(	deviceID.empty()) {
-		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects deviceID.";
-	}
-	else if(command == "dim" && onlevel.empty()) {
-		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects backlight level.";
-	}
-	else if(!v1.validateArg(deviceID)){
-		errorStr =  "\x1B[36;1;4m"  + deviceID + "\x1B[0m is not a valid DeviceID.";
-	}
-	else if(!InsteonDevice::stringToBackLightLevel(string(onlevel), &dimLevel)){
-		errorStr =  "\x1B[36;1;4m"  + onlevel + "\x1B[0m is not a valid backlight level.";
-	}
-	else {
-		
-		json request;
-		request[kREST_command] =  JSON_CMD_BACKLIGHT ;
-		request[string(JSON_ARG_DEVICEID)] =  line[1];
-		request[string(JSON_ARG_LEVEL)] =  dimLevel;
-	
-		ServerCmdQueue* cmdQueue = ServerCmdQueue::shared();
-		TCPClientInfo cInfo = mgr->getClientInfo();
-
-		cmdQueue->queueCommand(request, cInfo, [=] (json reply, httpStatusCodes_t code) {
-			
-			bool success = didSucceed(reply);
-			
-			if(success) {
-				mgr->sendReply( "OK \n\r");
-			}
-			else {
-				string error = errorMessage(reply);
-				mgr->sendReply( error + "\n\r");
-			}
-			
-			(cb) (success);
-		});
-		
-		return true;
-	}
-	
-	mgr->sendReply(errorStr + "\n\r");
-	return false;
-};
-
-
-
-
-static bool DATEcmdHandler( stringvector line,
+static bool DATECmdHandler( stringvector line,
 									CmdLineMgr* mgr,
 									boolCallback_t	cb){
 	using namespace rest;
-	json request;
-	request[kREST_command] =  JSON_CMD_DATE ;
-	
 	TCPClientInfo cInfo = mgr->getClientInfo();
-	ServerCmdQueue::shared()->queueCommand(request,cInfo, [=] (json reply, httpStatusCodes_t code) {
+	
+	REST_URL url("GET /date\n\n");
+	ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
 		
 		string str;
-  
+		
 		if(reply.count(JSON_ARG_DATE) ) {
 			string rfc399 =  reply[string(JSON_ARG_DATE)] ;
-  
+			
 			using namespace date;
 			using namespace std::chrono;
-
+			
 			std::chrono::system_clock::time_point tp;
 			std::istringstream in{ rfc399 };
 			in >> date::parse("%FT%TZ", tp);
 			
-	//		auto pdt_now = make_zoned(current_zone(), utc_now);
-	//		cout << format("%a, %b %d %Y at %I:%M %p %Z\n", pdt_now);
-	//
+			//		auto pdt_now = make_zoned(current_zone(), utc_now);
+			//		cout << format("%a, %b %d %Y at %I:%M %p %Z\n", pdt_now);
+			//
 			time_t tt = system_clock::to_time_t ( tp );
 			struct tm * timeinfo = localtime (&tt);
-		
+			
 			str = string(asctime(timeinfo));  // asctime appends \n
 			
 			mgr->sendReply(str + "\r");
@@ -738,251 +1169,35 @@ static bool DATEcmdHandler( stringvector line,
 	
 	//cmdQueue->queue
 	
-		return true;
+	return true;
 };
 
-
-static bool SHOWcmdHandler( stringvector line,
-									CmdLineMgr* mgr,
-									boolCallback_t	cb){
+static bool StatusCmdHandler( stringvector line,
+									  CmdLineMgr* mgr,
+									  boolCallback_t	cb){
 	using namespace rest;
-
-	string errorStr;
-	string command = line[0];
-	string deviceID;
-	string onlevel;
-	
-	DeviceIDArgValidator v1;
-	
-	if(	line.size() > 1)
-		deviceID = line[1];
-	
-	if(	deviceID.empty()) {
-		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects deviceID.";
-	}
-	else if(!v1.validateArg(deviceID)){
-		errorStr =  "\x1B[36;1;4m"  + deviceID + "\x1B[0m is not a valid DeviceID.";
-	}
-	else {
-		
-		json request;
-		request[kREST_command] =  JSON_CMD_SHOWDEVICE ;
-		request[string(JSON_ARG_DEVICEID)] =  line[1];
-		
-		TCPClientInfo cInfo = mgr->getClientInfo();
-		ServerCmdQueue::shared()->queueCommand(request,cInfo, [=] (json reply, httpStatusCodes_t code) {
-			
-			bool success = didSucceed(reply);
-			
-			if(success) {
-				
-				auto dump = reply.dump(4);
-				dump = replaceAll(dump, "\n","\r\n" );
-				cout << dump << "\n";
-		
-				if(reply.count(JSON_ARG_LEVEL)) {
-					
-					int onLevel = reply.at(string(JSON_ARG_LEVEL)).get<int>();
-					mgr->sendReply( "level: " + InsteonDevice::onLevelString(onLevel) +"\n\r" );
-				}
-			}
-			else {
-				string error = errorMessage(reply);
-				mgr->sendReply( error + "\n\r");
-			}
-			
-			(cb) (success);
-		});
-		
-		return true;
-	}
-	
-	mgr->sendReply(errorStr + "\n\r");
-	(cb)(false);
-	return false;
-};
-
-static bool InfoCmdHandler( stringvector line,
-									CmdLineMgr* mgr,
-									boolCallback_t	cb){
-	using namespace rest;
-
-	string errorStr;
-	string command = line[0];
-	string deviceID;
-	string onlevel;
-	
-	DeviceIDArgValidator v1;
-	
-	if(	line.size() > 1)
-		deviceID = line[1];
-	
-	if(	deviceID.empty()) {
-		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects deviceID.";
-	}
-	else if(!v1.validateArg(deviceID)){
-		errorStr =  "\x1B[36;1;4m"  + deviceID + "\x1B[0m is not a valid DeviceID.";
-	}
-	else {
-		
-		json request;
-		request[kREST_command] =  JSON_CMD_SHOWDEVICE ;
-		request[string(JSON_ARG_DEVICEID)] =  line[1];
-		request[string(JSON_ARG_DETAILS)] =  true;
-	
-		TCPClientInfo cInfo = mgr->getClientInfo();
-		ServerCmdQueue::shared()->queueCommand(request,cInfo, [=] (json reply, httpStatusCodes_t code) {
-			
-			bool success = didSucceed(reply);
-			
-			if(success) {
-				std::ostringstream oss;
-		 
-				for (auto& el : reply.items()) {
-					oss << setw(14) << el.key() << ": "  <<  setw(0) << el.value() << "\r\n";
-				}
-				
-	 			oss << "\n\r";
-		 		mgr->sendReply(oss.str());
-				 
-			}
-			else {
-				string error = errorMessage(reply);
-				mgr->sendReply( error + "\n\r");
-			}
-			
-			(cb) (success);
-		});
-		
-		return true;
-	}
-	
-	mgr->sendReply(errorStr + "\n\r");
-	(cb)(false);
-	return false;
-};
-
-static bool PLMcmdHandler( stringvector line,
-								  CmdLineMgr* mgr,
-								  boolCallback_t	cb){
-	using namespace rest;
-
-	string errorStr;
-	string command = line[0];
-
-	if(line.size() < 2){
-		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects a function.";
-	}
-	else {
-		string subcommand = line[1];
-		
-		json request;
-		TCPClientInfo cInfo = mgr->getClientInfo();
-		request[kREST_command] =  JSON_CMD_PLM ;
-		bool isValid = false;
-		
-		
-		if(subcommand == JSON_ARG_INFO) {
-			request[string(JSON_ARG_FUNCTION)] =  JSON_ARG_INFO ;
-			isValid = true;
-		}
-		else {
-			errorStr =  "Command: \x1B[36;1;4m"  + subcommand + "\x1B[0m is an invalid function for " + command;
-		}
-		
-		if(isValid){
-			ServerCmdQueue::shared()->queueCommand(request,cInfo,[=] (json reply, httpStatusCodes_t code) {
-				
-				
-				bool success = didSucceed(reply);
-				if(success) {
-				
-					if(subcommand == JSON_ARG_INFO) {
-						DeviceIDArgValidator vDeviceID;
-						ServerCmdArgValidator v;
-						
-						string strDeviceID;
-						string strDeviceInfo;
-						if(vDeviceID.getvalueFromJSON(JSON_ARG_DEVICEID, reply, strDeviceID)){
-							string plmFunc;
-							
-							if(v.getStringFromJSON(JSON_ARG_DEVICEINFO, reply, strDeviceInfo)){
-					
-								DeviceID deviceID = DeviceID(strDeviceID);
-								DeviceInfo deviceInfo = DeviceInfo(strDeviceInfo);
-			
-								if(!deviceInfo.isNULL() && !deviceID.isNULL()){
-							
-									std::ostringstream oss;
-									oss << deviceID.string()  << " "  << deviceInfo.descriptionString();
-									if(deviceInfo.GetFirmware() > 0){
-										oss << ", Version:" << to_string(deviceInfo.GetFirmware());
-									}
-									oss << "\r\n";
-									mgr->sendReply(oss.str());
-									return;
-								}
-	 						}
-						}
-					}
-					
-					auto dump = reply.dump(4);
-					dump = replaceAll(dump, "\n","\r\n" );
-					cout << dump << "\n";
-	 				mgr->sendReply( "??\n\r" );
-					
-				}
-				else {
-					string error = errorMessage(reply);
-					mgr->sendReply( error + "\n\r");
-				}
-				
-				(cb) (success);
-			});
-			return true;
-		}
-	}
-	
-	mgr->sendReply(errorStr + "\n\r");
-	(cb)(false);
-	return false;
-
-};
-
-
-static bool VersionCmdHandler( stringvector line,
-										CmdLineMgr* mgr,
-										boolCallback_t	cb){
-	using namespace rest;
-	json request;
-	request[kREST_command] =  JSON_CMD_VERSION ;
-	
 	TCPClientInfo cInfo = mgr->getClientInfo();
+	//
+	//	for (auto& t : cInfo.headers()){
+	//		printf("%s = %s\n", t.first.c_str(), t.second.c_str());
+	//	}
 	
-	for (auto& t : cInfo.headers()){
-		printf("%s = %s\n", t.first.c_str(), t.second.c_str());
-	}
-
-	ServerCmdQueue::shared()->queueCommand(request,cInfo,[=] (json reply, httpStatusCodes_t code) {
+	REST_URL url("GET /status\n\n");
+	ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
 		
 		bool success = didSucceed(reply);
 		
 		if(success) {
 			std::ostringstream oss;
-
-			if(reply.count(JSON_ARG_VERSION) ) {
-				string ver = reply[string(JSON_ARG_VERSION)];
-				oss << ver << " ";
+			
+			if(reply.count(JSON_ARG_STATESTR) ) {
+				string status = reply[string(JSON_ARG_STATESTR)];
+				oss << status << " ";
 			}
-	
-			if(reply.count(JSON_ARG_TIMESTAMP) ) {
-				string timestamp = reply[string(JSON_ARG_TIMESTAMP)];
-				oss <<  timestamp;
-			}
-	
+			
 			oss << "\r\n";
 			mgr->sendReply(oss.str());
-					
+			
 		}
 		else {
 			string error = errorMessage(reply);
@@ -997,47 +1212,45 @@ static bool VersionCmdHandler( stringvector line,
 };
 
 static bool ListCmdHandler( stringvector line,
-								  CmdLineMgr* mgr,
-								  boolCallback_t	cb){
+									CmdLineMgr* mgr,
+									boolCallback_t	cb){
 	using namespace rest;
-
+	
 	string errorStr;
 	string command = line[0];
-
+	bool showDetails = false;
+	
+	REST_URL url;
+	TCPClientInfo cInfo = mgr->getClientInfo();
+	
 	if(line.size() < 2){
 		errorStr =  "\x1B[36;1;4m"  + command + "\x1B[0m what?.";
 	}
 	else {
 		string subcommand = line[1];
-
-		json request;
-		TCPClientInfo cInfo = mgr->getClientInfo();
-		request[kREST_command] =  JSON_CMD_LIST ;
-		bool isValid = false;
-	
+		
 		if(subcommand == JSON_VAL_ALL) {
-			request[string(JSON_ARG_DATABASE)] =  JSON_VAL_ALL ;
-			isValid = true;
+			url.setURL("GET /devices?details=1\n\n");
 		}
 		else 	if(subcommand == JSON_VAL_VALID) {
-			request[string(JSON_ARG_DATABASE)] =  JSON_VAL_VALID ;
-			isValid = true;
+			url.setURL("GET /devices?valid=1&details=1\n\n");
 		}
 		else 	if(subcommand == JSON_VAL_DETAILS) {
-			request[string(JSON_ARG_DATABASE)] =  JSON_VAL_DETAILS ;
-			isValid = true;
+			url.setURL("GET /devices?details=1\n\n");
+			showDetails = true;
 		}
-
-		if(isValid) {
-			ServerCmdQueue::shared()->queueCommand(request,cInfo,[=] (json reply, httpStatusCodes_t code) {
+		
+		if(url.isValid()) {
+			
+			ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
 				bool success = didSucceed(reply);
 				if(success) {
 					
 					std::ostringstream oss;
-
+					
 					string key1 = string(JSON_ARG_DEVICEIDS);
 					string key2 = string(JSON_ARG_DETAILS);
-		
+					
 					if( reply.contains(key1)
 						&& reply.at(key1).is_array()){
 						auto deviceIDs = reply.at(key1);
@@ -1046,9 +1259,8 @@ static bool ListCmdHandler( stringvector line,
 							oss << deviceID.string();
 							oss << "\r\n";
 						}
-						oss << "\r\n";
+						//					oss << "\r\n";
 						mgr->sendReply(oss.str());
-						return;
 					}
 					else if( reply.contains(key2)
 							  && reply.at(key2).is_object()){
@@ -1057,12 +1269,10 @@ static bool ListCmdHandler( stringvector line,
 						for (auto& [key, value] : entries.items()) {
 							
 							DeviceID deviceID = DeviceID(key);
-
+							
 							string strDeviceInfo = value["deviceInfo"];
 							DeviceInfo deviceInfo = DeviceInfo(strDeviceInfo);
 							
-							cout << key << " : " << value << "\n";
-
 							oss << deviceID.string();
 							oss << " ";
 							
@@ -1070,28 +1280,48 @@ static bool ListCmdHandler( stringvector line,
 								oss << " ";
 							else
 								oss << "v";
-
+							
 							oss << " ";
 							
-							oss << deviceID.nameString();
+							oss << setiosflags(ios::left);
+							if(showDetails){
+								constexpr size_t maxlen = 20;
+								size_t len = deviceID.nameString().size();
+								if(len<maxlen){
+									oss << setw(maxlen);
+									oss << deviceID.nameString();
+								}
+								else {
+									oss << deviceID.nameString().substr(0,maxlen -1);
+									oss << "…";
+								}
+								oss << " ";
+								oss << setw(9);
+								oss << deviceInfo.skuString();
+								oss << setw(0);
+								oss << " ";
+								oss << deviceInfo.descriptionString();
+							}
+							else {
+								oss << deviceID.nameString();
+							}
+							oss << resetiosflags(ios::left);
 							
-//							oss << " ";
-//	 						oss << deviceInfo.descriptionString();
- 							oss << "\r\n";
- 						}
-
+							oss << "\r\n";
+						}
+						
 						oss << "\r\n";
 						mgr->sendReply(oss.str());
 					}
 					else {
-					
+						
 						// huh?
 						auto dump = reply.dump(4);
 						dump = replaceAll(dump, "\n","\r\n" );
 						cout << dump << "\n";
- 						mgr->sendReply( "OK\n\r" );
+						mgr->sendReply( "OK\n\r" );
 						return;
-	 					}
+					}
 				}
 				else {
 					string error = errorMessage(reply);
@@ -1104,87 +1334,232 @@ static bool ListCmdHandler( stringvector line,
 		}
 		else {
 			errorStr =  "Command: \x1B[36;1;4m"  + subcommand + "\x1B[0m is an invalid function for " + command;
- 		}
+		}
 	}
-
+	
 	mgr->sendReply(errorStr + "\n\r");
 	(cb)(false);
 	return false;
 }
 
-static bool StatusCmdHandler( stringvector line,
-										CmdLineMgr* mgr,
-										boolCallback_t	cb){
+
+static bool SETCmdHandler( stringvector 		line,
+								  CmdLineMgr* 		mgr,
+								  boolCallback_t 	cb){
+	
 	using namespace rest;
-	json request;
-	request[kREST_command] =  JSON_CMD_STATUS ;
+	string errorStr;
+	string command = line[0];
+	string deviceIDStr;
+	string onlevel;
 	
-	TCPClientInfo cInfo = mgr->getClientInfo();
+	uint8_t dimLevel = 0;
 	
-	for (auto& t : cInfo.headers()){
-		printf("%s = %s\n", t.first.c_str(), t.second.c_str());
+	REST_URL url;
+	DeviceIDArgValidator v1;
+	
+	if(	line.size() > 1)
+		deviceIDStr = line[1];
+	
+	if(command == "turn-on") {
+		onlevel = "on";
+	} else if(command == "turn-off") {
+		onlevel = "off";
+	} else if(command == "dim" && 	line.size() > 2){
+		onlevel = line[2];
 	}
-
-	ServerCmdQueue::shared()->queueCommand(request,cInfo,[=] (json reply, httpStatusCodes_t code) {
-		
-		bool success = didSucceed(reply);
-		
-		if(success) {
-			std::ostringstream oss;
-
-			if(reply.count(JSON_ARG_STATESTR) ) {
-				string status = reply[string(JSON_ARG_STATESTR)];
-				oss << status << " ";
-			}
- 
-			oss << "\r\n";
-			mgr->sendReply(oss.str());
-					
-		}
-		else {
-			string error = errorMessage(reply);
-			mgr->sendReply( error + "\n\r");
-		}
-		
-		(cb) (success);
-		
-	});
 	
-	return true;
+	if(	deviceIDStr.empty()) {
+		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects deviceID.";
+	}
+	else if(command == "dim" && onlevel.empty()) {
+		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects level.";
+	}
+	else if(!v1.validateArg(deviceIDStr)){
+		errorStr =  "\x1B[36;1;4m"  + deviceIDStr + "\x1B[0m is not a valid DeviceID.";
+	}
+	else if(!InsteonDevice::stringToLevel(string(onlevel), &dimLevel)){
+		errorStr =  "\x1B[36;1;4m"  + onlevel + "\x1B[0m is not a valid device level.";
+	}
+	else {
+		
+		DeviceID deviceID = DeviceID(deviceIDStr);
+		
+		std::ostringstream oss;
+		oss << "PUT /devices/" << deviceID.string() << " HTTP/1.1\n";
+		oss << "Content-Type: application/json; charset=utf-8\n";
+		oss << "Connection: close\n";
+		
+		json request;
+		request[string(JSON_ARG_LEVEL)] =  dimLevel;
+		
+		string jsonStr = request.dump(4);
+		oss << "Content-Length: " << jsonStr.size() << "\n\n";
+		oss << jsonStr << "\n";
+		
+		url.setURL(oss.str());
+		
+		TCPClientInfo cInfo = mgr->getClientInfo();
+		
+		ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
+			
+			bool success = didSucceed(reply);
+			
+			if(success) {
+				mgr->sendReply( "OK \n\r");
+			}
+			else {
+				string error = errorMessage(reply);
+				mgr->sendReply( error + "\n\r");
+			}
+			
+			(cb) (success);
+		});
+		
+		return true;
+	}
+	
+	mgr->sendReply(errorStr + "\n\r");
+	return false;
 };
+
+static bool SHOWcmdHandler( stringvector line,
+									CmdLineMgr* mgr,
+									boolCallback_t	cb){
+	using namespace rest;
+	
+	string errorStr;
+	string command = line[0];
+	string deviceIDStr;
+	
+	REST_URL url;
+	DeviceIDArgValidator v1;
+	
+	if(	line.size() > 1)
+		deviceIDStr = line[1];
+	
+	if(	deviceIDStr.empty()) {
+		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects deviceID.";
+	}
+	else if(!v1.validateArg(deviceIDStr)){
+		errorStr =  "\x1B[36;1;4m"  + deviceIDStr + "\x1B[0m is not a valid DeviceID.";
+	}
+	else {
+		
+		DeviceID deviceID = DeviceID(deviceIDStr);
+		
+		std::ostringstream oss;
+		oss << "GET /devices/" << deviceID.string() << " HTTP/1.1\n";
+		oss << "Connection: close\n";
+		oss << "\n";
+		url.setURL(oss.str());
+		
+		TCPClientInfo cInfo = mgr->getClientInfo();
+		ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
+			
+			bool success = didSucceed(reply);
+			
+			
+			if(success) {
+				std::ostringstream oss;
+				
+				DeviceIDArgValidator vDeviceID;
+				ServerCmdArgValidator v1;
+				DeviceLevelArgValidator vDevLevel;
+				
+				DeviceID 	 deviceID;
+				DeviceInfo deviceInfo;
+				int 		 onLevel;
+				long 		 eTag;
+				bool 		 valid;
+				
+				string str;
+				
+				if(vDeviceID.getvalueFromJSON(JSON_ARG_DEVICEID, reply, str))
+					deviceID = DeviceID(str);
+				
+				if(v1.getStringFromJSON(JSON_ARG_DEVICEINFO, reply, str))
+					deviceInfo = DeviceInfo(str);
+				
+				if(v1.getStringFromJSON("lastUpdated", reply, str)){
+					// figure out time
+				}
+				
+				vDevLevel.getvalueFromJSON(JSON_ARG_LEVEL, reply, onLevel);
+				v1.getLongIntFromJSON(JSON_ARG_ETAG, reply, eTag);
+				v1.getBoolFromJSON(JSON_VAL_VALID, reply, valid);
+				
+				oss << deviceID.string();
+				if(!valid) oss << " (v)";
+				oss << " " << InsteonDevice::onLevelString(onLevel);
+				oss << " \"" << deviceID.nameString() << "\"";
+				oss << "  " << deviceInfo.skuString();
+				oss << " " << deviceInfo.descriptionString();
+				oss << "\n\r";
+				mgr->sendReply(oss.str());
+			}
+			else {
+				string error = errorMessage(reply);
+				mgr->sendReply( error + "\n\r");
+			}
+			
+			(cb) (success);
+		});
+		
+		return true;
+	}
+	
+	mgr->sendReply(errorStr + "\n\r");
+	(cb)(false);
+	return false;
+};
+
 
 static bool BeepCmdHandler( stringvector line,
 									CmdLineMgr* mgr,
 									boolCallback_t	cb){
 	using namespace rest;
-
+	
 	string errorStr;
 	string command = line[0];
-	string deviceID;
+	string deviceIDStr;
 	string onlevel;
 	
 	DeviceIDArgValidator v1;
+	REST_URL url;
 	
 	if(	line.size() > 1)
-		deviceID = line[1];
+		deviceIDStr = line[1];
 	
-	if(	deviceID.empty()) {
+	if(	deviceIDStr.empty()) {
 		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects deviceID.";
 	}
-	else if(!v1.validateArg(deviceID)){
-		errorStr =  "\x1B[36;1;4m"  + deviceID + "\x1B[0m is not a valid DeviceID.";
+	else if(!v1.validateArg(deviceIDStr)){
+		errorStr =  "\x1B[36;1;4m"  + deviceIDStr + "\x1B[0m is not a valid DeviceID.";
 	}
 	else {
 		
+		DeviceID deviceID = DeviceID(deviceIDStr);
+		
+		std::ostringstream oss;
+		oss << "PUT /devices/" << deviceID.string() << " HTTP/1.1\n";
+		oss << "Content-Type: application/json; charset=utf-8\n";
+		oss << "Connection: close\n";
+		
 		json request;
-		request[kREST_command] =  JSON_CMD_BEEP ;
 		request[string(JSON_ARG_DEVICEID)] =  line[1];
+		request[string(JSON_ARG_BEEP)] = true;
+		
+		string jsonStr = request.dump(4);
+		oss << "Content-Length: " << jsonStr.size() << "\n\n";
+		oss << jsonStr << "\n";
+		url.setURL(oss.str());
 		
 		TCPClientInfo cInfo = mgr->getClientInfo();
-		ServerCmdQueue::shared()->queueCommand(request,cInfo, [=] (json reply, httpStatusCodes_t code) {
+		ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
 			
 			bool success = didSucceed(reply);
-	
+			
 			if(success) {
 				mgr->sendReply( "OK \n\r");
 			}
@@ -1204,84 +1579,138 @@ static bool BeepCmdHandler( stringvector line,
 	return false;
 };
 
-
-static bool GroupCmdHandler( stringvector line,
-								  CmdLineMgr* mgr,
-									 boolCallback_t	cb){
+static bool BackLightCmdHandler( stringvector 		line,
+										  CmdLineMgr* 		mgr,
+										  boolCallback_t 	cb){
 	
 	using namespace rest;
-
 	string errorStr;
 	string command = line[0];
+	string deviceIDStr;
+	string onlevel;
+	
+	uint8_t dimLevel = 0;
+	
+	REST_URL url;
+	DeviceIDArgValidator v1;
+	
+	if(	line.size() > 1)
+		deviceIDStr = line[1];
+	
+	if(	line.size() > 2)
+		onlevel = line[2];
+	
+	if(	deviceIDStr.empty()) {
+		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects deviceID.";
+	}
+	else if(command == "backlight" && onlevel.empty()) {
+		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects backlight level.";
+	}
+	else if(!v1.validateArg(deviceIDStr)){
+		errorStr =  "\x1B[36;1;4m"  + deviceIDStr + "\x1B[0m is not a valid DeviceID.";
+	}
+	else if(!InsteonDevice::stringToBackLightLevel(string(onlevel), &dimLevel)){
+		errorStr =  "\x1B[36;1;4m"  + onlevel + "\x1B[0m is not a valid backlight level.";
+	}
+	else {
+		
+		DeviceID deviceID = DeviceID(deviceIDStr);
+		
+		std::ostringstream oss;
+		oss << "PUT /devices/" << deviceID.string() << " HTTP/1.1\n";
+		oss << "Content-Type: application/json; charset=utf-8\n";
+		oss << "Connection: close\n";
+		
+		json request;
+		request[string(JSON_ARG_BACKLIGHT)] =  dimLevel;
+		
+		string jsonStr = request.dump(4);
+		oss << "Content-Length: " << jsonStr.size() << "\n\n";
+		oss << jsonStr << "\n";
+		
+		url.setURL(oss.str());
+		
+		TCPClientInfo cInfo = mgr->getClientInfo();
+		
+		ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
+			
+			bool success = didSucceed(reply);
+			
+			if(success) {
+				mgr->sendReply( "OK \n\r");
+			}
+			else {
+				string error = errorMessage(reply);
+				mgr->sendReply( error + "\n\r");
+			}
+			
+			(cb) (success);
+		});
+		
+		return true;
+	}
+	
+	mgr->sendReply(errorStr + "\n\r");
+	return false;
+};
 
+
+static bool PLMCmdHandler( stringvector line,
+								  CmdLineMgr* mgr,
+								  boolCallback_t	cb){
+	using namespace rest;
+	string errorStr;
+	string command = line[0];
+	
+	REST_URL url;
+	
 	if(line.size() < 2){
-		errorStr =  "\x1B[36;1;4m"  + command + "\x1B[0m what?.";
+		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects a function.";
 	}
 	else {
 		string subcommand = line[1];
-
-		json request;
-		TCPClientInfo cInfo = mgr->getClientInfo();
-		request[kREST_command] =  JSON_CMD_GROUP ;
-		bool isValid = false;
-	
-		if(subcommand == JSON_CMD_LIST) {
-			request[string(JSON_ARG_FUNCTION)] =  JSON_CMD_LIST ;
-			isValid = true;
-		}
-  
-		if(isValid) {
-			ServerCmdQueue::shared()->queueCommand(request,cInfo,[=] (json reply, httpStatusCodes_t code) {
-				bool success = didSucceed(reply);
-				if(success) {
-					
-					std::ostringstream oss;
-
-					string key1 = string(JSON_ARG_GROUPIDS);
 		
-				  if( reply.contains(key1)
-							  && reply.at(key1).is_object()){
-						auto entries = reply.at(key1);
-						
-						for (auto& [key, value] : entries.items()) {
-							
-							groupID_t groupID = stoi( key );
-							
-							auto deviceIDS = value[string(JSON_ARG_DEVICEIDS)];
-
-							oss  << " " << std::setfill ('0') << std::setw(4) << std::hex << groupID << " ";
-							oss  << std::dec << std::setfill (' ')<<  std::setw(3) <<  deviceIDS.size() <<  " ";
-							
-							string groupName = value[string(JSON_ARG_NAME)];
-							oss << "\"" << groupName << "\""  << "\r\n";
-							
-//							auto deviceIDS = value[string(JSON_ARG_DEVICEIDS)];
-//							if(deviceIDS.size() > 0){
-//								for(auto devString : deviceIDS){
-//									DeviceID deviceID = DeviceID(devString);
-//									oss << "   " << deviceID.string()  << "\r\n";
-//								}
-// 							}
-//
-						}
-
-	 					mgr->sendReply(oss.str());
-					}
-					else {
+		std::ostringstream oss;
+		
+		if(subcommand == "info"){
+			oss << "GET /plm" << " HTTP/1.1\n";
+			oss << "Connection: close\n";
+			oss << "\n";
+			url.setURL(oss.str());
+			
+			TCPClientInfo cInfo = mgr->getClientInfo();
+			ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
+				
+				std::ostringstream oss;
+				DeviceIDArgValidator vDeviceID;
+				ServerCmdArgValidator v1;
+				
+				bool success = didSucceed(reply);
+				
+				if(success) {
+					std::ostringstream oss;
 					
-						// huh?
-						auto dump = reply.dump(4);
-						dump = replaceAll(dump, "\n","\r\n" );
-						cout << dump << "\n";
-						mgr->sendReply( "OK\n\r" );
-						return;
-						}
+					DeviceID 	 deviceID;
+					DeviceInfo deviceInfo;
+					string str;
+					
+					if(vDeviceID.getvalueFromJSON(JSON_ARG_DEVICEID, reply, str))
+						deviceID = DeviceID(str);
+					
+					if(v1.getStringFromJSON(JSON_ARG_DEVICEINFO, reply, str))
+						deviceInfo = DeviceInfo(str);
+					
+					oss << deviceID.string();
+					oss << " \"" << deviceID.nameString() << "\"";
+					oss << "  " << deviceInfo.skuString();
+					oss << " " << deviceInfo.descriptionString();
+					oss << "\n\r";
+					mgr->sendReply(oss.str());
 				}
 				else {
 					string error = errorMessage(reply);
 					mgr->sendReply( error + "\n\r");
 				}
-				
 				(cb) (success);
 			});
 			return true;
@@ -1290,129 +1719,199 @@ static bool GroupCmdHandler( stringvector line,
 			errorStr =  "Command: \x1B[36;1;4m"  + subcommand + "\x1B[0m is an invalid function for " + command;
 		}
 	}
+	
+	mgr->sendReply(errorStr + "\n\r");
+	return false;
+}
 
+
+static bool GroupCmdHandler( stringvector line,
+								  CmdLineMgr* mgr,
+									 boolCallback_t	cb){
+
+	using namespace rest;
+
+	string errorStr;
+	string command = line[0];
+	REST_URL url;
+
+	if(line.size() < 2){
+		errorStr =  "\x1B[36;1;4m"  + command + "\x1B[0m what?.";
+	}
+	else {
+		string subcommand = line[1];
+		
+		if (subcommand == "list") {
+			
+			std::ostringstream oss;
+			oss << "GET /groups " <<  " HTTP/1.1\n";
+			oss << "Connection: close\n";
+			oss << "\n";
+			url.setURL(oss.str());
+		}
+		else {
+			errorStr =  "Command: \x1B[36;1;4m"  + subcommand + "\x1B[0m is an invalid function for " + command;
+		}
+	}
+ 
+	if(url.isValid()) {
+		
+		TCPClientInfo cInfo = mgr->getClientInfo();
+		ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
+			
+			bool success = didSucceed(reply);
+			if(success) {
+				
+				std::ostringstream oss;
+				
+				string key1 = string(JSON_ARG_GROUPIDS);
+				
+				if( reply.contains(key1)
+					&& reply.at(key1).is_object()){
+					auto entries = reply.at(key1);
+					
+					for (auto& [key, value] : entries.items()) {
+						
+						groupID_t groupID = stoi( key );
+						
+						auto deviceIDS = value[string(JSON_ARG_DEVICEIDS)];
+						
+						oss  << " " << std::setfill ('0') << std::setw(4) << std::hex << groupID << " ";
+						oss  << std::dec << std::setfill (' ')<<  std::setw(3) <<  deviceIDS.size() <<  " ";
+						
+						string groupName = value[string(JSON_ARG_NAME)];
+						oss << "\"" << groupName << "\""  << "\r\n";
+						
+						//							auto deviceIDS = value[string(JSON_ARG_DEVICEIDS)];
+						//							if(deviceIDS.size() > 0){
+						//								for(auto devString : deviceIDS){
+						//									DeviceID deviceID = DeviceID(devString);
+						//									oss << "   " << deviceID.string()  << "\r\n";
+						//								}
+						// 							}
+						//
+					}
+					
+					mgr->sendReply(oss.str());
+				}
+				else {
+					
+					// huh?
+					auto dump = reply.dump(4);
+					dump = replaceAll(dump, "\n","\r\n" );
+					cout << dump << "\n";
+					mgr->sendReply( "OK\n\r" );
+					return;
+				}
+			}
+			else {
+				string error = errorMessage(reply);
+				mgr->sendReply( error + "\n\r");
+			}
+			
+			(cb) (success);
+		});
+		return true;
+	}
+  
 	mgr->sendReply(errorStr + "\n\r");
 	(cb)(false);
 	return false;
 }
 
 
+static bool InsteonGroupCmdHandler( stringvector line,
+								  CmdLineMgr* mgr,
+											  boolCallback_t	cb){
+	
+	using namespace rest;
+	
+	string errorStr;
+	string command = line[0];
+	REST_URL url;
+	
+	if(line.size() < 2){
+		errorStr =  "\x1B[36;1;4m"  + command + "\x1B[0m what?.";
+	}
+	else {
+		string subcommand = line[1];
+		
+		if ((subcommand == "off") || (subcommand == "on")) {
+			std::ostringstream oss;
+			oss << "PUT /insteon.groups/" << "FF " << " HTTP/1.1\n";
+			oss << "Content-Type: application/json; charset=utf-8\n";
+			oss << "Connection: close\n";
+			
+			json request;
+			request[string(JSON_ARG_LEVEL)] =  (subcommand == "on" ?255:0);
+			
+			string jsonStr = request.dump(4);
+			oss << "Content-Length: " << jsonStr.size() << "\n\n";
+			oss << jsonStr << "\n";
+			url.setURL(oss.str());
+		}
+		else {
+			errorStr =  "Command: \x1B[36;1;4m"  + subcommand + "\x1B[0m is an invalid function for " + command;
+		}
+	}
+	
+	if(url.isValid()) {
+		
+		TCPClientInfo cInfo = mgr->getClientInfo();
+		ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
+			
+			bool success = didSucceed(reply);
+			
+			if(success) {
+				mgr->sendReply( "OK \n\r");
+			}
+			else {
+				string error = errorMessage(reply);
+				mgr->sendReply( error + "\n\r");
+			}
+			
+			(cb) (success);
+		});
+		
+		return true;
+	}
+	
+	mgr->sendReply(errorStr + "\n\r");
+	(cb)(false);
+	return false;
+}
+
 
 // MARK: -  register commands
 
-void test1(){
-	
-	auto db = insteon.getDB();
-
-#if 1
-	for (const auto group  : db->allGroups()) {
-		cout << group << " " <<  db->groupGetName(group)<< "\n";
-		auto devices = db->groupGetDevices(group);
-		for(auto device : devices){
-			cout << "\t" << device.string() << "\n";
-		}
-		cout  << "\n";
-	}
-#else
-	auto deviceList = db->allDevices();
-	
-	if(deviceList.size() == 0)
-		return;
-	
-	for(int i = 0; i<10; i++){
-		groupID_t group;
-		
-		db->groupCreate(&group, string("group:") + to_string(i));
-		
-		int  count = rand() % deviceList.size();
-		if(count == 0) count = 1;
-		
-		for(int j= 0; j <count; j++){
-			
-			int  offset = rand() % deviceList.size();
-			db->groupAddDevice(group, deviceList[offset]);
-		}
-		
-		cout << group << " " <<  db->groupGetName(group) + "\n";
- 	}
-	
-	for (const auto group  : db->allGroups()) {
-		
-		string newName = db->groupGetName(group) + "xx";
-		db->groupSetName(group, newName);
-		cout << group << " " <<  db->groupGetName(group)<< "\n";
-		auto devices = db->groupGetDevices(group);
-		for(auto device : devices){
-			cout << "\t" << device.string() << "\n";
-		}
-		cout  << "\n";
-	}
-//	
-//	for (const auto group  : db->allGroups()) {
-//		cout <<  "delete " << group << " " <<  db->groupGetName(group) + "\n";
-//		db->groupDelete(group);
-//	}
-	
-#endif
-	
-}
-
 void registerServerCommands() {
-  
+	
 	// create the server command processor
 	auto cmdQueue = ServerCmdQueue::shared();
-		
-	// register all our server commands
-	cmdQueue->registerCommand( JSON_CMD_SETLEVEL,
-									  SetLevelCommand);
-
-	cmdQueue->registerCommand( JSON_CMD_SHOWDEVICE,
-									  ShowDeviceCommand);
-
-	cmdQueue->registerCommand( JSON_CMD_DATE,
-									  ShowDateCommand);
-
-	cmdQueue->registerCommand( JSON_CMD_PLM,
-									  PlmFunctionsCommand);
-
-	cmdQueue->registerCommand( JSON_CMD_GROUP,
-									  GroupFunctionsCommand);
-
-	cmdQueue->registerCommand( JSON_CMD_VERSION,
-									  VersionCommand);
-
-	cmdQueue->registerCommand( JSON_CMD_LIST,
-									  ListDevicesCommand);
-
-	cmdQueue->registerCommand( JSON_CMD_STATUS,
-									  StatusCommand);
- 
-	cmdQueue->registerCommand( JSON_CMD_BEEP,
-									  BeepCommand);
-
-	cmdQueue->registerCommand( JSON_CMD_BACKLIGHT,
-									  SetBacklightLevelCommand);
- 
-
-	 // register command line commands
-	 auto cmlR = CmdLineRegistry::shared();
-	cmlR->registerCommand("turn-on",  	SETcmdHandler);
-	cmlR->registerCommand("turn-off",  SETcmdHandler);
-	cmlR->registerCommand("dim",  		SETcmdHandler);
-
-	cmlR->registerCommand("show",  	SHOWcmdHandler);
-	cmlR->registerCommand("plm",  	PLMcmdHandler);
-	cmlR->registerCommand("date",	DATEcmdHandler);
-
-	cmlR->registerCommand("version",	VersionCmdHandler);
-
-	cmlR->registerCommand("list",	ListCmdHandler);
-
-	cmlR->registerCommand("status",	StatusCmdHandler);
-	cmlR->registerCommand("beep",	BeepCmdHandler);
-	cmlR->registerCommand("set-backlight",	BackLightCmdHandler);
-	cmlR->registerCommand("info",			InfoCmdHandler);
 	
+	cmdQueue->registerNoun(NOUN_STATUS, 	Status_NounHandler);
+	cmdQueue->registerNoun(NOUN_VERSION, 	Version_NounHandler);
+	cmdQueue->registerNoun(NOUN_DATE, 		Date_NounHandler);
+	cmdQueue->registerNoun(NOUN_DEVICES, 	Devices_NounHandler);
+	cmdQueue->registerNoun(NOUN_PLM, 		PLM_NounHandler);
+	cmdQueue->registerNoun(NOUN_GROUPS,	Groups_NounHandler);
+	cmdQueue->registerNoun(NOUN_INSTEON_GROUPS,	InsteonGroups_NounHandler);
+ 
+		
+	// register command line commands
+	auto cmlR = CmdLineRegistry::shared();
+	
+	cmlR->registerCommand("version",	VersionCmdHandler);
+	cmlR->registerCommand("date",		DATECmdHandler);
+	cmlR->registerCommand("list",		ListCmdHandler);
+	cmlR->registerCommand("status",		StatusCmdHandler);
+	cmlR->registerCommand("turn-on",  	SETCmdHandler);
+	cmlR->registerCommand("turn-off",  SETCmdHandler);
+	cmlR->registerCommand("dim",  		SETCmdHandler);
+	cmlR->registerCommand("show",  		SHOWcmdHandler);
+	cmlR->registerCommand("beep",		BeepCmdHandler);
+	cmlR->registerCommand("set-backlight",	BackLightCmdHandler);
+	cmlR->registerCommand("plm",  		PLMCmdHandler);
 	cmlR->registerCommand("group",		GroupCmdHandler);
-
- }
+	cmlR->registerCommand("all",		InsteonGroupCmdHandler);
+}

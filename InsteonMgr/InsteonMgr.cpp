@@ -620,7 +620,7 @@ bool InsteonMgr::getOnLevel(DeviceID deviceID, bool forceLookup,
  
 	// do we have a value in our Database
 	if(!forceLookup  && _db.getDBOnLevel(deviceID, group, &level, &lastTag)) {
-		(cb)(level, lastTag, true);
+		if(cb) (cb)(level, lastTag, true);
 	}
 	else {
 		InsteonDevice(deviceID).getOnLevel([=](uint8_t level, bool didSucceed) {
@@ -629,7 +629,7 @@ bool InsteonMgr::getOnLevel(DeviceID deviceID, bool forceLookup,
 			if(didSucceed){
 				_db.setDBOnLevel(deviceID, group, level, &lastTag);
 			}
-			(cb)(level,lastTag, didSucceed);
+			if(cb) (cb)(level,lastTag, didSucceed);
 		});
 	}
 	
@@ -651,7 +651,7 @@ bool InsteonMgr::setOnLevel(DeviceID deviceID, uint8_t onLevel,
 			_db.setDBOnLevel(deviceID, group, onLevel, &lastTag);
 		}
 		
-		(cb)(lastTag, didSucceed);
+		if(cb) (cb)(lastTag, didSucceed);
 		
 	});
 	
@@ -664,12 +664,60 @@ bool InsteonMgr::setOnLevel(DeviceID deviceID, uint8_t onLevel,
 		return false;
 	
 	InsteonDevice(deviceID).setLEDBrightness(level, [=](bool didSucceed){
-		(cb)(didSucceed);
+		if(cb) (cb)(didSucceed);
 	});
 	
 	return true;
 }
 
+// MARK: - Group set
+
+bool InsteonMgr::setOnLevel(GroupID groupID, uint8_t onLevel,
+									 std::function<void(bool didSucceed)> cb){
+
+ 
+	if(_state != STATE_READY)
+		return false;
+	
+	if(!_db.groupIsValid(groupID))
+		return false;
+	
+	auto devices = _db.groupGetDevices(groupID);
+	if(devices.size() >  0){
+		
+		size_t* taskCount  = (size_t*) malloc(sizeof(size_t));
+		*taskCount = devices.size();
+
+		uint8_t cmd = (onLevel == 0)
+				? InsteonParser::CMD_LIGHT_OFF
+				:InsteonParser::CMD_LIGHT_ON;
+ 
+		// queue up all the devices.. and then reply when we are done.
+		for(auto deviceID : devices) {
+	 
+			_cmdQueue->queueMessage(deviceID,
+											cmd, onLevel,
+											NULL, 0,
+											[=]( auto arg, bool didSucceed) {
+				
+				if(didSucceed && arg.reply.msgType == MSG_TYP_DIRECT_ACK){
+					uint8_t group = 0x01;		// only on group 1
+					_db.setDBOnLevel(deviceID, group, onLevel, NULL);
+				}
+
+				if(--(*taskCount) == 0) {
+					free(taskCount);
+					if(cb) (cb)( true);
+				}
+			});
+		}
+	}
+	else {
+		if(cb) (cb)( true);
+	}
+
+	return true;
+}
 
 // MARK: - Linking
 
@@ -904,6 +952,22 @@ bool InsteonMgr::cancelLinking(){
 	
 	return status;
 }
+
+// MARK:  - unlinking device
+
+bool InsteonMgr::unlinkDevice(DeviceID deviceID,
+										boolCallback_t cb){
+	
+	if(_state != STATE_READY)
+		return false;
+	 
+// not implemeneted yet
+	if(cb)
+		(cb)(true);
+ 
+	return true;
+}
+
 
 // MARK: - event manager
 

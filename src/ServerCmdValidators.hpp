@@ -155,10 +155,56 @@ public:
 					result = levelVal;
 					return true;
 				}
-				
 			}
 			else if( j.at(k).is_number()){
-				result = j.at(k);
+				int num = j.at(k);
+				if(num >= 0 && num < 256){
+					result = num;
+					return true;
+				}
+			}
+			else if( j.at(k).is_boolean()){
+				bool val = j.at(k);
+				result = val?255:0;
+				return true;
+			}
+		}
+		return false;
+	}
+};
+
+class LEDBrightnessArgValidator : public ServerCmdArgValidator {
+	
+public:
+		
+	virtual bool validateArg(string_view arg) {
+		return InsteonDevice::stringToLevel(string(arg), NULL);
+	};
+
+	virtual bool getvalueFromJSON(string_view key, const json &j, int &result){
+		
+		if( j.contains(key)) {
+			string k = string(key);
+			
+			if( j.at(k).is_string()){
+				string str = j.at(k);
+				uint8_t levelVal = 0;
+				
+				if(InsteonDevice::stringToBackLightLevel(str, &levelVal)){
+					result = levelVal;
+					return true;
+				}
+			}
+			else if( j.at(k).is_number()){
+				int num = j.at(k);
+				if(num >= 0 && num < 127){
+					result = num;
+					return true;
+				}
+			}
+			else if( j.at(k).is_boolean()){
+				bool val = j.at(k);
+				result = val?127:0;
 				return true;
 			}
 		}

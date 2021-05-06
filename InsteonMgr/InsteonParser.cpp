@@ -617,5 +617,21 @@ bool str_to_deviceID(const char* str, deviceID_t devIDOut){
 	return status;
 }
  
+
+bool str_to_GroupID(const char* str, groupID_t *groupIDOut){
+	
+	bool status = false;
+	
+	groupID_t val = 0;
+ 
+	status = sscanf(str, "%hd", &val) == 1;
+	
+	if(groupIDOut)  {
+		*groupIDOut = val;
+ 	}
+	
+	return status;
+}
+
 } /* Extern c*/
  

@@ -876,46 +876,67 @@ string InsteonDB::cacheFileNameFromPLM(DeviceID deviceID) {
 
 //MARK: - group API
  
-bool InsteonDB::groupCreate(groupID_t* groupIDOut, const string name){
+bool InsteonDB::groupFind(string name, GroupID* groupIDOut){
+
+	for(auto g : _deviceGroups) {
+		auto info = &g.second;
+		
+		if (strcasecmp(name.c_str(), info->name.c_str()) == 0){
+				if(groupIDOut){
+ 				*groupIDOut = GroupID(g.first);
+  			}
+			return true;
+		}
+	}
+	return false;
+}
+
+bool InsteonDB::groupCreate(GroupID* groupIDOut, const string name){
 	
 	std::uniform_int_distribution<long> distribution(LONG_MIN,LONG_MAX);
 	
-	groupID_t groupID;
+	groupID_t gid;
 	
 	do {
-		groupID = distribution(_rng);
-	}while( _deviceGroups.count(groupID) > 0);
+		gid = distribution(_rng);
+	}while( _deviceGroups.count(gid) > 0);
 
 	groupInfo_t info;
 	info.name = name;
 	info.devices.clear();
-	_deviceGroups[groupID] = info;
+	_deviceGroups[gid] = info;
 	
 	saveToCacheFile();
 	
 	if(groupIDOut)
-		*groupIDOut = groupID;
+		*groupIDOut = GroupID(gid);
 	return true;
 }
 
 
-bool InsteonDB::groupDelete(groupID_t groupID){
+bool InsteonDB::groupDelete(GroupID groupID){
 	
-	if(_deviceGroups.count(groupID) == 0)
+	groupID_t gid;
+	groupID.copyToGroupID_t(&gid);
+	 
+	if(_deviceGroups.count(gid) == 0)
 		return false;
 
-	_deviceGroups.erase(groupID);
+	_deviceGroups.erase(gid);
 	saveToCacheFile();
 
 	return true;
 }
 
-bool InsteonDB::groupSetName(groupID_t groupID, string name){
-	
-	if(_deviceGroups.count(groupID) == 0)
+bool InsteonDB::groupSetName(GroupID groupID, string name){
+
+	groupID_t gid;
+	groupID.copyToGroupID_t(&gid);
+
+	if(_deviceGroups.count(gid) == 0)
 		return false;
 
-	groupInfo_t* info =  &_deviceGroups[groupID];
+	groupInfo_t* info =  &_deviceGroups[gid];
 	info->name = name;
 	
 	saveToCacheFile();
@@ -924,45 +945,62 @@ bool InsteonDB::groupSetName(groupID_t groupID, string name){
 }
 
 
-bool InsteonDB::groupAddDevice(groupID_t groupID, DeviceID deviceID){
+bool InsteonDB::groupAddDevice(GroupID groupID, DeviceID deviceID){
+	
+	groupID_t gid;
+	groupID.copyToGroupID_t(&gid);
 
-	if(_deviceGroups.count(groupID) == 0)
+	// is group valid
+	if(_deviceGroups.count(gid) == 0)
 		return false;
 	
-	groupInfo_t* info  =  &_deviceGroups[groupID];
+	// is device in database
+	if(!findDBEntryWithDeviceID(deviceID))
+		return false;
+
+	groupInfo_t* info  =  &_deviceGroups[gid];
 	info->devices.insert(deviceID);
-
 	saveToCacheFile();
-
 	return true;
 }
 
-bool InsteonDB::groupRemoveDevice(groupID_t groupID, DeviceID deviceID){
-	if(_deviceGroups.count(groupID) == 0)
+bool InsteonDB::groupRemoveDevice(GroupID groupID, DeviceID deviceID){
+	groupID_t gid;
+	groupID.copyToGroupID_t(&gid);
+
+	// is group valid
+	if(_deviceGroups.count(gid) == 0)
 		return false;
 	
-	groupInfo_t* info  =  &_deviceGroups[groupID];
+	// is device in the group
+	groupInfo_t* info  =  &_deviceGroups[gid];
+	if(info->devices.count(deviceID) == 0)
+		return false;
+
 	info->devices.erase(deviceID);
 	saveToCacheFile();
-
-	return false;
+	return true;
 }
 
-string InsteonDB::groupGetName(groupID_t groupID) {
-	
-	if(_deviceGroups.count(groupID) == 0)
+string InsteonDB::groupGetName(GroupID groupID) {
+	groupID_t gid;
+	groupID.copyToGroupID_t(&gid);
+
+	if(_deviceGroups.count(gid) == 0)
 		return "";
 	
-	groupInfo_t* info  =  &_deviceGroups[groupID];
+	groupInfo_t* info  =  &_deviceGroups[gid];
  
 	return info->name;
 }
 
-vector<DeviceID> InsteonDB::groupGetDevices(groupID_t groupID){
+vector<DeviceID> InsteonDB::groupGetDevices(GroupID groupID){
+	groupID_t gid;
+	groupID.copyToGroupID_t(&gid);
 	vector<DeviceID> devices;
 
-	if(_deviceGroups.count(groupID) > 0){
-		groupInfo_t* info  =  &_deviceGroups[groupID];
+	if(_deviceGroups.count(gid) > 0){
+		groupInfo_t* info  =  &_deviceGroups[gid];
 
 		for(auto device : info->devices){
 			devices.push_back(device);
@@ -972,14 +1010,35 @@ vector<DeviceID> InsteonDB::groupGetDevices(groupID_t groupID){
 	return devices;
 }
 
-vector<groupID_t> InsteonDB::allGroups(){
-	vector<groupID_t> groups;
+vector<GroupID> InsteonDB::allGroups(){
+	vector<GroupID> groups;
  
 	for (const auto& [key, _] : _deviceGroups) {
-		groups.push_back(key);
+		groups.push_back( GroupID(key));
 	}
 	
 	return groups;
+}
+
+vector<GroupID> InsteonDB::groupsContainingDevice(DeviceID deviceID){
+	vector<GroupID> groups;
+ 
+	for(auto g : _deviceGroups) {
+		groupInfo_t* info = &g.second;
+	
+		if(info->devices.count(deviceID) != 0){
+			groups.push_back( GroupID(g.first));
+		}
+ 	}
+	return groups;
+}
+
+
+bool InsteonDB::groupIsValid(GroupID groupID){
+	groupID_t gid;
+	groupID.copyToGroupID_t(&gid);
+
+	return (_deviceGroups.count(gid) > 0);
 }
 
 

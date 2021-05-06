@@ -125,15 +125,18 @@ public:
 	bool clearDeviceALDB(DeviceID deviceID);
 	
 	// groups
-	bool groupCreate(groupID_t* groupID, const string name);
-	bool groupDelete(groupID_t groupID);
-	bool groupSetName(groupID_t groupID, string name);
-	string groupGetName(groupID_t groupID);
-	bool groupAddDevice(groupID_t groupID, DeviceID deviceID);
-	bool groupRemoveDevice(groupID_t groupID, DeviceID deviceID);
-	vector<DeviceID> groupGetDevices(groupID_t groupID);
-	vector<groupID_t> allGroups();
-	
+	bool groupIsValid(GroupID groupID);
+	bool groupCreate(GroupID* groupID, const string name);
+	bool groupDelete(GroupID groupID);
+	bool groupFind(string name, GroupID* groupID);
+	bool groupSetName(GroupID groupID, string name);
+	string groupGetName(GroupID groupID);
+	bool groupAddDevice(GroupID groupID, DeviceID deviceID);
+	bool groupRemoveDevice(GroupID groupID, DeviceID deviceID);
+	vector<DeviceID> groupGetDevices(GroupID groupID);
+	vector<GroupID> allGroups();
+	vector<GroupID> groupsContainingDevice(DeviceID deviceID);
+
   	// debugging
 	void printDeviceInfo(DeviceID deviceID, bool printALDB = false);
 	void printDB(bool printALDB = false);

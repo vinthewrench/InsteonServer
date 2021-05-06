@@ -54,13 +54,9 @@ public:
 	void stop();
 
 	void erasePLM(boolCallback_t callback);
-
 	void syncPLM(boolCallback_t callback);
-
 	void readPLM(boolCallback_t callback);
-
 	void validatePLM(boolCallback_t callback);
-	
 	void savePLMCacheFile();
 
 	mgr_state_t currentState() {return _state;};
@@ -78,7 +74,10 @@ public:
 						 boolCallback_t callback = NULL);
 
 	bool addResponderToDevice(DeviceID deviceID, uint8_t groupID = 0x01, boolCallback_t callback = NULL);
-
+ 
+	bool unlinkDevice(DeviceID deviceID,
+						 boolCallback_t callback = NULL);
+	
 	bool linkKeyPadButtonsToGroups(DeviceID deviceID,
 											 vector<pair<uint8_t,uint8_t>> buttonGroups,
 											 boolCallback_t callback = NULL);
@@ -97,6 +96,10 @@ public:
 
 	bool setLEDBrightness(DeviceID deviceID, uint8_t level,
 									boolCallback_t callback = NULL);
+
+	// groups set
+	bool setOnLevel(GroupID groupID, uint8_t onLevel = 0,
+						 std::function<void(bool didSucceed)> callback = NULL);
 
 	// events
 	

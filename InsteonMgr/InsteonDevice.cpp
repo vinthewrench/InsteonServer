@@ -143,7 +143,6 @@ InsteonDevice::~InsteonDevice(){
 }
 
 
-
 bool InsteonDevice::getOnLevel(std::function<void(uint8_t level, bool didSucceed)> callback) {
 
 	SETUP_CMDQUEUE;

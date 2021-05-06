@@ -14,9 +14,64 @@
 #include <string>
 #include <map>
 
+#include "InsteonMgrDefs.hpp"
 #include "InsteonParser.hpp"
 
 #define name_cstr() nameString().c_str()
+
+class GroupID{
+
+public:
+	
+	GroupID() { _rawGroupID = 0;};
+
+	GroupID(groupID_t gid) { _rawGroupID = gid;};
+
+	GroupID( const char* str) {
+		str_to_GroupID(str, &_rawGroupID);
+	};
+
+	GroupID( std::string str) {
+		str_to_GroupID(str.c_str(), &_rawGroupID);
+	};
+
+	
+	inline void copyToGroupID_t(groupID_t * toGroup ){
+		if(toGroup) *toGroup = _rawGroupID;
+	}
+
+	std::string string() const {
+		return std::to_string(_rawGroupID);
+	}
+
+	bool isValid() {
+		return ( _rawGroupID != 0);
+	}
+
+	bool isEqual(GroupID a) {
+		return a._rawGroupID  == _rawGroupID ;
+	}
+	
+	bool isEqual(groupID_t rawGroupID) {
+ 		return rawGroupID  == _rawGroupID ;
+	}
+	
+	inline bool operator==(const GroupID& right) const {
+		return right._rawGroupID  == _rawGroupID;
+		}
+	
+	inline bool operator!=(const GroupID& right) const {
+		return right._rawGroupID  != _rawGroupID;
+	}
+	
+	inline void operator = (const GroupID &right ) {
+		_rawGroupID = right._rawGroupID;
+ 	}
+ 
+private:
+	groupID_t _rawGroupID;
+};
+
 
 class DeviceID;
 
