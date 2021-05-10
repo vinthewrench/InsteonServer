@@ -17,7 +17,6 @@
 #include <unistd.h>			//Needed for sleep
 
 #include "Utils.hpp"
-#include "date.h"
 
 #include "TCPServer.hpp"
 #include "Telnet/TelnetServerConnection.hpp"

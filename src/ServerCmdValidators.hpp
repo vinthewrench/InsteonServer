@@ -46,6 +46,16 @@ public:
 		}
 		return false;
 	}
+	virtual bool getStringFromMap(string_view key, const map<string, string> &m, string &result) {
+		string k = string(key);
+		
+		if( m.count(k)){
+			result = m.at(k);
+			return true;
+		}
+		return false;
+	}
+
  
 	virtual bool getIntFromJSON(string_view key, const json &j, int &result) {
 		if( j.contains(key)) {

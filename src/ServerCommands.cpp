@@ -17,7 +17,7 @@
 #include <unistd.h>			//Needed for sleep
 
 #include "Utils.hpp"
-#include "date.h"
+#include "TimeStamp.hpp"
 
 #include "TCPServer.hpp"
 #include "Telnet/TelnetServerConnection.hpp"
@@ -91,8 +91,6 @@ static bool Groups_NounHandler_GET(ServerCmdQueue* cmdQueue,
 											  TCPClientInfo cInfo,
 											  ServerCmdQueue::cmdCallback_t completion) {
 	using namespace rest;
-	using namespace date;
-	using namespace std::chrono;
 	
 	auto path = url.path();
 	auto queries = url.queries();
@@ -155,8 +153,6 @@ static bool Groups_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 											  TCPClientInfo cInfo,
 											  ServerCmdQueue::cmdCallback_t completion) {
 	using namespace rest;
-	using namespace date;
-	using namespace std::chrono;
 	
 	auto path = url.path();
 	auto queries = url.queries();
@@ -236,8 +232,6 @@ static bool Groups_NounHandler_PATCH(ServerCmdQueue* cmdQueue,
 											  TCPClientInfo cInfo,
 												 ServerCmdQueue::cmdCallback_t completion) {
 	using namespace rest;
-	using namespace date;
-	using namespace std::chrono;
 	
 	auto path = url.path();
 	auto queries = url.queries();
@@ -282,9 +276,6 @@ static bool Groups_NounHandler_POST(ServerCmdQueue* cmdQueue,
 											  TCPClientInfo cInfo,
 												 ServerCmdQueue::cmdCallback_t completion) {
 	using namespace rest;
-	using namespace date;
-	using namespace std::chrono;
-	
 	auto path = url.path();
 	auto queries = url.queries();
 	auto headers = url.headers();
@@ -330,9 +321,6 @@ static bool Groups_NounHandler_DELETE(ServerCmdQueue* cmdQueue,
 											  TCPClientInfo cInfo,
 												 ServerCmdQueue::cmdCallback_t completion) {
 	using namespace rest;
-	using namespace date;
-	using namespace std::chrono;
-	
 	auto path = url.path();
 	auto queries = url.queries();
 	auto headers = url.headers();
@@ -395,8 +383,6 @@ static void Groups_NounHandler(ServerCmdQueue* cmdQueue,
 										 TCPClientInfo cInfo,
 										 ServerCmdQueue::cmdCallback_t completion) {
 	using namespace rest;
-	using namespace date;
-	using namespace std::chrono;
 	json reply;
 	
 	auto path = url.path();
@@ -463,8 +449,6 @@ static void InsteonGroups_NounHandler(ServerCmdQueue* cmdQueue,
 										 TCPClientInfo cInfo,
 												  ServerCmdQueue::cmdCallback_t completion) {
 	using namespace rest;
-	using namespace date;
-	using namespace std::chrono;
 	json reply;
 	
 	auto path = url.path();
@@ -538,6 +522,7 @@ static void InsteonGroups_NounHandler(ServerCmdQueue* cmdQueue,
 }
 
 
+ 
 // MARK:  DEVICES NOUN HANDLERS
 static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 												REST_URL url,
@@ -545,8 +530,7 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 												ServerCmdQueue::cmdCallback_t completion) {
 	
 	using namespace rest;
-	using namespace date;
-	using namespace std::chrono;
+	using namespace timestamp;
 	
 	auto path = url.path();
 	auto queries = url.queries();
@@ -573,16 +557,17 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 	
 	// GET /devices
 	if(path.size() == 1) {
+		ServerCmdArgValidator v1;
+		string str;
 		
 		//			 only valid devices?
 		if(queries.count(string(JSON_VAL_VALID))) {
-			string str = queries[string(JSON_VAL_VALID)];
-			if( str == "true" ||  str =="1")
+			str = queries[string(JSON_VAL_VALID)];
+			if( str == "true" ||  str == "1")
 				deviceIDs = db->validDevices();
 		}
-		else if(headers.count("If-None-Match")) {
-			string str = headers["If-None-Match"];
-			
+		
+		if(v1.getStringFromMap("If-None-Match", url.headers(), str)){
 			char* p;
 			long eTag = strtol(str.c_str(), &p, 0);
 			if(*p == 0){
@@ -591,6 +576,14 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 			else {
 				deviceIDs = db->devicesUpdateSinceEtag(0);
 			}
+		}
+		else if(v1.getStringFromMap("If-Modified-Since", url.headers(), str)){
+			deviceIDs = db->allDevices();
+
+/*
+ ********************** CODE HERE *************************
+ */
+
 		}
 		else
 		{
@@ -609,10 +602,8 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 					json entry;
 					entry[string(JSON_VAL_VALID)] = info.isValidated;
 					entry[string(JSON_ARG_DEVICEINFO)] = info.deviceInfo.string();
-					system_clock::time_point tp = system_clock::from_time_t (info.lastUpdated);
-					auto rfc399 =  date::format("%FT%TZ", tp);
-					entry["lastUpdated"] =  rfc399;
-					devicesEntries[strDeviceID] = entry;
+					entry["lastUpdated"] =  TimeStamp(info.lastUpdated).RFC1123String();
+ 					devicesEntries[strDeviceID] = entry;
 				}
 				
 				reply[string(JSON_ARG_DETAILS)] = devicesEntries;
@@ -651,9 +642,7 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 					reply[string(JSON_VAL_VALID)] = info.isValidated;
 					reply[string(JSON_ARG_DEVICEINFO)] = info.deviceInfo.string();
 					reply[string(JSON_ARG_ETAG)] = info.eTag;
-					system_clock::time_point tp = system_clock::from_time_t (info.lastUpdated);
-					auto rfc399 =  date::format("%FT%TZ", tp);
-					reply["lastUpdated"] =  rfc399;
+					reply["lastUpdated"] =  TimeStamp(info.lastUpdated).RFC1123String();
 					reply[string(JSON_ARG_LEVEL)]  = level;
 					
 					auto groups = db->groupsContainingDevice(deviceID);
@@ -694,9 +683,6 @@ static bool Devices_NounHandler_DELETE(ServerCmdQueue* cmdQueue,
 											  TCPClientInfo cInfo,
 													ServerCmdQueue::cmdCallback_t completion) {
 	using namespace rest;
-	using namespace date;
-	using namespace std::chrono;
-	
 	auto path = url.path();
 	auto queries = url.queries();
 	auto headers = url.headers();
@@ -746,9 +732,6 @@ static bool Devices_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 												ServerCmdQueue::cmdCallback_t completion) {
 	
 	using namespace rest;
-	using namespace date;
-	using namespace std::chrono;
-	
 	auto path = url.path();
 	auto queries = url.queries();
 	auto headers = url.headers();
@@ -854,8 +837,6 @@ static void Devices_NounHandler(ServerCmdQueue* cmdQueue,
 										  ServerCmdQueue::cmdCallback_t completion) {
 	
 	using namespace rest;
-	using namespace date;
-	using namespace std::chrono;
 	json reply;
 	
 	auto path = url.path();
@@ -986,12 +967,10 @@ static void Date_NounHandler(ServerCmdQueue* cmdQueue,
 									  ServerCmdQueue::cmdCallback_t completion) {
 	
 	using namespace rest;
+	using namespace timestamp;
 	json reply;
 	string plmFunc;
-	
-	using namespace date;
-	using namespace std::chrono;
-	
+
 	// CHECK METHOD
 	if(url.method() != HTTP_GET ) {
 		(completion) (reply, STATUS_INVALID_METHOD);
@@ -1011,12 +990,7 @@ static void Date_NounHandler(ServerCmdQueue* cmdQueue,
 		return;
 	}
 	
-	
-	const auto tp = time_point_cast<seconds>(system_clock::now());
-	auto rfc399 =  date::format("%FT%TZ", tp);
-	
-	reply["date"] =  rfc399;
-	
+	reply["date"] = TimeStamp().RFC1123String();
 	makeStatusJSON(reply,STATUS_OK);
 	(completion) (reply, STATUS_OK);
 }
@@ -1144,24 +1118,17 @@ static bool DATECmdHandler( stringvector line,
 		string str;
 		
 		if(reply.count(JSON_ARG_DATE) ) {
-			string rfc399 =  reply[string(JSON_ARG_DATE)] ;
+			string rfc1123 =  reply[string(JSON_ARG_DATE)] ;
 			
-			using namespace date;
-			using namespace std::chrono;
-			
-			std::chrono::system_clock::time_point tp;
-			std::istringstream in{ rfc399 };
-			in >> date::parse("%FT%TZ", tp);
-			
-			//		auto pdt_now = make_zoned(current_zone(), utc_now);
-			//		cout << format("%a, %b %d %Y at %I:%M %p %Z\n", pdt_now);
-			//
-			time_t tt = system_clock::to_time_t ( tp );
+			using namespace timestamp;
+			time_t tt =  TimeStamp(rfc1123).getTime();
+
 			struct tm * timeinfo = localtime (&tt);
-			
-			str = string(asctime(timeinfo));  // asctime appends \n
-			
-			mgr->sendReply(str + "\r");
+			char timeStr[80] = {0};
+			static const char *kDateFormat = "%a %h-%d-%Y %r";
+ 			::strftime(timeStr, sizeof(timeStr), kDateFormat, timeinfo );
+	 		str = string(timeStr);
+			mgr->sendReply(str + "\n\r");
 		}
 		
 		(cb) (code > 199 && code < 400);
