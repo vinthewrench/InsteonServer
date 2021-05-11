@@ -598,6 +598,63 @@ void InsteonMgr::startDeviceValidation(){
 	}
 }
 
+
+bool InsteonMgr::validateDevice(DeviceID deviceID,
+										  boolCallback_t callback){
+		
+	// we only do this in the ready state
+	if(_state != STATE_READY){
+		return false;
+	}
+	
+	// we are already busy doing this.
+	if(_state == STATE_VALIDATING)
+		return false;
+	
+	
+	LOG_INFO("\tVALIDATION NEEDED for device %s\n",  deviceID.string().c_str() );
+	
+	if(!_validator){
+		_validator = new InsteonValidator(_cmdQueue);
+	}
+	
+	_state = STATE_VALIDATING;
+	
+	//	START_VERBOSE
+	_validator->startValidation({deviceID},
+										 [=]( auto result) {
+		
+		boolCallback_t cb = callback;
+		bool success = false;
+		
+		auto e  = result.front();
+		if(e.validated){
+			success = true;
+			_db.validateDeviceInfo(e.deviceID, &e.deviceInfo);
+		}
+		else  {
+			_db.validateDeviceInfo(e.deviceID, NULL);
+		}
+		
+		if(result.size() > 0){
+			_db.saveToCacheFile();
+		}
+		
+		_state = STATE_READY;
+		
+		// can we free it up from a callback?
+		delete _validator;
+		_validator = NULL;
+		updateLevels();
+		
+		if(cb)
+			(cb)(success);
+			
+	});
+	
+	return true;
+}
+
 // MARK: - Set Device State
 bool InsteonMgr::getOnLevel(DeviceID deviceID, bool forceLookup,
 									 std::function<void(uint8_t level, eTag_t lastTag,  bool didSucceed)> cb){
@@ -1382,7 +1439,6 @@ void InsteonMgr::updateLevels(){
 			 
 				if(--(*taskCount) == 0) {
 					free(taskCount);
-					_db.printDB();
 					_state = STATE_READY;
 
 				}

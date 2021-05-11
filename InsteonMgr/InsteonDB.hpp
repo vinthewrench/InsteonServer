@@ -40,6 +40,8 @@ typedef struct  {
 	bool 			isValidated;
  	DeviceInfo 	deviceInfo;
 	time_t			lastUpdated;
+	time_t			lastLevelUpdate;
+
 	eTag_t			eTag;		// last updtated tag
 	
 	std::vector<insteon_aldb_t> deviceALDB;
@@ -98,10 +100,14 @@ public:
 	vector<DeviceID> devicesThatNeedUpdating();
 	vector<DeviceID> validDevices();
 	vector<DeviceID> devicesUpdateSinceEtag(eTag_t  eTag);
+	vector<DeviceID> devicesUpdateSince(time_t time, time_t*  latestUpdate = NULL);
+
 	vector<DeviceID> devicesThatNeedALDB();
 
 	bool saveToCacheFile(string fileName = "");
-	
+
+	bool backupCacheFile(string filepath);
+ 
 	bool restoreFromCacheFile( string fileName = "",
 									 time_t validityDuration = 60*60*24		// how long is valid?
 									  );
@@ -138,6 +144,9 @@ public:
 	vector<GroupID> groupsContainingDevice(DeviceID deviceID);
 
   	// debugging
+	string dumpDB(bool printALDB = false);
+	void   dumpDBInfo(std::ostringstream &oss, DeviceID deviceID, bool printALDB = false );
+
 	void printDeviceInfo(DeviceID deviceID, bool printALDB = false);
 	void printDB(bool printALDB = false);
 	

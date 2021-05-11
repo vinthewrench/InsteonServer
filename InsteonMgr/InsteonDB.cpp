@@ -4,14 +4,20 @@
 //
 //  Created by Vincent Moscaritolo on 1/24/21.
 //
+#include <time.h>
+#include <random>
+#include <climits>
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
 
 #include "InsteonDB.hpp"
 #include "LogMgr.hpp"
 #include "NotificationCenter.hpp"
+#include "InsteonDevice.hpp"
 
-#include <time.h>
-#include <random>
-#include <climits>
+
 
 using namespace std;
 
@@ -229,6 +235,32 @@ vector<DeviceID> InsteonDB::devicesUpdateSinceEtag(eTag_t  eTag){
  	return dev_list;
 }
 
+vector<DeviceID> InsteonDB::devicesUpdateSince(time_t time,  time_t*  latestUpdateOut ){
+	vector< DeviceID> dev_list;
+	
+	time_t latestUpdate = 0;
+	
+	std::lock_guard<std::mutex> lock(_mutex);
+	for (auto e = _db.begin(); e != _db.end(); e++) {
+		
+		if(!e->isValidated) break;
+		
+		time_t updated = e->lastUpdated > e->lastLevelUpdate ? e->lastUpdated: e->lastLevelUpdate;
+		
+		if(latestUpdate < updated )
+			latestUpdate = updated;
+ 
+		if(updated > time)
+			dev_list.push_back(e->deviceID);
+	}
+	
+	if(latestUpdateOut)
+		*latestUpdateOut = latestUpdate;
+ 
+	return dev_list;
+	
+}
+
 void InsteonDB::addALDB(insteon_aldb_t aldb){
 	
 	std::lock_guard<std::mutex> lock(_mutex);
@@ -373,6 +405,7 @@ bool InsteonDB::setDBOnLevel(DeviceID deviceID, uint8_t group,
 			if(needsUpdate){
 				entry->levelMap[group] = onLevel;
 				entry->eTag = _eTag++;
+				entry->lastLevelUpdate = time(NULL);
 			}
 			
 			lastTag = entry->eTag;
@@ -501,129 +534,138 @@ string  InsteonDB::default_fileName(){
 
 static const char kDateFormat[] = "%Y-%m-%d %H:%M:%S";
 
+bool InsteonDB::backupCacheFile(string filepath){
+	
+	// debug  printDB();
+	
+	std::lock_guard<std::mutex> lock(_mutex);
+	bool statusOk = false;
+	
+	std::ofstream ofs;
+	
+	try{
+		ofs.open(filepath);
+		
+		if(ofs.fail())
+			return false;
+			
+		ofs << "## PLM " << _plmDeviceID.string() << " - " <<_plmDeviceID.nameString() << "\n";
+		ofs << "PLMID: "  << _plmDeviceID.string() << "\n\n";
+	
+		// save device Info
+		ofs << "DEVICES-START:" << "\n";
+		for (auto entry : _db) {
+
+			time_t	 updateTime = entry.isValidated?entry.lastUpdated:0;
+			char timeStr[40] = {0};
+			if(updateTime > 0.0){
+				strftime(timeStr, sizeof(timeStr), kDateFormat, gmtime(&updateTime));
+			}
+			else
+			{
+				//			LOG_ERROR("skipped saving: %s\n" ,entry.deviceID.string().c_str());
+				//			continue;
+			}
+			
+			string deviceName =  entry.deviceID.nameString();
+			string description = 	entry.deviceInfo.descriptionString();
+			
+			if(deviceName.size() > 0){
+				ofs << "## " << entry.deviceID.nameString();
+				if(description.size())
+					ofs << " - " << description;
+				ofs << "\n";
+			}
+
+			// do this twice.. first the controllers then the responders
+			
+			for(auto group :entry.groups){
+				bool isCNTRL =  get<0>(group);
+				if(!isCNTRL) continue;
+				
+				uint8_t gid 	= get<1>(group);
+				
+				ofs << entry.deviceID.string() << " ";
+				ofs  << hex;
+				ofs << setfill('0') << setw(2) << (int)(isCNTRL?0x40:0x00) << " ";
+				ofs << setfill('0') << setw(2) <<(int)gid << " ";
+				ofs << setfill('0') << setw(2) << (int)entry.deviceInfo.GetCat() << " ";
+				ofs << setfill('0') << setw(2) << (int)entry.deviceInfo.GetSubcat() << " ";
+				ofs << setfill('0') << setw(2) << (int)entry.deviceInfo.GetFirmware() << " ";
+				ofs << setfill('0') << setw(2) << (int)entry.deviceInfo.GetVersion() << " ";
+				ofs << timeStr << "\n";
+	 		}
+			
+			for(auto group :entry.groups){
+				bool isCNTRL =  get<0>(group);
+				if(isCNTRL) continue;
+				
+				uint8_t gid 	= get<1>(group);
+				
+				ofs << entry.deviceID.string() << " ";
+				ofs  << hex;
+				ofs << setfill('0') << setw(2) << (isCNTRL?0x40:0x00) << " ";
+				ofs << setfill('0') << setw(2) <<(int)gid << "\n";
+		}
+			
+			for(auto aldb :entry.deviceALDB){
+				
+				DeviceID aldbDev = DeviceID(aldb.devID);
+				
+				ofs << entry.deviceID.string() << " ";
+				ofs  << hex;
+				ofs << setfill('0') << setw(4) << aldb.address << " ";
+				ofs << setfill('0') << setw(2) <<(int)aldb.flag << " ";
+				ofs << setfill('0') << setw(2) <<(int)aldb.group << " ";
+				ofs <<  aldbDev.string() << " ";
+				ofs << setfill('0') << setw(2) << (int)aldb.info[0] << " ";
+				ofs << setfill('0') << setw(2) << (int)aldb.info[1] << "\n";
+			}
+	 	ofs << "\n";
+
+		}
+		ofs << "DEVICES-END:" << "\n\n";
+	
+		
+		// save Group Info
+		for (const auto& [groupID, _] : _deviceGroups) {
+			
+			groupInfo_t* info =  &_deviceGroups[groupID];
+			
+			ofs << "GROUP-START: "
+				<< setfill('0') << setw(4) << hex << groupID
+				<< setfill(' ') << setw(0) << " " << info->name << "\n";
+		 
+			
+			for(const auto &deviceID : info->devices){
+				ofs << deviceID.string() << "\n";
+	 		}
+		
+			ofs << "GROUP-END:" << "\n\n";
+		}
+		
+		ofs.flush();
+		ofs.close();
+			
+		statusOk = true;
+  	}
+ 	catch(std::ofstream::failure &writeErr) {
+			statusOk = false;
+	}
+	return statusOk;
+}
+ 
+
 bool InsteonDB::saveToCacheFile(string fileName ){
 	
 	// debug  printDB();
-
-	std::lock_guard<std::mutex> lock(_mutex);
-	bool statusOk = false;
-	FILE * fp;
 	
 	if(fileName.size() == 0)
 		fileName = default_fileName();
- 
+	
 	string path = _directoryPath + fileName;
-
-	if( (fp = fopen (path.c_str(), "w")) == NULL)
-		return false;
 	
-	fprintf(fp, "## PLM %s - %s\nPLMID: %s\n\n",
-			  _plmDeviceID.string().c_str(),
-			  _plmDeviceID.nameString().c_str(),
-			  _plmDeviceID.string().c_str());
- 
-	// save device database
-	for (auto entry : _db) {
-		
-		time_t	 updateTime = entry.isValidated?entry.lastUpdated:0;
-		char timeStr[40] = {0};
-		if(updateTime > 0.0){
-			strftime(timeStr, sizeof(timeStr), kDateFormat, gmtime(&updateTime));
-		}
-		else
-		{
-			//			LOG_ERROR("skipped saving: %s\n" ,entry.deviceID.string().c_str());
-//			continue;
-		}
-		
-		string deviceName =  entry.deviceID.nameString();
-		string description = 	entry.deviceInfo.descriptionString();
-		
-		if(deviceName.size() > 0){
-			fprintf(fp, "## %s - %s\n", deviceName.c_str(),
-					  description.size()? description.c_str() :"");
- 		}
-		
-		// do this twice.. first the controllers then the responders
-		
-		
-		for(auto group :entry.groups){
-			bool isCNTRL =  get<0>(group);
-			if(!isCNTRL) continue;
-			
-			uint8_t gid 	= get<1>(group);
- 
-			fprintf(fp, "%s %02X %02X %02X %02X %02X %02X",
-					  entry.deviceID.string().c_str(),
-					  isCNTRL?0x40:0x00,gid,
-					  entry.deviceInfo.GetCat(),
-					  entry.deviceInfo.GetSubcat(),
-					  entry.deviceInfo.GetFirmware(),
-					  entry.deviceInfo.GetVersion()
-					  );
-			
-			fprintf(fp," %s",timeStr);
-			fprintf(fp,"\n");
-		}
-		
-		for(auto group :entry.groups){
-			bool isCNTRL =  get<0>(group);
-			if(isCNTRL) continue;
-			
-			uint8_t gid 	= get<1>(group);
- 
-			fprintf(fp, "%s %02X %02X",
-					  entry.deviceID.string().c_str(),
-					  isCNTRL?0x40:0x00,gid
-					 );
-			
-		 		fprintf(fp,"\n");
-		}
-
-		for(auto aldb :entry.deviceALDB){
-		
-			DeviceID aldbDev = DeviceID(aldb.devID);
-	 
-			fprintf(fp, "%s %04X %02X %02X %s %02X %02X\n",
-					  entry.deviceID.string().c_str(),
-					  aldb.address, aldb.flag, aldb.group,
-					  aldbDev.string().c_str(),
-					  aldb.info[0], aldb.info[1]);
- 		}
-
-		
-		fprintf(fp,"\n");
-
-	}
-	
-	
-	// save Group Info
-	for (const auto& [groupID, _] : _deviceGroups) {
-		
-		groupInfo_t* info =  &_deviceGroups[groupID];
- 
-		fprintf(fp, "GROUP-START: %04x %s\n",
-					groupID,
-				  	info->name.c_str());
-		
-		for(const auto &deviceID : info->devices){
-			fprintf(fp, "%s\n",
-					  deviceID.string().c_str());
-		}
-		
-		fprintf(fp, "GROUP-END:\n\n");
- 	}
-
-
-	
-	fflush(fp);
-	
-	statusOk = true;
-	
-	fclose(fp);
-	
-	return statusOk;
-	
+	return backupCacheFile(path);
 }
 
 typedef enum  {
@@ -727,7 +769,12 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 			else if(strncmp(token, "GROUP-END", 9) == 0){
 				state = RESTORE_DEVICES;
 	 		}
-			
+			else if(strncmp(token, "DEVICES-START", 13) == 0){
+				state = RESTORE_DEVICES;
+			}
+			else if(strncmp(token, "DEVICES-END", 11) == 0){
+				state = RESTORE_UNKNOWN;
+			}
 			continue;
 	}
 		
@@ -822,6 +869,7 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 					
 					newEntry.isValidated = isStillValid;
 					newEntry.lastUpdated = lastUpdated;
+					newEntry.lastLevelUpdate = time(NULL);
 					newEntry.eTag = _eTag;
 					
 					newEntry.levelMap.clear();
@@ -837,6 +885,7 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 					if(isCTRL){
 						existing->deviceInfo	= DeviceInfo(cat,subcat,firmware, version );
 						existing->lastUpdated = lastUpdated?:lastUpdated;
+						existing->lastLevelUpdate = time(NULL);
 						existing->isValidated = existing->isValidated?:isStillValid;
 						existing->eTag = _eTag;
 					}
@@ -1142,6 +1191,162 @@ void InsteonDB::deviceStateWasUpdated(DeviceID deviceID){
 
 
 // MARK: - debugging
+
+string InsteonDB::dumpDB(bool printALDB)
+{
+	std::ostringstream oss;
+
+	oss << "--------------------- " << _db.size()  << " device entries --------------------- \n";
+ 
+	for (insteon_dbEntry_t entry : _db) {
+		dumpDBInfo(oss, entry.deviceID,printALDB);
+	}
+
+	oss <<  "--------------------------------------------------------------\n";
+ 	return oss.str();
+}
+
+
+void InsteonDB::dumpDBInfo(std::ostringstream &oss, DeviceID deviceID, bool printALDB ){
+ 
+	auto entry = findDBEntryWithDeviceID(deviceID);
+	if(!entry) return;
+	
+	oss << (entry->isValidated?"V":" ") << ( entry->lastUpdated?"U":" ") << " ";
+	oss << setiosflags(ios::left);
+
+	constexpr size_t maxlen = 20;
+		size_t len = deviceID.nameString().size();
+		if(len<maxlen){
+			oss << setw(maxlen);
+			oss << deviceID.nameString();
+		}
+		else {
+			oss << deviceID.nameString().substr(0,maxlen -1);
+			oss << "…";
+		}
+	oss << setw(0);
+	oss << " " << entry->deviceID.string() << " ";
+	 
+	oss << setw(3);
+
+	if(entry->levelMap.size() == 1){
+		auto firstEntry = *entry->levelMap.begin();
+		uint8_t onLevel = firstEntry.second;
+		oss << InsteonDevice::onLevelString(onLevel);
+	}
+	else
+		oss << "  ";
+	
+	oss << " ";
+	{
+		static const char* const lut = "0123456789ABCDEF";
+		
+		std::vector<uint8_t> cntlGrp;
+		std::vector<uint8_t> respGrp;
+		
+		for(auto group :entry->groups){
+			bool isCNTRL =  get<0>(group);
+			uint8_t gid 	= get<1>(group);
+			
+			if(isCNTRL){
+				cntlGrp.push_back(gid);
+			}
+			else {
+				respGrp.push_back(gid);
+				
+			}
+			//				if(isCNTRL) groupStr += "[";
+			//				groupStr += lut[gid >> 4];
+			//				groupStr += lut[gid & 0xf];
+			//				if(isCNTRL) groupStr += "]";
+			//				groupStr += " ";
+		}
+		
+		// sort them
+		std::sort(cntlGrp.begin(), cntlGrp.end(),
+					 [] (uint8_t const& a, uint8_t const& b) { return a < b; });
+		
+		std::sort(respGrp.begin(), respGrp.end(),
+					 [] (uint8_t const& a, uint8_t const& b) { return a < b; });
+		
+		std::string groupStr;
+		
+		int cnt = (int)cntlGrp.size();
+		if(cnt > 0) {
+			groupStr += "[";
+			for(auto group :cntlGrp){
+				if(group > 0xf){
+					groupStr += lut[group >> 4];
+				}
+				groupStr += lut[group & 0xf];
+				if(--cnt)
+					groupStr += " ";
+			}
+			groupStr += "] ";
+		}
+		
+		cnt = (int)respGrp.size();
+		
+		if(respGrp.size() > 0) {
+			for(auto group :respGrp){
+				if(group > 0xf){
+					groupStr += lut[group >> 4];
+				}
+				groupStr += lut[group & 0xf];
+				
+				if(--cnt)
+					groupStr += " ";
+			}
+		}
+		
+		oss << setiosflags(ios::left) << setw(16) << groupStr;
+ 	}
+	
+	if(!entry->deviceInfo.isNULL())
+	{
+		string version = "??";
+		if(entry->deviceInfo.GetVersion() == 1)
+			version = "i2";
+		else if(entry->deviceInfo.GetVersion() == 2)
+			version = "i2CS";
+		
+		oss << setw(0);
+		
+		oss << " (";
+		
+		oss << setfill('0') << setw(2) << hex
+		<< entry->deviceInfo.GetCat() << ","
+		<< entry->deviceInfo.GetSubcat() << ","
+		<< entry->deviceInfo.GetFirmware() << ") ";
+		oss << setw(4) << version <<  setw(0) << " " <<  entry->deviceInfo.descriptionString();
+ 	}
+
+	oss << "\n";
+	
+	if(printALDB){
+		for(auto e :entry->deviceALDB){
+			
+		//	Bit 6: 1 = Controller (Master) of Device ID, 0 = Responder to (Slave of) Device ID
+			bool isRESP = (e.flag & 0x40) == 0x00;
+			
+			DeviceID aldbDev = DeviceID(e.devID);
+			DeviceInfo info = DeviceInfo(e.info);
+			
+			string plmName = aldbDev.nameString()	;
+			
+			oss << setfill('0') << setw(4) << hex << e.address;
+			oss << (isRESP?" ":"[") << setfill('0') << setw(2) << hex << e.group  << ( isRESP?" ":"]") << " ";
+			oss <<  aldbDev.string() << " " << info.string() << " " << plmName << "\n";
+			}
+		oss << "\n";
+	}
+
+}
+
+
+
+
 void InsteonDB::printDB(bool printALDB){
 	
 	printf("\n--------------------- %2ld device entries  ---------------------\n", _db.size());

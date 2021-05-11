@@ -83,7 +83,10 @@ public:
 											 boolCallback_t callback = NULL);
 
 	bool getDeviceInfo(DeviceID deviceID, insteon_dbEntry_t * info);
-		 	
+
+	bool validateDevice(DeviceID deviceID,
+						 boolCallback_t callback = NULL);
+
 	void setExpiredDelay(time_t delayInSeconds);
 
 	// device set/get (always group 1)
