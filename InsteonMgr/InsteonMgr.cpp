@@ -299,7 +299,7 @@ string InsteonMgr::currentStateString(){
 			result = "Linking Device";
 			break;
 		case STATE_UPDATING:
-			result = "Updating Database";
+			result = "Updating Device Levels";
 			break;
 		default:
 			result = "Unknown";
@@ -524,7 +524,9 @@ void InsteonMgr::validatePLM(boolCallback_t callback){
 //		_nextValidationCheck = time(NULL)
 //				+ ((_db.devicesThatNeedUpdating().size() > 0) ? 60 : _expired_delay);
 	 
-		_state = STATE_READY;
+ 		_state = STATE_READY;
+		
+		updateLevels();
 		
 		callback(true);
  
@@ -1457,12 +1459,7 @@ plm_result_t InsteonMgr::handleResponse(uint64_t timeout){
  */
 
 void InsteonMgr::updateLevels(){
-	
-//DEBUG
-	START_VERBOSE
-   test();
-   return;
-	
+		
 	if(_state != STATE_READY)
 		return;
 	
@@ -1474,7 +1471,9 @@ void InsteonMgr::updateLevels(){
 		*taskCount = devices.size();
 		
 		_state = STATE_UPDATING;
-		
+
+		LOG_DEBUG("\tUPDATING LEVELS START\n");
+
 		for(auto deviceID : devices) {
 			
 			InsteonDevice(deviceID).getOnLevel([=](uint8_t level, bool didSucceed) {
@@ -1488,6 +1487,8 @@ void InsteonMgr::updateLevels(){
 				if(--(*taskCount) == 0) {
 					free(taskCount);
 					_state = STATE_READY;
+
+					LOG_DEBUG("\tUPDATING LEVELS COMPLETE\n");
 
 				}
 			});

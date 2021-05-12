@@ -48,7 +48,7 @@ int main(int argc, const char * argv[]) {
 	 
 	printf("Open %s\n", SERIAL_DEVICE);
 
-	START_VERBOSE;
+	START_INFO;
 
 	insteon.begin(SERIAL_DEVICE,
 						[=](bool didSucceed) {
@@ -56,9 +56,6 @@ int main(int argc, const char * argv[]) {
 		if(didSucceed){
 			
 			insteon.syncPLM( [=](bool didSucceed) {
-				
-//				test1();
-				
 				insteon.validatePLM( [](bool didSucceed) {
 //					insteon.getDB()->saveToCacheFile();
 				});

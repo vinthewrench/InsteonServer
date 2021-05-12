@@ -7,16 +7,16 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "2966953D-FCB1-4989-BD29-97EAF37A0578"
+            uuid = "B4A0914C-5B07-480B-92C3-DE5B084C6393"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "Submodule/FooServer/src/TCPServer.cpp"
+            filePath = "InsteonMgr/InsteonMgr.cpp"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "75"
-            endingLineNumber = "75"
-            landmarkName = "TCPServerConnection::close()"
+            startingLineNumber = "630"
+            endingLineNumber = "630"
+            landmarkName = "InsteonMgr::validateDevice(deviceID, callback)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

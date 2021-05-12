@@ -2175,7 +2175,6 @@ void registerServerCommands() {
 	cmdQueue->registerNoun(NOUN_GROUPS,	Groups_NounHandler);
 	cmdQueue->registerNoun(NOUN_INSTEON_GROUPS,	InsteonGroups_NounHandler);
 	cmdQueue->registerNoun(NOUN_LINK,	Link_NounHandler);
-  
 		
 	// register command line commands
 	auto cmlR = CmdLineRegistry::shared();
@@ -2194,4 +2193,7 @@ void registerServerCommands() {
 	cmlR->registerCommand("group",		GroupCmdHandler);
 	cmlR->registerCommand("all",			InsteonGroupCmdHandler);
 	cmlR->registerCommand("dump",		 DumpCmdHandler);
+	
+	cmlR->setHelpFile("helpfile");
+	
 }
