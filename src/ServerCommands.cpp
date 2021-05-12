@@ -541,7 +541,8 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 	bool showDetails = false;
 	bool showLevels = false;
 	bool forceLookup = false;
-	
+	bool onlyShowChanged = false;
+
 	json reply;
 	
 	auto db = insteon.getDB();
@@ -577,8 +578,7 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 			if( str == "true" ||  str == "1")
 				deviceIDs = db->validDevices();
 		}
-		
-		if(v1.getStringFromMap("If-None-Match", url.headers(), str)){
+		else if(v1.getStringFromMap("If-None-Match", url.headers(), str)){
 			char* p;
 			long eTag = strtol(str.c_str(), &p, 0);
 			if(*p == 0){
@@ -587,24 +587,29 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 			else {
 				deviceIDs = db->devicesUpdateSinceEtag(0);
 			}
+			onlyShowChanged = true;
 		}
 		else if(v1.getStringFromMap("If-Modified-Since", url.headers(), str)){
+
 			deviceIDs = db->allDevices();
- 
 			using namespace timestamp;
 			time_t time =  TimeStamp(str).getTime();
 			time_t lastUpdate =  ::time(NULL);  // in case we have no updates
 			deviceIDs = db->devicesUpdateSince(time, &lastUpdate);
-			if(deviceIDs.size() > 0)
-				reply["lastUpdated"] =  TimeStamp(lastUpdate).RFC1123String();
+			reply["lastUpdated"] =  TimeStamp(lastUpdate).RFC1123String();
+			onlyShowChanged = true;
 		}
 		else
 		{
 			// simple List all devices.
 			deviceIDs = db->allDevices();
 		}
-		
-		if(showDetails){
+		if(onlyShowChanged && deviceIDs.size() == 0){
+			makeStatusJSON(reply,STATUS_NOT_MODIFIED);
+			(completion) (reply, STATUS_NOT_MODIFIED);
+			return true;
+		}
+		else if(showDetails){
 			json devicesEntries;
 			for(DeviceID deviceID :deviceIDs) {
 				insteon_dbEntry_t info;
@@ -633,10 +638,14 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 					entry[string(JSON_ARG_LEVEL)] = InsteonDevice::onLevelString(onLevel);
 					devicesEntries[deviceID.string()] = entry;
 					reply[string(JSON_ARG_LEVELS)] = devicesEntries;
-
 				}
 			}
-
+			
+			if(onlyShowChanged && devicesEntries.size() == 0){
+				makeStatusJSON(reply,STATUS_NOT_MODIFIED);
+				(completion) (reply, STATUS_NOT_MODIFIED);
+				return true;
+			}
 		}
 		else {
 			vector<string> deviceList;
@@ -1205,8 +1214,8 @@ static void Link_NounHandler(ServerCmdQueue* cmdQueue,
 	using namespace rest;
 	using namespace timestamp;
 	json reply;
- 	bool isValidURL = false;
-
+	bool isValidURL = false;
+	
 	// CHECK METHOD
 	if(url.method() != HTTP_PUT ) {
 		(completion) (reply, STATUS_INVALID_METHOD);
@@ -1228,10 +1237,10 @@ static void Link_NounHandler(ServerCmdQueue* cmdQueue,
 	
 	if(path.size() == 1) {  // just link
 		isValidURL = true;
-
+		
 		makeStatusJSON(reply,STATUS_OK);
 		(completion) (reply, STATUS_OK);
-
+		
 	}
 	else if(path.size() == 2) { // link a specific device.
 		
@@ -1241,11 +1250,35 @@ static void Link_NounHandler(ServerCmdQueue* cmdQueue,
 		if(vDeviceID.validateArg(deviceStr)){
 			DeviceID	deviceID = DeviceID(deviceStr);
 			
-			makeStatusJSON(reply,STATUS_OK);
- 			(completion) (reply, STATUS_OK);
-  
-			isValidURL = true;
+			insteon.linkDevice(deviceID, true, 0xFE, [=](bool didSucceed) {
+				
+				if(didSucceed){
+					
+					insteon.addResponderToDevice(deviceID, 0x01, [=](bool didSucceed) {
+						
+						json reply;
+						reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+						
+						if(didSucceed){
+							
+							makeStatusJSON(reply,STATUS_OK);
+							(completion) (reply, STATUS_OK);
+						}
+						else {
+							makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "addResponderToDevice failed" );;
+							(completion) (reply, STATUS_INTERNAL_ERROR);
+						}
+					});
+				}
+				else {
+					json reply;
+					reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+					makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed" );;
+					(completion) (reply, STATUS_INTERNAL_ERROR);
+				}
+			});
 			
+			isValidURL = true;
 		}}
 	
 	

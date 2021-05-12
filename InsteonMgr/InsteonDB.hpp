@@ -130,6 +130,8 @@ public:
 	// clear local entry for DeviceALDB (not on device)
 	bool clearDeviceALDB(DeviceID deviceID);
 	
+	bool removeDevice(DeviceID deviceID);
+	
 	// groups
 	bool groupIsValid(GroupID groupID);
 	bool groupCreate(GroupID* groupID, const string name);

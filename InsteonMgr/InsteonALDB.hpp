@@ -58,7 +58,7 @@ public:
 								 u_int8_t* 	data = NULL,
 								 std::function<void(const insteon_aldb_t* newAldb, bool didSucceed)> callback = NULL);
 	 
-//	 bool removeFromDeviceALDB(DeviceID deviceID, uint8_t groupID, boolCallback_t callback);
+  bool removeFromDeviceALDB(DeviceID deviceID, uint8_t groupID, boolCallback_t callback);
 
 
 private:

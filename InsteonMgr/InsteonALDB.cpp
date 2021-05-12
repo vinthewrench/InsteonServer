@@ -27,7 +27,7 @@ InsteonALDB::InsteonALDB(InsteonCmdQueue*  cmdQueue){
 	_entryCnt = 0;
 	_aldbQueue.clear();
 	_writeALDBQueue.clear();
-	
+	_isAccesingRemoteALDB = false;
 	_plmDB.clear();
 }
 
@@ -249,6 +249,9 @@ bool InsteonALDB::syncDeviceALDB(DeviceID deviceID, std::vector<insteon_aldb_t> 
 	entry.deviceID = deviceID;
 	entry.callback = callback;
 	for(auto e :aldbIn){
+		uint8_t flag = e.flag;
+		if((flag & 0x80) ==  0) continue;
+		
 		writeALDBData_t data;
 		data.ack = false;
 		data.buffer = _plm->_parser.makeALDBWriteRecord(e, addr);
@@ -370,6 +373,15 @@ bool InsteonALDB::addToDeviceALDB(DeviceID targetDevice,
 #undef CHK_FAIL
 }
 
+bool InsteonALDB::removeFromDeviceALDB(DeviceID deviceID, uint8_t groupID, boolCallback_t callback){
+	
+	
+	if(callback)
+		(callback)(false);
+	
+	return false;
+}
+
 
 // MARK: - private API remote ALDB
 
@@ -427,7 +439,8 @@ void InsteonALDB::processNextWrite(){
 						return  aldbEntry.id == entry->id;
 					});
 					
-					callback(true);
+					if(callback)
+						callback(true);
 				}
 				else {
 					// give the PLM a short break before sending the next one.
@@ -566,7 +579,8 @@ bool InsteonALDB::processPLMresponse(plm_result_t response){
 						});
 						
 						// now do callback safely
-						callback(result, false);
+						if(callback)
+							callback(result, false);
 					}
 				}
 			}

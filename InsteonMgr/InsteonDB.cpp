@@ -160,8 +160,7 @@ vector<DeviceID> InsteonDB::validDevices(){
 	vector< DeviceID> val_list;
 	
 	for (auto e = _db.begin(); e != _db.end(); e++) {
-		
-		if(!e->isValidated) break;
+		if(!e->isValidated) continue;
 		val_list.push_back(e->deviceID);
 	}
 	
@@ -242,8 +241,7 @@ vector<DeviceID> InsteonDB::devicesUpdateSince(time_t time,  time_t*  latestUpda
 	
 	std::lock_guard<std::mutex> lock(_mutex);
 	for (auto e = _db.begin(); e != _db.end(); e++) {
-		
-		if(!e->isValidated) break;
+		if(!e->isValidated)  continue;
 		
 		time_t updated = e->lastUpdated > e->lastLevelUpdate ? e->lastUpdated: e->lastLevelUpdate;
 		
@@ -379,6 +377,35 @@ bool InsteonDB::clearDeviceALDB(DeviceID deviceID){
 
 	return didUpdate;
 
+}
+
+bool InsteonDB::removeDevice(DeviceID deviceID){
+
+	bool didUpdate = false;
+	
+	// remove the device from all groups containing it.
+	for(auto groupID : groupsContainingDevice(deviceID)){
+		groupRemoveDevice(groupID, deviceID);
+	}
+
+	{ // lock durring erase.
+		std::lock_guard<std::mutex> lock(_mutex);
+ 
+	// remove it from the database
+		for (auto e = _db.begin(); e != _db.end();) {
+			if(e->deviceID == deviceID){
+				_db.erase(e);
+				didUpdate = true;
+			}
+			else {
+				e++;
+			}
+		}
+	}
+ 
+	if(	didUpdate)
+		saveToCacheFile();
+	return didUpdate;
 }
 
 
@@ -1027,7 +1054,7 @@ bool InsteonDB::groupRemoveDevice(GroupID groupID, DeviceID deviceID){
 		return false;
 
 	info->devices.erase(deviceID);
-	saveToCacheFile();
+ 	saveToCacheFile();
 	return true;
 }
 
@@ -1212,6 +1239,7 @@ void InsteonDB::dumpDBInfo(std::ostringstream &oss, DeviceID deviceID, bool prin
 	auto entry = findDBEntryWithDeviceID(deviceID);
 	if(!entry) return;
 	
+	oss<< setfill(' ');
 	oss << (entry->isValidated?"V":" ") << ( entry->lastUpdated?"U":" ") << " ";
 	oss << setiosflags(ios::left);
 
@@ -1315,11 +1343,11 @@ void InsteonDB::dumpDBInfo(std::ostringstream &oss, DeviceID deviceID, bool prin
 		
 		oss << " (";
 		
-		oss << setfill('0') << setw(2) << hex
-		<< entry->deviceInfo.GetCat() << ","
-		<< entry->deviceInfo.GetSubcat() << ","
-		<< entry->deviceInfo.GetFirmware() << ") ";
-		oss << setw(4) << version <<  setw(0) << " " <<  entry->deviceInfo.descriptionString();
+		oss << setfill('0') << setw(2) << hex << (int)entry->deviceInfo.GetCat() << ","
+		<< setfill('0') << setw(2) << (int)entry->deviceInfo.GetSubcat() << ","
+		<< setfill('0') << setw(2) << (int)entry->deviceInfo.GetFirmware() << ") ";
+		oss << setfill('0') << setw(4) << version;
+		oss <<  setw(0) << " " <<  entry->deviceInfo.descriptionString();
  	}
 
 	oss << "\n";
@@ -1335,8 +1363,8 @@ void InsteonDB::dumpDBInfo(std::ostringstream &oss, DeviceID deviceID, bool prin
 			
 			string plmName = aldbDev.nameString()	;
 			
-			oss << setfill('0') << setw(4) << hex << e.address;
-			oss << (isRESP?" ":"[") << setfill('0') << setw(2) << hex << e.group  << ( isRESP?" ":"]") << " ";
+			oss << setfill('0') << setw(4) << hex << (int) e.address << " ";
+			oss << (isRESP?" ":"[") << setfill('0') << setw(2) << hex << (int) e.group  << ( isRESP?" ":"]") << " ";
 			oss <<  aldbDev.string() << " " << info.string() << " " << plmName << "\n";
 			}
 		oss << "\n";

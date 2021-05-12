@@ -48,7 +48,7 @@ int main(int argc, const char * argv[]) {
 	 
 	printf("Open %s\n", SERIAL_DEVICE);
 
-	START_INFO;
+	START_VERBOSE;
 
 	insteon.begin(SERIAL_DEVICE,
 						[=](bool didSucceed) {

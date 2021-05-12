@@ -9,6 +9,7 @@
 #include "InsteonMgr.hpp"
 #include "LogMgr.hpp"
 #include "NotificationCenter.hpp"
+#include "InsteonParser.hpp"
 
 #include "InsteonDevice.hpp"
 
@@ -894,7 +895,7 @@ bool InsteonMgr::linkDevice(DeviceID deviceID,
 									link.groupID,
 									info,
 									true);			// is validated
-	 
+	 			
 	 			_aldb->readDeviceALDB(deviceID, [=]
 											 ( std::vector<insteon_aldb_t> aldb,  bool didSucceed) {
 					
@@ -1014,15 +1015,62 @@ bool InsteonMgr::cancelLinking(){
 
 bool InsteonMgr::unlinkDevice(DeviceID deviceID,
 										boolCallback_t cb){
+
+	bool statusOK = false;
 	
 	if(_state != STATE_READY)
 		return false;
 	 
-// not implemeneted yet
-	if(cb)
-		(cb)(true);
+	if(!_aldb)
+		throw InsteonException("aldb not setup");
+
+	
+ 	// update the device's ALDB removing us from it.
+	statusOK = _aldb->readDeviceALDB(deviceID, [=]
+												( std::vector<insteon_aldb_t> aldb,  bool didSucceed) {
+		
+		
+		bool needsALDBupdate = false;
+		
+		if(didSucceed){
+			// walk the device ALDB looing for our _plmDeviceID
+			
+			for (auto e = aldb.begin(); e != aldb.end(); e++) {
+				if(_plmDeviceID.isEqual(e->devID)){
+					// set the flag to delete.  0
+					e->flag &= 0x02;
+					e->group = 0;
+					e->devID[0] = 0;
+					e->devID[1] = 0;
+					e->devID[2] = 0;
+					e->info[0] = 0;
+					e->info[1] = 0;
+					e->info[2] = 0;
+					needsALDBupdate = true;
+				}
+			}
+			
+	 
+			if(needsALDBupdate){
+	 			_aldb->syncDeviceALDB(deviceID, aldb, [=](bool didSucceed){
+					
+		 			printf("Synced ALDB %s\n", didSucceed?"OK":"FAIL");
+					
+					_db.removeDevice(deviceID);
+					if(cb) (cb)(true);
+					
+				}); // dont care about callback
+			}
+			return;
+		}
+		
+		if(!needsALDBupdate) {
+			_db.removeDevice(deviceID);
+			if(cb) (cb)(true);
+		}
+	});
  
-	return true;
+	return statusOK;
 }
 
 
