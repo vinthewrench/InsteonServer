@@ -30,6 +30,8 @@ InsteonDB::InsteonDB() {
 	_expired_age = 60*60*24*30;
 	_directoryPath = "";
 	_db.clear();
+	_deviceGroups.clear();
+	_actionGroups.clear();
 	_eTag = 0;
 	
 	// create RNG engine
@@ -756,8 +758,8 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 		if(*p == '#') continue;
 	 
 		// check for PLMID: xx.xx.xx == _plmDeviceID
-		char token[17] = {0};
-		cnt = sscanf(p, "%16[^ :]:%hhx.%hhx.%hhx %n", token,
+			char token[17] = {0};
+			cnt = sscanf(p, "%16[^ :]:%hhx.%hhx.%hhx %n", token,
 						 &devID[2], &devID[1], &devID[0],
 						 &n);
 		if(cnt == 4){
@@ -950,8 +952,166 @@ string InsteonDB::cacheFileNameFromPLM(DeviceID deviceID) {
 	return (deviceID.string() + ".txt");
 }
 
-//MARK: - group API
+//MARK: - actionGroup API
+
+bool InsteonDB::actionGroupIsValid(actionGroupID_t actionGroupID){
+
+
+	return (_actionGroups.count(actionGroupID) > 0);
+}
  
+bool InsteonDB::actionGroupCreate(actionGroupID_t* actionGroupIDOut, const string name){
+	
+	std::uniform_int_distribution<long> distribution(LONG_MIN,LONG_MAX);
+	actionGroupID_t actionGroupID;
+
+	do {
+		actionGroupID = distribution(_rng);
+	}while( _actionGroups.count(actionGroupID) > 0);
+
+	actionGroupInfo_t info;
+	info.name = name;
+	info.actions.clear();
+	_actionGroups[actionGroupID] = info;
+ 
+	saveToCacheFile();
+	
+	if(actionGroupIDOut)
+		*actionGroupIDOut = actionGroupID;
+	return true;
+}
+
+bool InsteonDB::actionGroupDelete(actionGroupID_t actionGroupID){
+
+ 
+	if(_actionGroups.count(actionGroupID) == 0)
+		return false;
+
+	_actionGroups.erase(actionGroupID);
+	saveToCacheFile();
+
+	return true;
+}
+
+ 
+bool InsteonDB::actionGroupFind(string name, actionGroupID_t* actionGroupIDOut){
+
+	for(auto g : _actionGroups) {
+		auto info = &g.second;
+
+		if (strcasecmp(name.c_str(), info->name.c_str()) == 0){
+				if(actionGroupIDOut){
+				*actionGroupIDOut =  g.first;
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+
+bool InsteonDB::actionGroupSetName(actionGroupID_t actionGroupID, string name){
+
+	if(_actionGroups.count(actionGroupID) == 0)
+		return false;
+ 
+	actionGroupInfo_t* info  =  &_actionGroups[actionGroupID];
+	info->name = name;
+
+	saveToCacheFile();
+	return true;
+}
+
+
+string InsteonDB::actionGroupGetName(actionGroupID_t actionGroupID){
+
+	if(_actionGroups.count(actionGroupID) == 0)
+		return "";
+ 
+	actionGroupInfo_t* info  =  &_actionGroups[actionGroupID];
+	return info->name;
+}
+
+
+bool InsteonDB::actionGroupAddAction(actionGroupID_t actionGroupID,
+												 Action action,
+												 actionID_t* actionIDOut){
+	
+	if(_actionGroups.count(actionGroupID) == 0)
+		return false;
+ 
+	actionGroupInfo_t* info  =  &_actionGroups[actionGroupID];
+	// create an actionID unique to this actionGroup
+	
+	std::uniform_int_distribution<long> distribution(LONG_MIN,LONG_MAX);
+	actionID_t aid;
+
+	do {
+		aid = distribution(_rng);
+	}while(info->actions.count(aid) > 0 );
+	
+	action._actionID = aid;
+	info->actions[aid] = action;
+	
+	if(actionIDOut)
+		*actionIDOut = aid;
+	
+	saveToCacheFile();
+
+	return true;
+}
+
+
+bool InsteonDB::actionGroupRemoveAction(actionGroupID_t actionGroupID, actionID_t actionID){
+
+	if(_actionGroups.count(actionGroupID) == 0)
+		return false;
+ 
+	actionGroupInfo_t* info  =  &_actionGroups[actionGroupID];
+	info->actions.erase(actionID);
+ 	saveToCacheFile();
+	return true;
+}
+
+bool InsteonDB::actionGroupIsValidActionID(actionGroupID_t actionGroupID, actionID_t actionID){
+	
+	if(_actionGroups.count(actionGroupID) == 0)
+		return false;
+	
+	actionGroupInfo_t* info  =  &_actionGroups[actionGroupID];
+	return info->actions.count(actionID) > 0;
+	
+}
+
+
+vector<reference_wrapper<Action>> InsteonDB::actionGroupGetActions(actionGroupID_t actionGroupID){
+
+	vector<reference_wrapper<Action>> actions;
+
+	if(_actionGroups.count(actionGroupID) > 0){
+		actionGroupInfo_t* info  =  &_actionGroups[actionGroupID];
+		
+		for ( auto &i : info->actions) {
+			actions.push_back(std::ref(i.second));
+		}
+	}
+
+	return actions;
+}
+
+
+vector<actionGroupID_t> InsteonDB::allActionGroupsIDs(){
+	vector<actionGroupID_t> actionGroupIDs;
+	
+	for(auto const& aid: _actionGroups)
+		actionGroupIDs.push_back(aid.first);
+	
+	return actionGroupIDs;
+}
+
+
+//MARK: - group API
+
 bool InsteonDB::groupFind(string name, GroupID* groupIDOut){
 
 	for(auto g : _deviceGroups) {

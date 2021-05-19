@@ -1,0 +1,147 @@
+## Help for Insteon Sever
+
+TOPIC-START: "history"
+dont know much about history
+TOPIC-END:
+
+
+TOPIC-START: "version"
+some text about version..
+
+TOPIC-END:
+
+TOPIC-START: "date"
+NAME
+     date -- display date and time
+     
+SYNOPSIS
+	date
+	
+DESCRIPTION
+     The date utility displays the current date and time.
+     
+TOPIC-END:
+
+TOPIC-START: "list"
+
+SYNOPSIS
+	list all
+	list valid
+	list details
+
+TOPIC-END:
+
+TOPIC-START: "status"
+show the state of the server
+
+TOPIC-END:
+
+TOPIC-START: "turn-on"
+NAME
+     	turn-on -- turn on a device
+     
+SYNOPSIS
+	turn-on XX.XX.XX
+
+DESCRIPTION
+     The turn-on command turns on a device to full brighntess
+ TOPIC-END:
+
+TOPIC-START: "turn-off"
+NAME
+     	turn-off -- turn off a device
+     
+SYNOPSIS
+	turn-off XX.XX.XX
+
+DESCRIPTION
+     The turn-off command turns off a device
+TOPIC-END:
+
+TOPIC-START: "dim"
+NAME
+     	dim -- set a device brighntess level
+     
+SYNOPSIS
+	dim XX.XX.XX level, level%, off, on
+
+DESCRIPTION
+     The dim command  set a device brighntess level
+
+TOPIC-END:
+
+TOPIC-START: "show"
+
+SYNOPSIS
+	show XX.XX.XX
+	
+TOPIC-END:
+
+TOPIC-START: "beep"
+SYNOPSIS
+	beep XX.XX.XX
+
+TOPIC-END:
+
+TOPIC-START: "set-backlight"
+SYNOPSIS
+	set-backlight XX.XX.XX level, level%, off, on
+
+TOPIC-END:
+
+TOPIC-START: "plm"
+SYNOPSIS
+	plm info
+	plm backup
+
+TOPIC-END:
+
+TOPIC-START: "group"
+SYNOPSIS
+	group list
+ 
+TOPIC-END:
+
+TOPIC-START: "all"
+SYNOPSIS
+	all on/off
+
+TOPIC-END:
+
+TOPIC-START: "dump"
+ SYNOPSIS
+	dump
+	dump all
+TOPIC-END:
+
+ 
+
+TOPIC-START: "whatismyip"
+NAME
+     whatismyip -- display my IP adddress
+
+SYNOPSIS
+          whatismyip
+
+DESCRIPTION
+     The whatismyip utility displays the user IP adddress
+
+TOPIC-END:
+
+TOPIC-START: "finger"
+NAME
+     finger -- user information lookup program
+
+SYNOPSIS
+     finger
+
+DESCRIPTION
+     The finger utility displays information about the system users.
+     
+TOPIC-END:
+
+TOPIC-START: "bye"
+well bye...
+TOPIC-END:
+
+	

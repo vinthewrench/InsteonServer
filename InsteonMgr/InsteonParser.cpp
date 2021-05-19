@@ -13,7 +13,7 @@
 #define XXH_STATIC_LINKING_ONLY   /* *_state_t */
 
 #include "xxhash.h"
-
+#include <regex>
  
 InsteonParser::InsteonParser() {
 	dbuff_init();
@@ -602,6 +602,11 @@ uint32_t makeMsgHash(insteon_msg_t* msg){
 	return XXH32_digest(&hashState);
 }
 
+
+bool validateDeviceID( const std::string arg) {
+	return regex_match( arg, std::regex("^[A-Fa-f0-9]{2}.[A-Fa-f0-9]{2}.[A-Fa-f0-9]{2}$"));
+};
+
 bool str_to_deviceID(const char* str, deviceID_t devIDOut){
 	
 	bool status = false;
@@ -624,7 +629,7 @@ bool str_to_GroupID(const char* str, groupID_t *groupIDOut){
 	
 	groupID_t val = 0;
  
-	status = sscanf(str, "%hd", &val) == 1;
+	status = sscanf(str, "%hx", &val) == 1;
 	
 	if(groupIDOut)  {
 		*groupIDOut = val;
@@ -632,6 +637,7 @@ bool str_to_GroupID(const char* str, groupID_t *groupIDOut){
 	
 	return status;
 }
+
 
 } /* Extern c*/
  

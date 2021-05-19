@@ -16,11 +16,14 @@
 #include <mutex>
 #include <random>
 #include <set>
+#include <vector>
 
 #include <stdio.h>
 #include "InsteonMgrDefs.hpp"
 #include "DeviceID.hpp"
 #include "DeviceInfo.hpp"
+#include "Action.hpp"
+
 #include "InsteonPLM.hpp"  // for deviceID_t
 //#include "InsteonDBValidator.hpp"
 //#include "InventoryMgmt.hpp"
@@ -145,6 +148,21 @@ public:
 	vector<GroupID> allGroups();
 	vector<GroupID> groupsContainingDevice(DeviceID deviceID);
 
+	// actions
+	bool actionGroupIsValid(actionGroupID_t actionGroupID);
+	bool actionGroupCreate(actionGroupID_t* actionGroupID, const string name);
+	bool actionGroupDelete(actionGroupID_t actionGroupID);
+	bool actionGroupFind(string name, actionGroupID_t* actionGroupID);
+	bool actionGroupSetName(actionGroupID_t actionGroupID, string name);
+	string actionGroupGetName(actionGroupID_t actionGroupID);
+	bool actionGroupAddAction(actionGroupID_t actionGroupID,  Action action, actionID_t* actionIDOut = NULL);
+	bool actionGroupRemoveAction(actionGroupID_t actionGroupID, actionID_t actionID);
+	bool actionGroupIsValidActionID(actionGroupID_t actionGroupID, actionID_t actionID);
+
+	vector<reference_wrapper<Action>> actionGroupGetActions(actionGroupID_t groupID);
+	vector<actionGroupID_t> allActionGroupsIDs();
+	
+
   	// debugging
 	string dumpDB(bool printALDB = false);
 	void   dumpDBInfo(std::ostringstream &oss, DeviceID deviceID, bool printALDB = false );
@@ -193,6 +211,13 @@ private:
 
  	map<groupID_t, groupInfo_t> _deviceGroups;
 
+	typedef struct {
+		string name;
+		map<actionID_t, Action> actions;
+	} actionGroupInfo_t;
+
+	map<actionGroupID_t, actionGroupInfo_t> _actionGroups;
+ 	
 	string 						_directoryPath;
 	
 	mt19937						_rng;

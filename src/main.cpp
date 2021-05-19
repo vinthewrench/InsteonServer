@@ -29,6 +29,8 @@
  
 #include "CommonIncludes.h"
 
+#include "Action.hpp"
+
 #if __APPLE__
 //  #define SERIAL_DEVICE "/dev/cu.usbserial-AK05Z8CQ"
 //   #define SERIAL_DEVICE "/dev/cu.usbserial-AL02YD29"
@@ -39,13 +41,83 @@
 #warning  NO CLUE
 
 #endif
+ 
+void test(){
+	vector<string> actions;
+	
+	actions.clear();
+	DeviceID deviceID =  DeviceID("01.02.03");
+	GroupID groupID =  GroupID("01.02.03");
 
+	auto db = insteon.getDB();
+	
+	for(int i = 0; i < 4; i++){
+		
+		actionGroupID_t agID1;
+		
+		string name = "group_" + to_string(i);
+		
+		if(db->actionGroupCreate(&agID1, name)){
+			if( db->actionGroupSetName(agID1, name + "_a")) {
+								
+				auto a1 = Action(deviceID, Action::ACTION_SET_LEVEL, 255);
+				db->actionGroupAddAction(agID1, a1);
+				db->actionGroupAddAction(agID1, Action(DeviceID("54.F5.2D"), Action::ACTION_BEEP));
+				db->actionGroupAddAction(agID1, Action(deviceID, Action::ACTION_SET_LED_BRIGHTNESS, 120));
+ 				db->actionGroupAddAction(agID1,  Action(groupID, Action::ACTION_SET_LEVEL, 100));
+				db->actionGroupAddAction(agID1, Action(22, 255));
+				
+				
+				actionGroupID_t agID2;
+				string subName = "subgroup_" + to_string(i);
+				db->actionGroupCreate(&agID2, subName);
+				db->actionGroupAddAction(agID1,  Action(agID2));
+//		 		db->actionGroupDelete(agID1);
+				
+			}
+		}
+
+	}
+	
+	if(0){
+		
+		auto actionIDs = db->allActionGroupsIDs();
+		for(auto agID : actionIDs ){
+			
+			insteon.executeActionGroup(agID,[=](bool didSucceed) {
+				
+				string name = db->actionGroupGetName(agID);
+				auto actions = db->actionGroupGetActions(agID);
+				
+				printf("completed %x: %10s %ld\n", agID, name.c_str(), actions.size());
+			});
+			
+		}
+	}
+// 	for(auto agID : actionIDs ){
+//
+//		string name = db->actionGroupGetName(agID);
+//		auto actions = db->actionGroupGetActions(agID);
+//
+//		printf("%x: %10s %ld\n", agID, name.c_str(), actions.size());
+//
+//		for(auto ref :actions){
+//			Action a1 = ref.get();
+//			string str = a1.serialize();
+//			printf("\t%s", str.c_str());
+//
+//		}
+//
+//		db->actionGroupDelete(agID);
+//	}
+}
 
 // MARK: - MAIN
 [[clang::no_destroy]]  InsteonMgr	insteon;
  
 int main(int argc, const char * argv[]) {
 	 
+	
 	printf("Open %s\n", SERIAL_DEVICE);
 
 	START_INFO;
@@ -55,8 +127,11 @@ int main(int argc, const char * argv[]) {
 		
 		if(didSucceed){
 			
-			insteon.syncPLM( [=](bool didSucceed) {
+ 			insteon.syncPLM( [=](bool didSucceed) {
 				insteon.validatePLM( [](bool didSucceed) {
+					
+ 				test();
+
 //					insteon.getDB()->saveToCacheFile();
 				});
 			});

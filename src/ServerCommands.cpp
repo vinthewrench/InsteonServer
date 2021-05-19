@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include "ServerCmdQueue.hpp"
+#include "CmdLineHelp.hpp"
 #include <regex>
 #include <string>
 #include <iostream>
@@ -46,14 +47,17 @@ constexpr string_view NOUN_STATUS		 		= "status";
 constexpr string_view NOUN_PLM			 		= "plm";
 constexpr string_view NOUN_GROUPS			 	= "groups";
 constexpr string_view NOUN_INSTEON_GROUPS		= "insteon.groups";
+constexpr string_view NOUN_ACTION_GROUPS		= "action.groups";
 
 constexpr string_view NOUN_LINK	 				= "link";
  
 constexpr string_view SUBPATH_INFO			 	= "info";
 constexpr string_view SUBPATH_DATABASE		 	= "database";
+constexpr string_view SUBPATH_RUN_ACTION		= "run.actions";
 
 constexpr string_view JSON_ARG_DEVICEID 		= "deviceID";
 constexpr string_view JSON_ARG_GROUPID 		= "groupID";
+constexpr string_view JSON_ARG_ACTIONID 		= "actionID";
 
 constexpr string_view JSON_ARG_BEEP 			= "beep";
 constexpr string_view JSON_ARG_LEVEL 			= "level";
@@ -69,6 +73,7 @@ constexpr string_view JSON_ARG_DEVICEIDS 		= "deviceIDs";
 constexpr string_view JSON_ARG_DEVICEINFO 	= "deviceInfo";
 constexpr string_view JSON_ARG_DETAILS 		= "details";
 constexpr string_view JSON_ARG_LEVELS 			= "levels";
+constexpr string_view JSON_ARG_ACTIONS			= "actions";
 
 constexpr string_view JSON_ARG_STATE			= "state";
 constexpr string_view JSON_ARG_STATESTR		= "stateString";
@@ -86,6 +91,370 @@ constexpr string_view JSON_VAL_LEVELS			= "levels";
 
 
 // MARK: -
+
+// MARK:  ACTION GROUPS NOUN HANDLERS
+
+static bool ActionGroups_NounHandler_GET(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+											  ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	json reply;
+	
+	auto db = insteon.getDB();
+	vector<DeviceID> deviceIDs;
+	
+	// GET /groups
+	if(path.size() == 1) {;
+		
+		json groupsList;
+		auto groupIDs = db->allActionGroupsIDs();
+		for(auto groupID : groupIDs){
+			json entry;
+			
+			ActionGroup ag = ActionGroup(groupID);
+			entry[string(JSON_ARG_NAME)] =  db->actionGroupGetName(groupID);
+			groupsList[ag.string()] = entry;
+		}
+		
+		reply[string(JSON_ARG_GROUPIDS)] = groupsList;
+		makeStatusJSON(reply,STATUS_OK);
+		(completion) (reply, STATUS_OK);
+		return true;
+		
+	}
+		// GET /action.groups/XXXX
+		else if(path.size() == 2) {
+			ActionGroup group = ActionGroup(path.at(1));
+			
+			
+			if(!group.isValid() ||!db->actionGroupIsValid(group.groupID()))
+				return false;
+
+			actionGroupID_t agID = group.groupID();
+	
+			reply[string(JSON_ARG_GROUPID)] = group.string();
+			reply[string(JSON_ARG_NAME)] =  db->actionGroupGetName(agID);
+
+			json actions;
+			auto acts = db->actionGroupGetActions(agID);
+			for(auto ref :acts){
+				Action a1 = ref.get();
+				actions[a1.idString()] =  a1.JSON();
+			}
+			reply[string(JSON_ARG_ACTIONS)] = actions;
+			
+			makeStatusJSON(reply,STATUS_OK);
+			(completion) (reply, STATUS_OK);
+
+ 	}
+	else {
+		
+	}
+	
+	return false;
+}
+
+
+static bool ActionGroups_NounHandler_PUT(ServerCmdQueue* cmdQueue,
+												REST_URL url,
+												TCPClientInfo cInfo,
+													  ServerCmdQueue::cmdCallback_t completion) {
+	
+	using namespace rest;
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	json reply;
+	
+	auto db = insteon.getDB();
+	vector<DeviceID> deviceIDs;
+	string subpath;
+	
+	if(path.size() > 1){
+		subpath =   path.at(1);
+	}
+	
+	if(path.size() == 2) {
+		ActionGroup group = ActionGroup(subpath);
+		
+		if(!group.isValid() ||!db->actionGroupIsValid(group.groupID()))
+			return false;
+		
+		Action	 act(url.body());
+		if(act.isValid()){
+			
+			actionID_t  actionID;
+			if(db->actionGroupAddAction(group.groupID(), act, &actionID)) {
+				reply[string(JSON_ARG_GROUPID)] = group.string();
+				reply[string(JSON_ARG_ACTIONID)] = to_hex<unsigned short>(actionID,false);
+				
+				makeStatusJSON(reply,STATUS_OK);
+				(completion) (reply, STATUS_OK);
+				return true;
+			}
+		}
+		makeStatusJSON(reply, STATUS_BAD_REQUEST, "Create Failed",  "Invalid Action Specified" );;
+		(completion) (reply, STATUS_BAD_REQUEST);
+		return true;
+	}
+	else if(path.size() == 3) {
+		if( subpath == SUBPATH_RUN_ACTION) {
+			
+			ActionGroup group = ActionGroup(path.at(2));
+			
+			if(!group.isValid() ||!db->actionGroupIsValid(group.groupID()))
+				return false;
+			
+			bool queued = insteon.executeActionGroup(group.groupID(),
+														[=]( bool didSucceed){
+				
+				json reply;
+				
+				if(didSucceed){
+					reply[string(JSON_ARG_GROUPID)] = group.string();
+		 			makeStatusJSON(reply,STATUS_OK);
+					(completion) (reply, STATUS_OK);
+				}
+				else {
+					reply[string(JSON_ARG_GROUPID)] = group.string();
+					makeStatusJSON(reply, STATUS_BAD_REQUEST, "Run Group Failed" );;
+					(completion) (reply, STATUS_BAD_REQUEST);
+				}
+			});
+			
+			if(!queued) {
+				makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
+				(completion) (reply, STATUS_UNAVAILABLE);
+				return true;
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool ActionGroups_NounHandler_PATCH(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+												 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	
+	json reply;
+	
+	ServerCmdArgValidator v1;
+	auto db = insteon.getDB();
+	
+	if(path.size() == 2) {
+		
+		ActionGroup group = ActionGroup(path.at(1));
+ 
+		if(!group.isValid() ||!db->actionGroupIsValid(group.groupID()))
+			return false;
+
+		string name;
+		// set name
+		if(v1.getStringFromJSON(JSON_ARG_NAME, url.body(), name)){
+			if(db->actionGroupSetName(group.groupID(), name)) {
+				reply[string(JSON_ARG_GROUPID)] = group.string();
+				reply[string(JSON_ARG_NAME)] = name;
+				
+				makeStatusJSON(reply,STATUS_OK);
+				(completion) (reply, STATUS_OK);
+			}
+			else {
+				reply[string(JSON_ARG_GROUPID)] = group.string();
+				makeStatusJSON(reply, STATUS_BAD_REQUEST, "Set Failed" );;
+				(completion) (reply, STATUS_BAD_REQUEST);
+			}
+		}
+		
+	}
+	return false;
+	
+}
+
+static bool ActionGroups_NounHandler_POST(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+												 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	
+	json reply;
+	
+	ServerCmdArgValidator v1;
+	auto db = insteon.getDB();
+	
+	if(path.size() == 1) {
+		
+		string name;
+		// Create group
+		if(v1.getStringFromJSON(JSON_ARG_NAME, url.body(), name)){
+			
+			actionGroupID_t groupID;
+			if(db->actionGroupFind(name, &groupID)){
+				name = db->actionGroupGetName(groupID);
+			}
+			else {
+				if (! db->actionGroupCreate(&groupID, name)) {
+					reply[string(JSON_ARG_NAME)] = name;
+					makeStatusJSON(reply, STATUS_BAD_REQUEST, "Set Failed" );;
+					(completion) (reply, STATUS_BAD_REQUEST);
+					return true;
+				}
+			}
+		
+			ActionGroup ag = ActionGroup(groupID);
+
+			reply[string(JSON_ARG_GROUPID)] = ag.string();
+			reply[string(JSON_ARG_NAME)] = name;
+			makeStatusJSON(reply,STATUS_OK);
+			(completion) (reply, STATUS_OK);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+
+static bool ActionGroups_NounHandler_DELETE(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+														  ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	
+	json reply;
+	
+	ServerCmdArgValidator v1;
+	auto db = insteon.getDB();
+	ActionGroup group;
+	
+	if(path.size() > 1){
+		group = ActionGroup(path.at(1));
+		
+		if(!group.isValid() ||!db->actionGroupIsValid(group.groupID()))
+			return false;
+	}
+	
+	if(path.size() == 2) {
+		if(db->actionGroupDelete(group.groupID())){
+			makeStatusJSON(reply,STATUS_NO_CONTENT);
+			(completion) (reply, STATUS_NO_CONTENT);
+		}
+		else {
+			reply[string(JSON_ARG_GROUPID)] = group.string();
+			makeStatusJSON(reply, STATUS_BAD_REQUEST, "Delete Failed" );;
+			(completion) (reply, STATUS_BAD_REQUEST);
+		}
+		return true;
+		
+	}
+	else if(path.size() == 3) {
+		
+		string str = path.at(2);
+		actionID_t  actionID;
+		
+		if( str_to_ActionID(str.c_str(), &actionID)
+			&& db-> actionGroupIsValidActionID(group.groupID(),actionID)){
+			
+				if( db->actionGroupRemoveAction(group.groupID(),actionID)) {
+					makeStatusJSON(reply,STATUS_NO_CONTENT);
+					(completion) (reply, STATUS_NO_CONTENT);
+				}
+			else
+			{
+				reply[string(JSON_ARG_GROUPID)] = group.string();
+				reply[string(JSON_ARG_ACTIONID)] =  to_hex<unsigned short>(actionID,false);
+				makeStatusJSON(reply, STATUS_BAD_REQUEST, "Delete Failed" );;
+				(completion) (reply, STATUS_BAD_REQUEST);
+
+			}
+				return true;
+		}
+	}
+	return false;
+}
+
+static void ActionGroups_NounHandler(ServerCmdQueue* cmdQueue,
+										 REST_URL url,
+										 TCPClientInfo cInfo,
+										 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	json reply;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	string noun;
+	
+	bool isValidURL = false;
+	
+	if(path.size() > 0) {
+		noun = path.at(0);
+	}
+	
+	// CHECK noun
+	if(noun != NOUN_ACTION_GROUPS){
+		(completion) (reply, STATUS_NOT_FOUND);
+		return;
+	}
+	
+	// is server available?
+	auto state = insteon.currentState();
+	if(!( state == InsteonMgr::STATE_READY
+		  || state == InsteonMgr::STATE_VALIDATING)) {
+		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
+		(completion) (reply, STATUS_UNAVAILABLE);
+		return;
+	}
+	
+	switch(url.method()){
+		case HTTP_GET:
+			isValidURL = ActionGroups_NounHandler_GET(cmdQueue,url,cInfo, completion);
+			break;
+			
+		case HTTP_PUT:
+			isValidURL = ActionGroups_NounHandler_PUT(cmdQueue,url,cInfo, completion);
+			break;
+			
+		case HTTP_PATCH:
+			isValidURL = ActionGroups_NounHandler_PATCH(cmdQueue,url,cInfo, completion);
+			break;
+	 
+		case HTTP_POST:
+ 			isValidURL = ActionGroups_NounHandler_POST(cmdQueue,url,cInfo, completion);
+			break;
+ 
+		case HTTP_DELETE:
+ 			isValidURL = ActionGroups_NounHandler_DELETE(cmdQueue,url,cInfo, completion);
+			break;
+  
+		default:
+			(completion) (reply, STATUS_INVALID_METHOD);
+			return;
+	}
+	
+	if(!isValidURL) {
+		(completion) (reply, STATUS_NOT_FOUND);
+	}
+	
+}
 
 // MARK:  GROUPS NOUN HANDLERS
 
@@ -381,6 +750,7 @@ static bool Groups_NounHandler_DELETE(ServerCmdQueue* cmdQueue,
 	return false;
 }
 
+
 static void Groups_NounHandler(ServerCmdQueue* cmdQueue,
 										 REST_URL url,
 										 TCPClientInfo cInfo,
@@ -445,6 +815,7 @@ static void Groups_NounHandler(ServerCmdQueue* cmdQueue,
 	}
 	
 }
+
 // MARK:  INSTEON.GROUPS NOUN HANDLERS
 
 static void InsteonGroups_NounHandler(ServerCmdQueue* cmdQueue,
@@ -2175,6 +2546,7 @@ void registerServerCommands() {
 	cmdQueue->registerNoun(NOUN_GROUPS,	Groups_NounHandler);
 	cmdQueue->registerNoun(NOUN_INSTEON_GROUPS,	InsteonGroups_NounHandler);
 	cmdQueue->registerNoun(NOUN_LINK,	Link_NounHandler);
+	cmdQueue->registerNoun(NOUN_ACTION_GROUPS, ActionGroups_NounHandler);
 		
 	// register command line commands
 	auto cmlR = CmdLineRegistry::shared();
@@ -2194,6 +2566,5 @@ void registerServerCommands() {
 	cmlR->registerCommand("all",			InsteonGroupCmdHandler);
 	cmlR->registerCommand("dump",		 DumpCmdHandler);
 	
-	cmlR->setHelpFile("helpfile");
-	 
+	CmdLineHelp::shared()->setHelpFile("helpfile.txt");
 }

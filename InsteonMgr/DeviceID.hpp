@@ -13,6 +13,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include "Utils.hpp"
 
 #include "InsteonMgrDefs.hpp"
 #include "InsteonParser.hpp"
@@ -41,7 +42,7 @@ public:
 	}
 
 	std::string string() const {
-		return std::to_string(_rawGroupID);
+		return  to_hex<unsigned short>(_rawGroupID,false);
 	}
 
 	bool isValid() {

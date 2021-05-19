@@ -73,3 +73,4 @@ std::string DeviceID::nameString() const {
 	DeviceNames* nameDB = DeviceNames::shared();
 	return nameDB->_nameMap[_rawDevID];
 }
+

@@ -36,6 +36,36 @@ std::string InsteonDevice::onLevelString(uint8_t onLevel){
 	return str;
 }
 
+bool InsteonDevice::jsonToLevel( nlohmann::json j, uint8_t* levelOut){
+	
+	uint8_t levelVal = 0;
+	bool isValid = false;
+	
+	if( j.is_string()){
+		string str = j;
+		if(InsteonDevice::stringToLevel(str, &levelVal)){
+			isValid = true;
+		}
+	}
+	else if( j.is_number()){
+		int num = j;
+		if(num >= 0 && num < 256){
+			levelVal = num;
+			isValid = true;
+		}
+	}
+	else if( j.is_boolean()){
+		bool val = j;
+		levelVal= val?255:0;
+		isValid = true;
+	}
+	
+	if(levelOut)
+		*levelOut = levelVal;
+
+	return isValid;
+}
+
 bool InsteonDevice::stringToLevel(const std::string str, uint8_t* levelOut){
 	bool valid = false;
 	

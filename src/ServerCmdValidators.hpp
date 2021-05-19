@@ -157,25 +157,9 @@ public:
 		if( j.contains(key)) {
 			string k = string(key);
 			
-			if( j.at(k).is_string()){
-				string str = j.at(k);
-				uint8_t levelVal = 0;
-				
-				if(InsteonDevice::stringToLevel(str, &levelVal)){
-					result = levelVal;
-					return true;
-				}
-			}
-			else if( j.at(k).is_number()){
-				int num = j.at(k);
-				if(num >= 0 && num < 256){
-					result = num;
-					return true;
-				}
-			}
-			else if( j.at(k).is_boolean()){
-				bool val = j.at(k);
-				result = val?255:0;
+			uint8_t levelVal = 0;
+			if(InsteonDevice::jsonToLevel(j.at(k), &levelVal)){
+				result = levelVal;
 				return true;
 			}
 		}

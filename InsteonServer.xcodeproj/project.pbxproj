@@ -31,6 +31,8 @@
 		2E592EC32620C9660041AA34 /* catagories.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E592EC12620C9410041AA34 /* catagories.txt */; };
 		2E592ED22620CEE00041AA34 /* deviceNames.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E592ED02620CEC10041AA34 /* deviceNames.txt */; };
 		2EC68B1A2644D35800541251 /* TimeStamp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EC68B162644D18200541251 /* TimeStamp.cpp */; };
+		2EC68B32264DA54600541251 /* helpfile.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2EC68B2D264DA3C600541251 /* helpfile.txt */; };
+		2EC68B38265303C200541251 /* Action.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EC68B36265303C200541251 /* Action.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,13 +42,6 @@
 			proxyType = 2;
 			remoteGlobalIDString = 2EA770C9261E20FC00045F27;
 			remoteInfo = FOOServer;
-		};
-		2E431A0F2634E6DD000BEAF8 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 2E431A082634E6DD000BEAF8 /* FooServer.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 2EA77141261FBEC500045F27;
-			remoteInfo = FooServerTest;
 		};
 		2E431A142634E6E7000BEAF8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -66,6 +61,7 @@
 			files = (
 				2E592EC32620C9660041AA34 /* catagories.txt in CopyFiles */,
 				2E592ED22620CEE00041AA34 /* deviceNames.txt in CopyFiles */,
+				2EC68B32264DA54600541251 /* helpfile.txt in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -121,6 +117,9 @@
 		2E592EDC2630831F0041AA34 /* CommonIncludes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CommonIncludes.h; sourceTree = "<group>"; };
 		2EC68B162644D18200541251 /* TimeStamp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TimeStamp.cpp; sourceTree = "<group>"; };
 		2EC68B172644D18200541251 /* TimeStamp.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = TimeStamp.hpp; sourceTree = "<group>"; };
+		2EC68B2D264DA3C600541251 /* helpfile.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = helpfile.txt; sourceTree = "<group>"; };
+		2EC68B36265303C200541251 /* Action.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Action.cpp; sourceTree = "<group>"; };
+		2EC68B37265303C200541251 /* Action.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Action.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -147,7 +146,6 @@
 			isa = PBXGroup;
 			children = (
 				2E431A0E2634E6DD000BEAF8 /* libFOOServer.a */,
-				2E431A102634E6DD000BEAF8 /* FooServerTest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -157,7 +155,6 @@
 			children = (
 				2E592E3D2620C0FC0041AA34 /* src */,
 				2E592E892620C8F50041AA34 /* InsteonMgr */,
-				2E592ECD2620CEA60041AA34 /* assets */,
 				2E431A072634E6D2000BEAF8 /* Submodules */,
 				2E592E312620C09C0041AA34 /* Products */,
 				2E592E5F2620C1B00041AA34 /* Frameworks */,
@@ -176,6 +173,7 @@
 			isa = PBXGroup;
 			children = (
 				2E592E412620C1150041AA34 /* main.cpp */,
+				2E592ECD2620CEA60041AA34 /* assets */,
 				2E592EDC2630831F0041AA34 /* CommonIncludes.h */,
 				2E592E672620C2EC0041AA34 /* ServerCmdValidators.hpp */,
 				2E592E662620C2EC0041AA34 /* ServerCmdValidators.cpp */,
@@ -200,6 +198,8 @@
 				2E592E8A2620C9370041AA34 /* InsteonMgr.cpp */,
 				2E592E9B2620C9380041AA34 /* InsteonDB.hpp */,
 				2E592E992620C9380041AA34 /* InsteonDB.cpp */,
+				2EC68B37265303C200541251 /* Action.hpp */,
+				2EC68B36265303C200541251 /* Action.cpp */,
 				2E592E952620C9380041AA34 /* InsteonParser.cpp */,
 				2E592EAB2620C9380041AA34 /* InsteonParser.hpp */,
 				2E592EA52620C9380041AA34 /* InsteonPLM.cpp */,
@@ -242,6 +242,7 @@
 			isa = PBXGroup;
 			children = (
 				2E592ED02620CEC10041AA34 /* deviceNames.txt */,
+				2EC68B2D264DA3C600541251 /* helpfile.txt */,
 				2E592ED12620CED70041AA34 /* PLMDB_52.18.42.txt */,
 			);
 			path = assets;
@@ -313,13 +314,6 @@
 			remoteRef = 2E431A0D2634E6DD000BEAF8 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		2E431A102634E6DD000BEAF8 /* FooServerTest */ = {
-			isa = PBXReferenceProxy;
-			fileType = "compiled.mach-o.executable";
-			path = FooServerTest;
-			remoteRef = 2E431A0F2634E6DD000BEAF8 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
 /* End PBXReferenceProxy section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -335,6 +329,7 @@
 				2E592E6D2620C3990041AA34 /* ServerCommands.cpp in Sources */,
 				2E592EB12620C9380041AA34 /* InsteonDeviceEventMgr.cpp in Sources */,
 				2E592EBA2620C9380041AA34 /* InsteonCmdQueue.cpp in Sources */,
+				2EC68B38265303C200541251 /* Action.cpp in Sources */,
 				2EC68B1A2644D35800541251 /* TimeStamp.cpp in Sources */,
 				2E592EB62620C9380041AA34 /* PLMStream.cpp in Sources */,
 				2E592EB22620C9380041AA34 /* InsteonParser.cpp in Sources */,

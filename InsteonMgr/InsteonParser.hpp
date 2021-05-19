@@ -113,6 +113,7 @@ extern "C" {
 
 	bool str_to_deviceID(const char* str, deviceID_t devID);
 	bool str_to_GroupID(const char* str, groupID_t *groupIDOut);
+	bool validateDeviceID( const std::string arg);
 
 	// caclulated XXHash32(to,flag,cmd,[(optional)data])
 	uint32_t makeMsgHash(insteon_msg_t *msg);

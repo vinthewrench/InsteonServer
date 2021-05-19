@@ -779,6 +779,118 @@ bool InsteonMgr::setOnLevel(GroupID groupID, uint8_t onLevel,
 	return true;
 }
 
+//MARK: -  action groups
+
+bool InsteonMgr::executeActionGroup(actionGroupID_t actionGroupID,
+											  std::function<void(bool didSucceed)> cb){
+	
+	if(!_db.actionGroupIsValid(actionGroupID))
+		return false;
+	
+	auto actions = _db.actionGroupGetActions(actionGroupID);
+	if(actions.size() == 0){
+		if(cb) (cb)( true);
+		return true;
+	}
+	
+	size_t* taskCount  = (size_t*) malloc(sizeof(size_t));
+	*taskCount = actions.size();
+	
+	for(auto ref :actions){
+		Action action = ref.get();
+		uint8_t level = action.level();
+		bool handled = false;
+		
+		switch (action.actionType()	) {
+				
+			case Action::ACTION_TYPE_DEVICE: {
+				
+				DeviceID deviceID = action.deviceID();
+				switch (action.cmd()) {
+						
+					case Action::ACTION_SET_LEVEL:
+						handled = setOnLevel(deviceID, level, [=](eTag_t eTag, bool didSucceed){
+							if(--(*taskCount) == 0) {
+							free(taskCount);
+							if(cb) (cb)( true);
+							}
+						});
+						
+						break;
+						
+					case Action::ACTION_BEEP:
+						handled =  InsteonDevice(deviceID).beep([=](bool didSucceed){
+							if(--(*taskCount) == 0) {
+							free(taskCount);
+							if(cb) (cb)( true);
+							}
+						});
+						break;
+						
+					case Action::ACTION_SET_LED_BRIGHTNESS:
+						handled = setLEDBrightness(deviceID, level, [=]( bool didSucceed){
+							if(--(*taskCount) == 0) {
+							free(taskCount);
+							if(cb) (cb)( true);
+							}
+						});
+						break;
+		
+					default:
+						break;
+				}
+				
+			}
+				break;
+
+			case Action::ACTION_TYPE_GROUP: {
+				GroupID groupID = action.groupID();
+				switch (action.cmd()) {
+						
+					case Action::ACTION_SET_LEVEL:
+						handled = setOnLevel(groupID, level, [=](bool didSucceed){
+							if(--(*taskCount) == 0) {
+							free(taskCount);
+							if(cb) (cb)( true);
+							}
+						});
+						
+						break;
+					default:
+						break;
+				}
+	
+			}
+ 				break;
+
+			case Action::ACTION_TYPE_DEVICEGROUP: {
+				{
+					uint8_t devGroupID = action.deviceGroupID();
+		
+					handled = InsteonDeviceGroup(devGroupID).setOnLevel(level, [=](bool didSucceed){
+						if(--(*taskCount) == 0) {
+						free(taskCount);
+						if(cb) (cb)( true);
+						}
+					});
+				}
+ 			}
+ 				break;
+
+			default:
+				break;
+		}
+		
+		if(!handled)
+			if(--(*taskCount) == 0) {
+			free(taskCount);
+			if(cb) (cb)( true);
+		}
+	};
+	
+	return true;
+}
+
 // MARK: - Linking
 
 bool InsteonMgr::addResponderToDevice(DeviceID deviceID, uint8_t groupID, boolCallback_t callback){

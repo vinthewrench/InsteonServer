@@ -104,6 +104,10 @@ public:
 	bool setOnLevel(GroupID groupID, uint8_t onLevel = 0,
 						 std::function<void(bool didSucceed)> callback = NULL);
 
+	// action groups
+	bool executeActionGroup(actionGroupID_t actionGroupID,
+						 std::function<void(bool didSucceed)> callback = NULL);
+
 	// events
 	
 	void registerEvent( DeviceID deviceID,

@@ -11,6 +11,7 @@
 #include "InsteonMgrDefs.hpp"
 #include "DeviceID.hpp"
 #include "DeviceInfo.hpp"
+#include "json.hpp"
 
 #include <vector>
 #include <utility>
@@ -54,6 +55,9 @@ public:
 	static std::string onLevelString(uint8_t level);
 	static bool stringToLevel(const std::string str, uint8_t* levelOut = NULL);
 
+	static bool jsonToLevel( nlohmann::json j, uint8_t* levelOut = NULL);
+	
+	
 	static bool stringToBackLightLevel(std::string str, uint8_t* levelOut = NULL);
 
 protected:
