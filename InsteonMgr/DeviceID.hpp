@@ -42,7 +42,7 @@ public:
 	}
 
 	std::string string() const {
-		return  to_hex<unsigned short>(_rawGroupID,false);
+		return  to_hex<unsigned short>(_rawGroupID);
 	}
 
 	bool isValid() {
@@ -76,28 +76,28 @@ private:
 
 class DeviceID;
 
-class DeviceNames {
-public:
-	
-	static DeviceNames *shared() {
-		if (!sharedInstance)
-			sharedInstance = new DeviceNames;
-		return sharedInstance;
-	}
-	
-	bool initDeviceNamesFromFile(const char * path = "deviceNames.txt");	// path to database file
-	
-private:
-	
-	friend class DeviceID;
-	
-	static DeviceNames *sharedInstance;
-	
-	DeviceNames();
-	~DeviceNames();
-	
-	std::map<DeviceID, std::string> _nameMap;
-};
+//class DeviceNames {
+//public:
+//	
+//	static DeviceNames *shared() {
+//		if (!sharedInstance)
+//			sharedInstance = new DeviceNames;
+//		return sharedInstance;
+//	}
+//	
+//	bool initDeviceNamesFromFile(const char * path = "deviceNames.txt");	// path to database file
+//	
+//private:
+//	
+//	friend class DeviceID;
+//	
+//	static DeviceNames *sharedInstance;
+//	
+//	DeviceNames();
+//	~DeviceNames();
+//	
+//	std::map<DeviceID, std::string> _nameMap;
+//};
 
 class DeviceID{
 	
@@ -202,7 +202,7 @@ public:
 		return output;
 	}
 	
-	std::string  nameString() const;
+//	std::string  nameString() const;
 	
 	//	const char* name_cstr();
 	

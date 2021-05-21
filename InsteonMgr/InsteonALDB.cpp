@@ -235,9 +235,8 @@ bool InsteonALDB::syncDeviceALDB(DeviceID deviceID, std::vector<insteon_aldb_t> 
 	if(_isReadingPLM)
 		return false;
 
-	LOG_INFO("\tSYNC %s %s\n",
-			deviceID.string().c_str(),
-			 deviceID.nameString().c_str());
+	LOG_INFO("\tSYNC %s\n",
+			deviceID.string().c_str());
  
 	// create a queue entry
 	uint8_t entryID = _entryCnt++;
@@ -662,9 +661,8 @@ bool InsteonALDB::processPLMresponse(plm_result_t response){
 				
 				DeviceID deviceID = DeviceID(aldb.devID);
 				
-				LOG_DEBUG("\t ALDB_RESPONSE <%s>  %s \n",
-							deviceID.string().c_str(),
-							deviceID.name_cstr()) ;
+				LOG_DEBUG("\t ALDB_RESPONSE <%s>\n",
+							deviceID.string().c_str() ) ;
 			}
 			_plm->_parser.reset();
 			this->continueReadPLM();

@@ -46,7 +46,10 @@ typedef struct  {
 	time_t			lastLevelUpdate;
 
 	eTag_t			eTag;		// last updtated tag
-	
+	string			name;
+
+	map<string ,string> properties;  
+ 
 	std::vector<insteon_aldb_t> deviceALDB;
 
 	// dynamic
@@ -126,13 +129,15 @@ public:
 	// return information about device
 	bool getDeviceInfo(DeviceID deviceID, insteon_dbEntry_t * info);
 
+	bool updateDeviceProperty(DeviceID deviceID, string key, string value);
+	bool removeDeviceProperty(DeviceID deviceID, string key);
+
 	// Add information about device ALDB
 	bool addDeviceALDB(DeviceID deviceID, vector<insteon_aldb_t> deviceALDB);
 	bool addDeviceALDB(DeviceID deviceID, const insteon_aldb_t deviceALDB);
 
 	// clear local entry for DeviceALDB (not on device)
 	bool clearDeviceALDB(DeviceID deviceID);
-	
 	bool removeDevice(DeviceID deviceID);
 	
 	// groups
@@ -166,9 +171,6 @@ public:
   	// debugging
 	string dumpDB(bool printALDB = false);
 	void   dumpDBInfo(std::ostringstream &oss, DeviceID deviceID, bool printALDB = false );
-
-	void printDeviceInfo(DeviceID deviceID, bool printALDB = false);
-	void printDB(bool printALDB = false);
 	
 	void 	setDirectoryPath(std::string path) { _directoryPath = path;};
 	string getDirectoryPath() { return _directoryPath;};

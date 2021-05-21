@@ -130,7 +130,7 @@ int main(int argc, const char * argv[]) {
  			insteon.syncPLM( [=](bool didSucceed) {
 				insteon.validatePLM( [](bool didSucceed) {
 					
- 				test();
+// 				test();
 
 //					insteon.getDB()->saveToCacheFile();
 				});

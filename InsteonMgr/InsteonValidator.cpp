@@ -144,10 +144,7 @@ bool InsteonValidator::processPLMresponse(plm_result_t response){
 						e.timeOut = true;
 						
 						
-						LOG_DEBUG("\tTIMEOUT %s %s\n",
-									 e.deviceID.string().c_str(),
-									 e.deviceID.nameString().c_str()
-									 );
+						LOG_DEBUG("\tTIMEOUT %s\n", e.deviceID.string().c_str() );
 						
 						// add to to the list of timeed out devices.
 						_devicesTimeedOut.push_back(e.deviceID);
@@ -190,11 +187,10 @@ bool InsteonValidator::processPLMresponse(plm_result_t response){
 							
 							entry->validated = true;
 							
-							LOG_INFO("\tVALIDATED %s %s Rev: %02X %s\n",
+							LOG_INFO("\tVALIDATED %s %s Rev: %02X\n",
 										deviceID.string().c_str(),
 										entry->deviceInfo.string().c_str(),
-										entry->deviceInfo.GetFirmware(),
-										deviceID.nameString().c_str()
+										entry->deviceInfo.GetFirmware()
 										);
 							
 							// Now we need to query the device for it's Insteon version

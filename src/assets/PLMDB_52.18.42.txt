@@ -1,220 +1,267 @@
-## PLM 52.18.42 - Test PLM
+## PLM 52.18.42
 PLMID: 52.18.42
 
-DEVICES-START:
 ## Bedroom - SwitchLinc Dimmer (Dual-Band)
-52.AC.35 40 ff 01 20 45 02 2021-05-10 21:28:12
-52.AC.35 0fff aa 01 2C.DE.42 fe 1c
-52.AC.35 0ff7 e2 01 53.C2.B8 03 1f
-52.AC.35 0fef aa 01 54.FA.39 00 1c
-52.AC.35 0fe7 aa fe 53.C2.B8 00 1c
-52.AC.35 0fdf aa fe 52.18.42 00 1c
+DEVICE-START: 52.AC.35 Bedroom
+40 ff 01 20 45 02 2021-05-20 20:55:10
+0fff aa 01 2C.DE.42 fe 1c
+0ff7 e2 01 53.C2.B8 03 1f
+0fef aa 01 54.FA.39 00 1c
+0fe7 aa fe 53.C2.B8 00 1c
+0fdf aa fe 52.18.42 00 1c
+DEVICE-END:
 
 ## couch lights - SwitchLinc Dimmer (Dual-Band)
-57.2F.51 40 ff 01 20 45 02 2021-05-10 21:28:12
-57.2F.51 00 01
-57.2F.51 0fff e2 01 53.C2.B8 03 1f
-57.2F.51 0ff7 aa ff 52.18.42 fe 1c
-57.2F.51 0fef aa 01 29.B9.6E 00 1c
-57.2F.51 0fe7 e2 01 29.B9.6E 03 1c
-57.2F.51 0fdf ea 00 53.C2.B8 03 1c
-57.2F.51 0fd7 ea 00 53.C2.B8 03 1c
-57.2F.51 0fcf ea 00 53.C2.B8 03 1c
-57.2F.51 0fc7 ea 00 53.C2.B8 03 1c
-57.2F.51 0fbf aa fe 53.C2.B8 00 1c
+DEVICE-START: 57.2F.51 couch lights
+40 ff 01 20 45 02 2021-05-20 20:55:10
+00 01
+0fff e2 01 53.C2.B8 03 1f
+0ff7 aa ff 52.18.42 fe 1c
+0fef aa 01 29.B9.6E 00 1c
+0fe7 e2 01 29.B9.6E 03 1c
+0fdf ea 00 53.C2.B8 03 1c
+0fd7 ea 00 53.C2.B8 03 1c
+0fcf ea 00 53.C2.B8 03 1c
+0fc7 ea 00 53.C2.B8 03 1c
+0fbf aa fe 53.C2.B8 00 1c
+DEVICE-END:
 
 ## living room string led - On/Off Outdoor Module (Dual-Band)
-54.F6.F9 40 ff 02 38 43 02 2021-05-10 21:28:12
-54.F6.F9 00 01
-54.F6.F9 0fff a2 ff 52.18.42 ff 00
-54.F6.F9 0ff7 02 00 00.00.00 00 00
-54.F6.F9 0fef e2 01 53.C2.B8 03 00
-54.F6.F9 0fe7 a2 fe 53.C2.B8 00 00
+DEVICE-START: 54.F6.F9 living room string led
+40 ff 02 38 43 02 2021-05-20 20:55:10
+00 01
+0fff a2 ff 52.18.42 ff 00
+0ff7 02 00 00.00.00 00 00
+0fef e2 01 53.C2.B8 03 00
+0fe7 a2 fe 53.C2.B8 00 00
+DEVICE-END:
 
 ## flood garage - SwitchLinc Relay (Dual-Band)
-2A.4D.D6 40 ff 02 2a 43 02 2021-05-10 21:28:12
-2A.4D.D6 0fff e2 01 53.C2.B8 03 1f
-2A.4D.D6 0ff7 aa ff 52.18.42 00 1c
-2A.4D.D6 0fef aa fe 53.C2.B8 00 1c
+DEVICE-START: 2A.4D.D6 flood garage
+40 ff 02 2a 43 02 2021-05-20 21:02:49
+0fff e2 01 53.C2.B8 03 1f
+0ff7 aa ff 52.18.42 00 1c
+0fef aa fe 53.C2.B8 00 1c
+DEVICE-END:
 
 ## flood back porch - SwitchLinc Relay (Dual-Band)
-52.B6.E4 40 ff 02 2a 45 02 2021-05-10 21:28:12
-52.B6.E4 0fff e2 01 53.C2.B8 03 1f
-52.B6.E4 0ff7 aa ff 52.18.42 00 1c
-52.B6.E4 0fef e2 01 4E.82.96 03 1c
-52.B6.E4 0fe7 aa 01 4E.82.96 00 1c
-52.B6.E4 0fdf aa fe 52.18.42 00 1c
-52.B6.E4 0fd7 ea 00 53.C2.B8 03 1c
-52.B6.E4 0fcf ea 00 53.C2.B8 03 1c
-52.B6.E4 0fc7 aa fe 53.C2.B8 00 1c
+DEVICE-START: 52.B6.E4 flood back porch
+40 ff 02 2a 45 02 2021-05-20 20:55:10
+0fff e2 01 53.C2.B8 03 1f
+0ff7 aa ff 52.18.42 00 1c
+0fef e2 01 4E.82.96 03 1c
+0fe7 aa 01 4E.82.96 00 1c
+0fdf aa fe 52.18.42 00 1c
+0fd7 ea 00 53.C2.B8 03 1c
+0fcf ea 00 53.C2.B8 03 1c
+0fc7 aa fe 53.C2.B8 00 1c
+DEVICE-END:
 
 ## Front Deck lights - SwitchLinc Relay (Dual-Band)
-2A.50.AD 40 ff 02 2a 43 02 2021-05-10 21:28:12
-2A.50.AD 0fff ea 01 53.C2.B8 03 1f
-2A.50.AD 0ff7 02 00 00.00.00 00 00
-2A.50.AD 0fef aa ff 52.18.42 00 1c
-2A.50.AD 0fe7 ea 01 2C.DE.42 03 1c
-2A.50.AD 0fdf ea 00 53.C2.B8 03 1c
-2A.50.AD 0fd7 ea 00 53.C2.B8 03 1c
-2A.50.AD 0fcf aa fe 53.C2.B8 00 1c
+DEVICE-START: 2A.50.AD Front Deck lights
+40 ff 02 2a 43 02 2021-05-20 20:55:10
+0fff ea 01 53.C2.B8 03 1f
+0ff7 02 00 00.00.00 00 00
+0fef aa ff 52.18.42 00 1c
+0fe7 ea 01 2C.DE.42 03 1c
+0fdf ea 00 53.C2.B8 03 1c
+0fd7 ea 00 53.C2.B8 03 1c
+0fcf aa fe 53.C2.B8 00 1c
+DEVICE-END:
 
 ## hall lights - SwitchLinc Dimmer (Dual-Band)
-29.B6.49 40 ff 01 20 41 02 2021-05-10 21:28:12
-29.B6.49 0fff e2 01 53.C2.B8 03 1f
-29.B6.49 0ff7 aa ff 52.18.42 00 1c
-29.B6.49 0fef 02 00 00.00.00 00 00
-29.B6.49 0fe7 02 00 00.00.00 00 00
-29.B6.49 0fdf aa 01 2C.DE.42 00 1c
-29.B6.49 0fd7 02 00 00.00.00 00 00
-29.B6.49 0fcf aa fe 53.C2.B8 00 1c
+DEVICE-START: 29.B6.49 hall lights
+40 ff 01 20 41 02 2021-05-20 20:55:10
+0fff e2 01 53.C2.B8 03 1f
+0ff7 aa ff 52.18.42 00 1c
+0fef 02 00 00.00.00 00 00
+0fe7 02 00 00.00.00 00 00
+0fdf aa 01 2C.DE.42 00 1c
+0fd7 02 00 00.00.00 00 00
+0fcf aa fe 53.C2.B8 00 1c
+DEVICE-END:
 
 ## House Christmas Light - On/Off Outdoor Module (Dual-Band)
-54.F6.99 40 ff 02 38 43 02 2021-05-10 21:28:12
-54.F6.99 0fff a2 ff 52.18.42 00 00
-54.F6.99 0ff7 02 00 00.00.00 00 00
-54.F6.99 0fef e2 01 53.C2.B8 03 00
-54.F6.99 0fe7 a2 fe 53.C2.B8 00 00
+DEVICE-START: 54.F6.99 House Christmas Light
+40 ff 02 38 43 02 2021-05-20 20:55:10
+0fff a2 ff 52.18.42 00 00
+0ff7 02 00 00.00.00 00 00
+0fef e2 01 53.C2.B8 03 00
+0fe7 a2 fe 53.C2.B8 00 00
+DEVICE-END:
 
 ## Kitchen - SwitchLinc Dimmer (Dual-Band)
-29.B9.04 40 ff 01 20 41 02 2021-05-10 21:28:12
-29.B9.04 0fff ea 01 53.C2.B8 03 1f
-29.B9.04 0ff7 aa ff 52.18.42 00 1c
-29.B9.04 0fef aa 01 2C.DE.42 00 1c
-29.B9.04 0fe7 02 00 00.00.00 00 00
-29.B9.04 0fdf aa fe 53.C2.B8 00 1c
+DEVICE-START: 29.B9.04 Kitchen
+40 ff 01 20 41 02 2021-05-20 20:55:10
+0fff ea 01 53.C2.B8 03 1f
+0ff7 aa ff 52.18.42 00 1c
+0fef aa 01 2C.DE.42 00 1c
+0fe7 02 00 00.00.00 00 00
+0fdf aa fe 53.C2.B8 00 1c
+DEVICE-END:
 
 ## Living Room LED - On/Off Outdoor Module (Dual-Band)
-54.F5.56 40 ff 02 38 43 02 2021-05-10 21:28:12
-54.F5.56 0fe7 e2 01 53.C2.B8 03 00
-54.F5.56 0fdf a2 fe 53.C2.B8 00 00
-54.F5.56 0fef a2 fe 52.18.42 ff 00
+DEVICE-START: 54.F5.56 Living Room LED
+40 ff 02 38 43 02 2021-05-20 20:55:10
+0fe7 e2 01 53.C2.B8 03 00
+0fdf a2 fe 53.C2.B8 00 00
+0fef a2 fe 52.18.42 ff 00
+DEVICE-END:
 
 ## Bathroom - SwitchLinc Dimmer (Dual-Band)
-57.2F.FA 40 ff 01 20 45 02 2021-05-10 21:28:12
-57.2F.FA 0fff e2 01 53.C2.B8 03 1f
-57.2F.FA 0ff7 aa ff 52.18.42 00 1c
-57.2F.FA 0fef ea 00 53.C2.B8 03 1c
-57.2F.FA 0fe7 ea 00 53.C2.B8 03 1c
-57.2F.FA 0fdf aa fe 53.C2.B8 00 1c
+DEVICE-START: 57.2F.FA Bathroom
+40 ff 01 20 45 02 2021-05-20 20:55:10
+0fff e2 01 53.C2.B8 03 1f
+0ff7 aa ff 52.18.42 00 1c
+0fef ea 00 53.C2.B8 03 1c
+0fe7 ea 00 53.C2.B8 03 1c
+0fdf aa fe 53.C2.B8 00 1c
+DEVICE-END:
 
 ## counter lights - SwitchLinc Dimmer (Dual-Band)
-29.AA.FF 40 ff 01 20 41 02 2021-05-10 21:28:12
-29.AA.FF 0fff ea 01 53.C2.B8 03 1f
-29.AA.FF 0ff7 aa 01 2C.DE.42 00 1c
-29.AA.FF 0fef 02 00 00.00.00 00 00
-29.AA.FF 0fe7 aa ff 52.18.42 00 1c
-29.AA.FF 0fdf aa fe 53.C2.B8 00 1c
+DEVICE-START: 29.AA.FF counter lights
+40 ff 01 20 41 02 2021-05-20 20:55:10
+0fff ea 01 53.C2.B8 03 1f
+0ff7 aa 01 2C.DE.42 00 1c
+0fef 02 00 00.00.00 00 00
+0fe7 aa ff 52.18.42 00 1c
+0fdf aa fe 53.C2.B8 00 1c
+DEVICE-END:
 
 ## Driveway Lights - On/Off Outdoor Module (Dual-Band)
-54.7E.26 40 ff 02 38 43 02 2021-05-10 21:28:12
-54.7E.26 0ff7 e2 01 2A.4D.D6 03 00
-54.7E.26 0fef a2 fe 53.C2.B8 00 00
-54.7E.26 0fe7 a2 ff 52.18.42 00 00
+DEVICE-START: 54.7E.26 Driveway Lights
+40 ff 02 38 43 02 2021-05-20 20:55:10
+0ff7 e2 01 2A.4D.D6 03 00
+0fef a2 fe 53.C2.B8 00 00
+0fe7 a2 ff 52.18.42 00 00
+DEVICE-END:
 
 ## flood back porch 2 - SwitchLinc Relay (Dual-Band)
-4E.82.96 40 ff 02 2a 45 02 2021-05-10 21:28:12
-4E.82.96 0fff e2 01 53.C2.B8 03 1f
-4E.82.96 0ff7 aa ff 52.18.42 00 1c
-4E.82.96 0fef aa 01 52.B6.E4 00 1c
-4E.82.96 0fcf aa fe 53.C2.B8 00 1c
+DEVICE-START: 4E.82.96 flood back porch 2
+40 ff 02 2a 45 02 2021-05-20 20:55:10
+0fff e2 01 53.C2.B8 03 1f
+0ff7 aa ff 52.18.42 00 1c
+0fef aa 01 52.B6.E4 00 1c
+0fcf aa fe 53.C2.B8 00 1c
+DEVICE-END:
 
 ## Garage Christmas Lights - On/Off Outdoor Module (Dual-Band)
-54.FA.39 40 ff 02 38 43 02 2021-05-10 21:28:12
-54.FA.39 0fff e2 01 53.C2.B8 03 1f
-54.FA.39 0ff7 e2 01 52.AC.35 03 00
-54.FA.39 0fef a2 fe 53.C2.B8 00 00
-54.FA.39 0fe7 a2 ff 52.18.42 00 00
+DEVICE-START: 54.FA.39 Garage Christmas Lights
+40 ff 02 38 43 02 2021-05-20 20:55:10
+0fff e2 01 53.C2.B8 03 1f
+0ff7 e2 01 52.AC.35 03 00
+0fef a2 fe 53.C2.B8 00 00
+0fe7 a2 ff 52.18.42 00 00
+DEVICE-END:
 
 ## flood shop - SwitchLinc Relay (Dual-Band)
-4D.BC.2A 40 ff 02 2a 45 02 2021-05-10 21:35:22
-4D.BC.2A 0fff f2 01 53.C2.B8 03 1f
-4D.BC.2A 0ff7 aa ff 52.18.42 00 1c
-4D.BC.2A 0fdf aa fe 53.C2.B8 00 1c
+DEVICE-START: 4D.BC.2A flood shop
+40 ff 02 2a 45 02 2021-05-20 20:55:10
+0fff f2 01 53.C2.B8 03 1f
+0ff7 aa ff 52.18.42 00 1c
+0fdf aa fe 53.C2.B8 00 1c
+DEVICE-END:
 
 ## Back Deck Railing - On/Off Outdoor Module (Dual-Band)
-54.F6.C6 40 ff 02 38 43 02 2021-05-10 21:28:12
-54.F6.C6 0fff a2 ff 52.18.42 00 00
-54.F6.C6 0fef e2 01 53.C2.B8 03 00
+DEVICE-START: 54.F6.C6 Back Deck Railing
+40 ff 02 38 43 02 2021-05-20 20:55:10
+0fff a2 ff 52.18.42 00 00
+0fef e2 01 53.C2.B8 03 00
+DEVICE-END:
 
 ## Driveway lights 2 - On/Off Outdoor Module (Dual-Band)
-53.20.59 40 ff 02 38 43 02 2021-05-10 21:28:12
-53.20.59 0ff7 02 00 00.00.00 00 00
-53.20.59 0fef a2 ff 52.18.42 00 00
-53.20.59 0fe7 a2 fe 53.C2.B8 00 00
+DEVICE-START: 53.20.59 Driveway lights 2
+40 ff 02 38 43 02 2021-05-20 20:55:10
+0ff7 02 00 00.00.00 00 00
+0fef a2 ff 52.18.42 00 00
+0fe7 a2 fe 53.C2.B8 00 00
+DEVICE-END:
 
 ## Back Deck Lights - SwitchLinc Dimmer [with beeper]
-17.39.51 40 fe 01 19 38 01 2021-05-10 21:28:12
-17.39.51 0fff a2 01 14.F2.C8 fe 1c
-17.39.51 0ff7 e2 01 14.F2.C8 03 1c
-17.39.51 0fef a2 07 15.62.08 fe 1c
-17.39.51 0fe7 e2 01 15.62.08 03 1c
-17.39.51 0fdf e2 01 14.8A.02 03 1c
-17.39.51 0fd7 e2 01 17.B6.78 03 1f
-17.39.51 0fcf e2 01 53.C2.B8 03 1f
-17.39.51 0fc7 a2 fe 52.18.42 00 1c
+DEVICE-START: 17.39.51 Back Deck Lights
+40 fe 01 19 38 01 2021-05-20 20:55:10
+0fff a2 01 14.F2.C8 fe 1c
+0ff7 e2 01 14.F2.C8 03 1c
+0fef a2 07 15.62.08 fe 1c
+0fe7 e2 01 15.62.08 03 1c
+0fdf e2 01 14.8A.02 03 1c
+0fd7 e2 01 17.B6.78 03 1f
+0fcf e2 01 53.C2.B8 03 1f
+0fc7 a2 fe 52.18.42 00 1c
+DEVICE-END:
 
 ## Kara's Room - ICON On/Off Switch (25 max links)
-1B.3F.74 40 fe 02 16 39 01 2021-05-10 21:28:12
-1B.3F.74 00ff c2 fe 52.18.42 00 00
-1B.3F.74 00f7 82 01 52.18.42 00 00
+DEVICE-START: 1B.3F.74 Kara's Room
+40 fe 02 16 39 01 2021-05-20 20:55:10
+00ff c2 fe 52.18.42 00 00
+00f7 82 01 52.18.42 00 00
+DEVICE-END:
 
 ## living room - SwitchLinc Dimmer (Dual-Band)
-29.AA.F5 40 fe 01 20 41 02 2021-05-11 17:03:37
-29.AA.F5 0fff 82 fe 53.C2.B8 00 00
-29.AA.F5 0ff7 c2 01 53.C2.B8 00 00
-29.AA.F5 0fef 82 fe 52.18.42 00 00
-29.AA.F5 0fe7 c2 01 52.18.42 00 00
+DEVICE-START: 29.AA.F5 living room
+40 fe 01 20 41 02 2021-05-20 20:55:10
+0fff 82 fe 53.C2.B8 00 00
+0ff7 c2 01 53.C2.B8 00 00
+0fef 82 fe 52.18.42 00 00
+0fe7 c2 01 52.18.42 00 00
+DEVICE-END:
 
 ## LampLinc 1 - LampLinc (Dual-Band)
-2E.A1.12 40 fe 01 0e 43 02 2021-05-10 21:28:12
-2E.A1.12 0fff a2 fe 52.18.42 00 1c
-2E.A1.12 0ff7 c2 01 52.18.42 00 00
+DEVICE-START: 2E.A1.12 LampLinc 1
+40 fe 01 0e 43 02 2021-05-20 20:55:10
+0fff a2 fe 52.18.42 00 1c
+0ff7 c2 01 52.18.42 00 00
+DEVICE-END:
 
 ## Outdoor Box 1 - On/Off Outdoor Module (Dual-Band)
-54.F5.2D 40 fe 02 38 43 02 2021-05-11 20:45:27
-54.F5.2D 0fff a2 fe 52.18.42 ff 00
-54.F5.2D 0ff7 c2 01 52.18.42 00 00
+DEVICE-START: 54.F5.2D Outdoor Box 1
+40 fe 02 38 43 02 2021-05-20 20:55:10
+0fff a2 fe 52.18.42 ff 00
+0ff7 c2 01 52.18.42 00 00
+DEVICE-END:
 
 ## bedroom keypad - Keypad Dimmer Dual-Band, 8 Button
-56.79.30 40 fe 01 41 45 02 2021-05-10 21:28:12
-56.79.30 0fff e2 01 53.C2.B8 03 1f
-56.79.30 0ff7 e2 02 53.C2.B8 03 1f
-56.79.30 0fef e2 03 53.C2.B8 03 1f
-56.79.30 0fe7 e2 04 53.C2.B8 03 1f
-56.79.30 0fdf e2 05 53.C2.B8 03 1f
-56.79.30 0fd7 e2 06 53.C2.B8 03 1f
-56.79.30 0fcf e2 07 53.C2.B8 03 1f
-56.79.30 0fc7 e2 08 53.C2.B8 03 1f
-56.79.30 0fbf aa ff 52.18.42 00 1c
-56.79.30 0fb7 a2 02 53.C2.B8 ff 1f
-56.79.30 0faf a2 01 53.C2.B8 ff 1f
-56.79.30 0fa7 a2 03 53.C2.B8 ff 1f
-56.79.30 0f9f a2 04 53.C2.B8 ff 1f
-56.79.30 0f97 a2 05 53.C2.B8 ff 1f
-56.79.30 0f8f ea 00 53.C2.B8 03 1c
-56.79.30 0f87 aa fe 53.C2.B8 00 1c
-56.79.30 0f7f aa fe 52.18.42 00 1c
+DEVICE-START: 56.79.30 bedroom keypad
+40 fe 01 41 45 02 2021-05-20 20:55:10
+0fff e2 01 53.C2.B8 03 1f
+0ff7 e2 02 53.C2.B8 03 1f
+0fef e2 03 53.C2.B8 03 1f
+0fe7 e2 04 53.C2.B8 03 1f
+0fdf e2 05 53.C2.B8 03 1f
+0fd7 e2 06 53.C2.B8 03 1f
+0fcf e2 07 53.C2.B8 03 1f
+0fc7 e2 08 53.C2.B8 03 1f
+0fbf aa ff 52.18.42 00 1c
+0fb7 a2 02 53.C2.B8 ff 1f
+0faf a2 01 53.C2.B8 ff 1f
+0fa7 a2 03 53.C2.B8 ff 1f
+0f9f a2 04 53.C2.B8 ff 1f
+0f97 a2 05 53.C2.B8 ff 1f
+0f8f ea 00 53.C2.B8 03 1c
+0f87 aa fe 53.C2.B8 00 1c
+0f7f aa fe 52.18.42 00 1c
+DEVICE-END:
 
 ## Test KeyPad - KeypadLinc On/Off (Dual-Band,50/60 Hz)
-33.4F.F6 40 fe 02 2c 41 02 
-33.4F.F6 0fff aa fe 52.18.42 00 1c
-33.4F.F6 0ff7 c2 01 52.18.42 00 00
-33.4F.F6 0fef aa a2 52.18.42 ff 00
-33.4F.F6 0fdf aa a7 52.18.42 ff 00
-33.4F.F6 0fd7 aa a6 52.18.42 ff 00
-33.4F.F6 0fcf aa a5 52.18.42 ff 00
-33.4F.F6 0fc7 aa a4 52.18.42 ff 00
-33.4F.F6 0fbf aa a3 52.18.42 ff 00
-33.4F.F6 0fb7 c2 02 52.18.42 00 00
-33.4F.F6 0faf c2 03 52.18.42 00 00
-33.4F.F6 0fa7 c2 04 52.18.42 00 00
-33.4F.F6 0f9f c2 05 52.18.42 00 00
-33.4F.F6 0f97 c2 07 52.18.42 00 00
-33.4F.F6 0f8f c2 00 52.18.42 00 00
-33.4F.F6 0f87 c2 08 52.18.42 00 00
-33.4F.F6 0f7f c2 06 52.18.42 00 00
-
-DEVICES-END:
+DEVICE-START: 33.4F.F6 Test KeyPad
+40 fe 02 2c 41 02
+0fff aa fe 52.18.42 00 1c
+0ff7 c2 01 52.18.42 00 00
+0fef aa a2 52.18.42 ff 00
+0fdf aa a7 52.18.42 ff 00
+0fd7 aa a6 52.18.42 ff 00
+0fcf aa a5 52.18.42 ff 00
+0fc7 aa a4 52.18.42 ff 00
+0fbf aa a3 52.18.42 ff 00
+0fb7 c2 02 52.18.42 00 00
+0faf c2 03 52.18.42 00 00
+0fa7 c2 04 52.18.42 00 00
+0f9f c2 05 52.18.42 00 00
+0f97 c2 07 52.18.42 00 00
+0f8f c2 00 52.18.42 00 00
+0f87 c2 08 52.18.42 00 00
+0f7f c2 06 52.18.42 00 00
+DEVICE-END:
 
 GROUP-START: 0aec Test Group
 57.2F.FA
@@ -290,4 +337,14 @@ GROUP-START: c439 3BpGijbh
 29.B9.04
 1B.3F.74
 GROUP-END:
+
+ACTION_GROUP-START: 0001 evening on
+0001 {"cmd":"set","deviceID":"54.F6.F9","level":255}
+0002 {"cmd":"set","deviceID":"54.F5.56","level":255}
+ACTION_GROUP-END:
+
+ACTION_GROUP-START: 0002 evening off
+0001 {"cmd":"set","deviceID":"54.F6.F9","level":0}
+0002 {"cmd":"set","deviceID":"54.F5.56","level":0}
+ACTION_GROUP-END:
 

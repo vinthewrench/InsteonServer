@@ -216,10 +216,9 @@ bool InsteonLinking::processPLMresponse(plm_result_t response){
 				link_result.groupID = data.group;;
 				link_result.status = LINK_SUCCESS;
 
-				LOG_DEBUG("\tLINKING COMPLETE (%02x %02x) %s \"%s\"\n",
+				LOG_DEBUG("\tLINKING COMPLETE (%02x %02x) %s\n",
 							 data.flag, data.group,
-							 deviceID.string().c_str(),
-							 deviceID.name_cstr());
+							 deviceID.string().c_str());
 
 				if(_callback)
 					_callback(link_result);

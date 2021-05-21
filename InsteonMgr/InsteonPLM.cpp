@@ -198,22 +198,6 @@ bool InsteonPLM::startLinking(uint8_t link_code, uint8_t groupID){
 	_stream->write( packet, sizeof(packet));
 	
 	statusOk = true;
-//
-//  while(true) {
-//	  plm_result_t result = recvResponse(_cmdTimeout);
-//	  if(result == PLR_CMD){
-//		  statusOk = true;
-//	  }
-//	  break;
-//  }
-//
-//  if(statusOk){
-//	  insteon_cmd_t cmd;
-//
-//	  statusOk =  _parser.get_cmd(&cmd)
-//	  && cmd.cmd == InsteonParser::IM_START_LINKING
-//	  && cmd.ack == InsteonParser::ACK;
- // }
 
   return statusOk;
 }

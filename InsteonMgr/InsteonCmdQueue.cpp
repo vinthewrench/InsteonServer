@@ -120,9 +120,8 @@ void InsteonCmdQueue::processTimeout() {
 				case CMD_ENTRY_MSG:
 				{
 					DeviceID deviceID = DeviceID(entry->send.to);
-					LOG_DEBUG("TIMEOUT-MSG %s \"%s\" [%02x, %02x]\n",
+					LOG_DEBUG("TIMEOUT-MSG %s [%02x, %02x]\n",
 								deviceID.string().c_str(),
-								deviceID.name_cstr(),
 								entry->send.cmd[0], entry->send.cmd[0] );
 		
 				}
@@ -195,11 +194,10 @@ bool InsteonCmdQueue::processEntry( cmd_entry_t* entry) {
 										  entry->send.cmd,
 										  entry->send.data);
 			
-			LOG_DEBUG("SEND-MSG (%d) %s%s \"%s\" [%02x, %02x]\n",
+			LOG_DEBUG("SEND-MSG (%d) %s%s [%02x, %02x]\n",
 						 entry->sendCount,
 						 status?"":"FAIL ",
 						 deviceID.string().c_str(),
-						 deviceID.name_cstr(),
 						 entry->send.cmd[0], entry->send.cmd[1] );
 			
 			if(status) {
@@ -430,9 +428,8 @@ void InsteonCmdQueue::queueMessage(DeviceID deviceID,
 	
 	entry.msgCallback = callback;
 	
-	LOG_DEBUG("QUEUE-MSG %s \"%s\" [%02x, %02x]\n",
+	LOG_DEBUG("QUEUE-MSG %s [%02x, %02x]\n",
 				deviceID.string().c_str(),
-				deviceID.name_cstr(),
 				command,arg );
 	
 	// queue it
@@ -471,10 +468,9 @@ bool InsteonCmdQueue::processPLMresponse(plm_result_t response) {
 								 msgOut.to[0]);
 				}
 				else {
-					LOG_DEBUG("%-8s %s \"%s\"\n",
+					LOG_DEBUG("%-8s %s \n",
 								msgOut.ack == InsteonParser::ACK?"SEND-ACK":"SEND-NAK",
-								deviceID.string().c_str(),
-								deviceID.name_cstr());
+								deviceID.string().c_str());
 				}
 				
 				// if it was ACK -  We succeded
@@ -497,9 +493,8 @@ bool InsteonCmdQueue::processPLMresponse(plm_result_t response) {
 					}
 					else  // just punt
 					{
-						LOG_DEBUG("\tSEND FAIL %s \"%s\" \n",
-									deviceID.string().c_str(),
-									deviceID.name_cstr() );
+						LOG_DEBUG("\tSEND FAIL %s \n",
+									deviceID.string().c_str() );
 						
 						performCompletion(cmdEntry, false);
 					}
@@ -524,10 +519,9 @@ bool InsteonCmdQueue::processPLMresponse(plm_result_t response) {
 				
 				if(cmdEntry && (cmdEntry->sendCount > 0)){
 					
-					LOG_DEBUG("RECV-%s  %s \"%s\"\n",
+					LOG_DEBUG("RECV-%s  %s \n",
 								reply.msgType == MSG_TYP_DIRECT_ACK?"ACK":"NAK",
-								deviceID.string().c_str(),
-								deviceID.name_cstr());
+								deviceID.string().c_str() );
 					
 					performCompletion(cmdEntry, true, &reply);
 					_plm->_parser.reset();

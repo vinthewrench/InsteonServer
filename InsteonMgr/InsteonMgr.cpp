@@ -314,7 +314,6 @@ string InsteonMgr::currentStateString(){
 
 // MARK: - ALDB and PLM setup
 
-
 /**
  * @brief erase and reset  the PLM
  *
@@ -514,7 +513,7 @@ void InsteonMgr::validatePLM(boolCallback_t callback){
 			}
 		}
 		
-		_db.saveToCacheFile();
+	_db.saveToCacheFile();
 
 //		if(result.size() > 0){
 //			_db.saveToCacheFile();
@@ -784,6 +783,9 @@ bool InsteonMgr::setOnLevel(GroupID groupID, uint8_t onLevel,
 bool InsteonMgr::executeActionGroup(actionGroupID_t actionGroupID,
 											  std::function<void(bool didSucceed)> cb){
 	
+	if(_state != STATE_READY)
+		return false;
+
 	if(!_db.actionGroupIsValid(actionGroupID))
 		return false;
 	
@@ -884,7 +886,7 @@ bool InsteonMgr::executeActionGroup(actionGroupID_t actionGroupID,
 		if(!handled)
 			if(--(*taskCount) == 0) {
 			free(taskCount);
-			if(cb) (cb)( true);
+			if(cb) (cb)( false);
 		}
 	};
 	
@@ -1017,10 +1019,9 @@ bool InsteonMgr::linkDevice(DeviceID deviceID,
 						_db.addDeviceALDB(deviceID, aldb);
 					}
 					
-					LOG_INFO("\tLINKING COMPLETE(%02x) %s \"%s\" %s rev:%02X version:%02X\n",
+					LOG_INFO("\tLINKING COMPLETE(%02x) %s %s rev:%02X version:%02X\n",
 								link.groupID,
 								deviceID.string().c_str(),
-								deviceID.name_cstr(),
 								info.string().c_str(),
 								info.GetFirmware(),
 								info.GetVersion());
@@ -1060,10 +1061,9 @@ bool InsteonMgr::startLinking(uint8_t groupID){
 				
 			case InsteonLinking::LINK_SUCCESS:
 			{
-				LOG_INFO("\tLINKING COMPLETE(%02x) %s \"%s\" %s rev:%02X \n",
+				LOG_INFO("\tLINKING COMPLETE(%02x) %s %s rev:%02X \n",
 							link.groupID,
 							link.deviceID.string().c_str(),
-							link.deviceID.name_cstr(),
 							link.deviceInfo.string().c_str(),
 							link.deviceInfo.GetFirmware());
 				
@@ -1075,7 +1075,7 @@ bool InsteonMgr::startLinking(uint8_t groupID){
 				
 				_db.saveToCacheFile();
 				
-				_db.printDB();
+	//			_db.printDB();
 			}
 				break;
 				
@@ -1249,12 +1249,11 @@ bool  InsteonMgr::processBroadcastEvents(plm_result_t response) {
 						break;
 						
 					default:
-						printf("-- (%02X) [%02x %02x] %s \"%s\"\n",
+						printf("-- (%02X) [%02x %02x] %s\n",
 								 msg.to[0], // group
 								 msg.cmd[0],
 								 msg.cmd[1],
-								 deviceID.string().c_str(),
-								 deviceID.name_cstr()) ;
+								 deviceID.string().c_str()) ;
 						didHandle = true;
 				}
 			}
@@ -1344,27 +1343,27 @@ plm_result_t InsteonMgr::handleResponse(uint64_t timeout){
 						
 					case MSG_TYP_BROADCAST:
 						LOG_INFO("\t\tBROADCAST%s ",msg.ext?"-EXT":"");
-						LOG_INFO("From %s \"%s\" ", deviceID.string().c_str(), deviceID.name_cstr());
+						LOG_INFO("From %s ", deviceID.string().c_str());
 						LOG_INFO("[%02X %02X %02X] ", 	msg.to[2],msg.to[1],msg.to[0]);
 						LOG_INFO("CMD: %02X %02X \n", 	msg.cmd[0],msg.cmd[1]);
 						break;
 						
 					case MSG_TYP_GROUP_BROADCAST:
 						LOG_INFO("\t\tGROUP%s :%02x ",msg.ext?"-EXT":"", msg.to[0]);
-						LOG_INFO("From %s \"%s\" ", deviceID.string().c_str(), deviceID.name_cstr());
+						LOG_INFO("From %s ", deviceID.string().c_str());
 						LOG_INFO("CMD: %02X %02X \n", 	msg.cmd[0],msg.cmd[1]);
 						break;
 						
 					case MSG_TYP_DIRECT:
 						LOG_INFO("\t\tMESSAGE%s ",msg.ext?"-EXT":"");
-						LOG_INFO("From %s \"%s\" ", deviceID.string().c_str(), deviceID.name_cstr());
+						LOG_INFO("From %s ", deviceID.string().c_str() );
 						LOG_INFO("<%02X.%02X.%02X>  ", msg.to[2],msg.to[1],msg.to[0]);
 						LOG_INFO("CMD: %02X %02X \n", 	msg.cmd[0],msg.cmd[1]);
 						break;
 						
 					case MSG_TYP_GROUP_CLEANUP:
 						LOG_INFO("\t\tCLEANUP%s ", 	  msg.ext?"-EXT":"");
-						LOG_INFO("From %s \"%s\" ", deviceID.string().c_str(), deviceID.name_cstr());
+						LOG_INFO("From %s ", deviceID.string().c_str());
 						LOG_INFO("<%02X.%02X.%02X> GROUP:%02x  CMD:%02x\n",
 									msg.to[2],msg.to[1],msg.to[0],
 									msg.cmd[1], msg.cmd[0]) ;
@@ -1380,7 +1379,7 @@ plm_result_t InsteonMgr::handleResponse(uint64_t timeout){
 					default:
 						
 						LOG_INFO("\t\tOTHER%s ", msg.ext?"-EXT":"");
-						LOG_INFO("From %s \"%s\" ", deviceID.string().c_str(), deviceID.name_cstr());
+						LOG_INFO("From %s ", deviceID.string().c_str());
 						LOG_INFO("(%d) <%02X.%02X.%02X>  ",msg.msgType,  msg.to[2],msg.to[1],msg.to[0]);
 						LOG_INFO(" %02X %02X \n", 	msg.cmd[0],msg.cmd[1]);
 				}
@@ -1612,6 +1611,10 @@ void InsteonMgr::updateLevels(){
 // debug test code
 
 
+// MARK: - test code
+
+#if 0
+
 void InsteonMgr::test1(vector<DeviceID> devices,
 							  boolCallback_t callback) {
 	
@@ -1642,12 +1645,12 @@ void InsteonMgr::test1(vector<DeviceID> devices,
 		if(didSucceed){
 			_db.addDeviceALDB(devID, aldb);
 			
-			_db.printDeviceInfo(devID,true);
+	//		_db.printDeviceInfo(devID,true);
 			
 			_db.saveToCacheFile();
 		}
 	 
-		test1(devices,callback);
+//		test1(devices,callback);
 	});
 }
 
@@ -1786,7 +1789,7 @@ void InsteonMgr::test() {
 
 	LOG_INFO("\n\tALDB UPDATE NEEDED for %d devices\n",  devices.size() );
 
-	test1(devices, [](bool didSucceed){
+//	test1(devices, [](bool didSucceed){
 
 		LOG_INFO("\tALDB UPDATE COMPLETE\n\n" );
 
@@ -1869,3 +1872,5 @@ void InsteonMgr::test() {
 	
 	
 }
+
+#endif

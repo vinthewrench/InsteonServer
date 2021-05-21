@@ -74,7 +74,7 @@ static std::string stringForCmd(Action::actionCmd_t cmd) {
 
 
 std::string ActionGroup::string() const {
-	return  to_hex<unsigned short>(_rawGroupID,false);
+	return  to_hex<unsigned short>(_rawGroupID);
 }
 
 Action::Action(){
@@ -221,10 +221,47 @@ Action::Action(std::string str){
 
 
 std::string Action::idString() const {
-	return  to_hex<unsigned short>(_actionID,false);
+	return  to_hex<unsigned short>(_actionID);
 }
 
-nlohmann::json Action::JSON(){
+std::string Action::printString() const {
+	std::ostringstream oss;
+
+	switch (_actionType) {
+		case ACTION_TYPE_DEVICE:
+			oss <<  stringForCmd(_cmd)
+				<< " <" << _deviceID.string()  << "> "
+				<< InsteonDevice::onLevelString(_level);
+			
+			break;
+			
+		case ACTION_TYPE_GROUP:
+			oss <<  stringForCmd(_cmd)
+				<< " Group:" << _groupID.string()  << "  "
+				<< InsteonDevice::onLevelString(_level);
+
+			break;
+			
+		case ACTION_TYPE_DEVICEGROUP:
+			oss <<  stringForCmd(_cmd)
+				<< " Insteon.Group:" <<  to_hex(_deviceGroupID)  << "  "
+				<< InsteonDevice::onLevelString(_level);
+
+			break;
+
+		case ACTION_TYPE_ACTIONGROUP:
+			oss <<  stringForCmd(_cmd)
+			<< " action.Group:" <<  to_hex(_ActionGroupID);
+			break;
+			
+		default:
+			oss <<  "Invalid";
+	}
+	
+	return  oss.str();
+}
+
+const nlohmann::json Action::JSON(){
 	json j;
 
 	switch (_actionType) {
@@ -243,13 +280,13 @@ nlohmann::json Action::JSON(){
 			break;
 
 		case ACTION_TYPE_DEVICEGROUP:
-			j[string(JSON_INSTEON_GROUPS)] = to_hex<unsigned short>(_deviceGroupID,false);
+			j[string(JSON_INSTEON_GROUPS)] = to_hex<unsigned short>(_deviceGroupID);
 			j[string(JSON_ACTION_CMD)] = JSON_CMD_SET;
 			j[string(JSON_ACTION_LEVEL)] = _level;
 			break;
 			
 		case ACTION_TYPE_ACTIONGROUP:
-			j[string(JSON_ACTION_GROUP)] = to_hex<unsigned short>(_ActionGroupID,false);
+			j[string(JSON_ACTION_GROUP)] = to_hex<unsigned short>(_ActionGroupID);
 			j[string(JSON_ACTION_CMD)] = JSON_CMD_EXECUTE;
 			break;
 

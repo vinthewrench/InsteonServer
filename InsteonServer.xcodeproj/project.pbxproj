@@ -29,7 +29,6 @@
 		2E592EBE2620C9380041AA34 /* DeviceInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EAD2620C9380041AA34 /* DeviceInfo.cpp */; };
 		2E592EBF2620C9380041AA34 /* NotificationCenter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EAE2620C9380041AA34 /* NotificationCenter.cpp */; };
 		2E592EC32620C9660041AA34 /* catagories.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E592EC12620C9410041AA34 /* catagories.txt */; };
-		2E592ED22620CEE00041AA34 /* deviceNames.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E592ED02620CEC10041AA34 /* deviceNames.txt */; };
 		2EC68B1A2644D35800541251 /* TimeStamp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EC68B162644D18200541251 /* TimeStamp.cpp */; };
 		2EC68B32264DA54600541251 /* helpfile.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2EC68B2D264DA3C600541251 /* helpfile.txt */; };
 		2EC68B38265303C200541251 /* Action.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EC68B36265303C200541251 /* Action.cpp */; };
@@ -60,7 +59,6 @@
 			dstSubfolderSpec = 16;
 			files = (
 				2E592EC32620C9660041AA34 /* catagories.txt in CopyFiles */,
-				2E592ED22620CEE00041AA34 /* deviceNames.txt in CopyFiles */,
 				2EC68B32264DA54600541251 /* helpfile.txt in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

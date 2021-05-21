@@ -60,6 +60,9 @@ public:
 	void savePLMCacheFile();
 
 	mgr_state_t currentState() {return _state;};
+	bool serverAvailable() { return ( _state == STATE_READY
+												|| _state == STATE_VALIDATING
+												|| _state == STATE_UPDATING); };
 	
 	string currentStateString();
 
@@ -114,10 +117,6 @@ public:
 							 uint8_t groupID,
 							 uint8_t cmd,
 							 std::string& notification);
-
-	// debug
- 	void test();
-	void test1(vector<DeviceID>, boolCallback_t callback);
 
 	InsteonDB*			getDB() {return &_db; };
   

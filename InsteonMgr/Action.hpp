@@ -134,8 +134,9 @@ public:
 	}
 	
 	std::string idString() const;
-
-	nlohmann::json JSON();
+	std::string printString() const;
+	
+	const nlohmann::json JSON();
 	
 	bool isValid() {return (_actionType != ACTION_TYPE_UNKNOWN);};
  
