@@ -32,6 +32,9 @@ constexpr static string_view KEY_START_GROUP 			= "group-start";
 constexpr static string_view KEY_END_GROUP			= "group-end";
 constexpr static string_view KEY_START_ACTIONGROUP 	= "action_group-start";
 constexpr static string_view KEY_END_ACTIONGROUP		= "action_group-end";
+constexpr static string_view KEY_START_EVENT 			= "event-start";
+constexpr static string_view KEY_END_EVENT			= "event-end";
+
 constexpr static string_view KEY_DEVICE_NAME			= "name";
 constexpr static string_view KEY_DEVICE_ALDB			= "aldb";
 constexpr static string_view KEY_DEVICE_UPDATED		= "updated";
@@ -39,6 +42,7 @@ constexpr static string_view KEY_DEVICE_CNTL			= "cntl";
 constexpr static string_view KEY_DEVICE_RESP			= "resp";
 constexpr static string_view KEY_GROUP_DEVICEID		= "dev";
 constexpr static string_view KEY_ACTIONGROUP_ACTION	= "act";
+constexpr static string_view KEY_EVENT_TRIGGER		= "trigger";
 
 InsteonDB::InsteonDB() {
 	
@@ -47,6 +51,7 @@ InsteonDB::InsteonDB() {
 	_db.clear();
 	_deviceGroups.clear();
 	_actionGroups.clear();
+	_events.clear();
 	_eTag = 0;
 	
 	// create RNG engine
@@ -749,6 +754,22 @@ bool InsteonDB::backupCacheFile(string filepath){
 			ofs << KEY_END_ACTIONGROUP <<  ":\n\n";
 		}
  
+		for (const auto& [eventID, _] : _events) {
+			
+			Event* evt =  &_events[eventID];
+
+			ofs <<   KEY_START_EVENT << ": "  << evt->idString() << " " << evt->_name << "\n";
+				 
+			Action act = evt->getAction();
+			EventTrigger trig = evt->getEventTrigger();
+	 
+			ofs << KEY_ACTIONGROUP_ACTION << ": ";
+	 		ofs << act.JSON().dump() << "\n";
+			ofs << KEY_EVENT_TRIGGER << ": ";
+			ofs << trig.JSON().dump() << "\n";
+			ofs << KEY_END_EVENT <<  ":\n\n";
+		}
+
 		ofs.flush();
 		ofs.close();
 			
@@ -777,7 +798,9 @@ typedef enum  {
 	RESTORE_UNKNOWN = 0,
 	RESTORE_DEVICE,
 	RESTORE_GROUP,
-	RESTORE_ACTION_GROUP
+	RESTORE_ACTION_GROUP,
+	RESTORE_EVENT
+
 }restoreState_t;
 
 bool InsteonDB::restoreFromCacheFile(string fileName,
@@ -805,7 +828,8 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 		groupID_t				groupID = 0;
 		actionGroupID_t		actionGroupID = 0;
 		DeviceID 			 	deviceID;
-		
+		eventID_t				eventID = 0;
+	
 		// open the file
 		ifs.open(path, ios::in);
 		if(!ifs.is_open()) return false;
@@ -885,8 +909,28 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 			}
 			else if(token == KEY_END_ACTIONGROUP){
 				state = RESTORE_UNKNOWN;
+				eventID = 0;
 				continue;
 			}
+			else if(token == KEY_START_EVENT){
+				if( sscanf(p, "%hx %n", &eventID ,&n) == 1){
+					p+=n;
+					
+				string eventName = Utils::trimStart(string(p));
+				
+					Event event = Event();
+					event._rawEventID	=  eventID;
+					event._name = eventName;
+					_events[eventID] = event;
+					state = RESTORE_EVENT;
+				}
+				continue;
+			}
+			else if(token == KEY_END_EVENT){
+				state = RESTORE_UNKNOWN;
+				continue;
+			}
+	
 			
 			// process line based on state.
 			
@@ -1008,23 +1052,50 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 					
 				case RESTORE_ACTION_GROUP:
 				{
-					// loading actionGroupID;
-					actionID_t actionID = 0;
-					// scan for a line starting with a action ID
-					if( sscanf(p, "%hx %n", &actionID ,&n) < 1) continue;
-					p += n;
 					
-					Action action = Action(string(p));
-					if(!action.isValid()) continue;
-					action._actionID = actionID;
-					
-					if(_actionGroups.count(actionGroupID) != 0){
-						actionGroupInfo_t* info  =  &_actionGroups[actionGroupID];
+					if(token == KEY_ACTIONGROUP_ACTION) {
+						// loading actionGroupID;
+						actionID_t actionID = 0;
+						// scan for a line starting with a action ID
+						if( sscanf(p, "%hx %n", &actionID ,&n) < 1) continue;
+						p += n;
 						
-						if(info->actions.count(actionID) == 0){
-							info->actions[actionID] = action;
+						Action action = Action(string(p));
+						if(!action.isValid()) continue;
+						action._actionID = actionID;
+						
+						if(_actionGroups.count(actionGroupID) != 0){
+							actionGroupInfo_t* info  =  &_actionGroups[actionGroupID];
+							
+							if(info->actions.count(actionID) == 0){
+								info->actions[actionID] = action;
+							}
 						}
 					}
+				}
+					break;
+					
+				case RESTORE_EVENT: {
+					
+					if(token == KEY_ACTIONGROUP_ACTION) {
+						Action action = Action(string(p));
+						if(!action.isValid()) continue;
+						
+						if(_events.count(eventID) >0 ){
+							auto evt = &_events[eventID];
+							evt->_action = action;
+						}
+						
+					} else if(token == KEY_EVENT_TRIGGER){
+						EventTrigger trig = EventTrigger(string(p));
+						if(!trig.isValid()) continue;
+						
+						if(_events.count(eventID) >0 ){
+							auto evt = &_events[eventID];
+							evt->_trigger = trig;
+						}
+					}
+					continue;
 				}
 					break;
 					
@@ -1225,7 +1296,7 @@ bool InsteonDB::groupFind(string name, GroupID* groupIDOut){
 
 bool InsteonDB::groupCreate(GroupID* groupIDOut, const string name){
 	
-	std::uniform_int_distribution<long> distribution(LONG_MIN,LONG_MAX);
+	std::uniform_int_distribution<long> distribution(SHRT_MIN,SHRT_MAX);
 	
 	groupID_t gid;
 	
@@ -1373,6 +1444,114 @@ bool InsteonDB::groupIsValid(GroupID groupID){
 	return (_deviceGroups.count(gid) > 0);
 }
 
+//MARK: - Events API
+
+
+bool InsteonDB::eventsIsValid(eventID_t eid){
+	
+	return(_events.count(eid) > 0);
+}
+
+
+bool InsteonDB::eventSave(Event event, eventID_t* eventIDOut){
+	
+	std::uniform_int_distribution<long> distribution(SHRT_MIN,SHRT_MAX);
+	eventID_t eid;
+
+	do {
+		eid = distribution(_rng);
+	}while( _events.count(eid) > 0);
+
+	event._rawEventID = eid;
+	_events[eid] = event;
+	
+	saveToCacheFile();
+ 
+	if(eventIDOut)
+		*eventIDOut = eid;
+
+	return true;
+}
+
+ 
+bool InsteonDB::eventDelete(eventID_t eventID){
+	
+	if(_events.count(eventID) == 0)
+		return false;
+	
+	_events.erase(eventID);
+
+	saveToCacheFile();
+	
+	return true;
+}
+
+bool InsteonDB::eventSetName(eventID_t eventID, string name){
+	
+	if(_events.count(eventID) == 0)
+		return false;
+	
+	Event* evt =  &_events[eventID];
+	evt->_name = name;
+ 
+	saveToCacheFile();
+	
+	return true;
+}
+
+string InsteonDB::eventGetName(eventID_t eventID) {
+	
+	if(_events.count(eventID) == 0)
+		return "";
+
+	Event* evt =  &_events[eventID];
+	return evt->_name;
+}
+
+bool InsteonDB::eventFind(string name, eventID_t* eventIDOut){
+	
+	for(auto e : _events) {
+		auto event = &e.second;
+		
+		if (strcasecmp(name.c_str(), event->_name.c_str()) == 0){
+				if(eventIDOut){
+				*eventIDOut = e.first;
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+optional<reference_wrapper<Event>> InsteonDB::eventsGetEvent(eventID_t eventID){
+
+	if(_events.count(eventID) >0 ){
+		return  ref(_events[eventID]);
+	}
+	 
+	return optional<reference_wrapper<Event>> ();
+}
+
+vector<eventID_t> InsteonDB::allEventsIDs(){
+	vector<eventID_t> events;
+ 
+ for (const auto& [key, _] : _events) {
+	 events.push_back( key);
+ 	}
+	
+	return events;
+}
+
+vector<eventID_t> InsteonDB::matchingEventIDs(EventTrigger trig){
+	vector<eventID_t> events;
+	
+	for (auto& [key, evt] : _events) {
+		if(evt._trigger.shouldTrigger(trig))
+			events.push_back( key);
+	};
+		
+	return events;
+}
 
 //MARK: - private API
 

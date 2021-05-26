@@ -111,6 +111,12 @@ public:
 	bool executeActionGroup(actionGroupID_t actionGroupID,
 						 std::function<void(bool didSucceed)> callback = NULL);
 
+	bool runAction(Action action,
+						std::function<void(bool didSucceed)> callback = NULL);
+	// events
+	bool executeEvent(eventID_t eventID,
+						 std::function<void(bool didSucceed)> callback = NULL);
+
 	// events
 	
 	void registerEvent( DeviceID deviceID,

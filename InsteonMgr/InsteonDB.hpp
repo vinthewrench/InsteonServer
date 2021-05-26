@@ -23,6 +23,7 @@
 #include "DeviceID.hpp"
 #include "DeviceInfo.hpp"
 #include "Action.hpp"
+#include "Event.hpp"
 
 #include "InsteonPLM.hpp"  // for deviceID_t
 //#include "InsteonDBValidator.hpp"
@@ -163,10 +164,22 @@ public:
 	bool actionGroupAddAction(actionGroupID_t actionGroupID,  Action action, actionID_t* actionIDOut = NULL);
 	bool actionGroupRemoveAction(actionGroupID_t actionGroupID, actionID_t actionID);
 	bool actionGroupIsValidActionID(actionGroupID_t actionGroupID, actionID_t actionID);
-
 	vector<reference_wrapper<Action>> actionGroupGetActions(actionGroupID_t groupID);
 	vector<actionGroupID_t> allActionGroupsIDs();
 	
+	// events
+	bool eventsIsValid(eventID_t eventID);
+	bool eventSave(Event event, eventID_t* eventIDOut = NULL);
+	bool eventFind(string name, eventID_t* eventID);
+
+	bool 	eventDelete(eventID_t eventID);
+	bool 	eventSetName(eventID_t eventID, string name);
+	string eventGetName(eventID_t eventID);
+	
+	optional<reference_wrapper<Event>> eventsGetEvent(eventID_t eventID);
+	vector<eventID_t> allEventsIDs();
+	vector<eventID_t> matchingEventIDs(EventTrigger trig);
+
 
   	// debugging
 	string dumpDB(bool printALDB = false);
@@ -219,9 +232,10 @@ private:
 	} actionGroupInfo_t;
 
 	map<actionGroupID_t, actionGroupInfo_t> _actionGroups;
- 	
-	string 						_directoryPath;
+ 
+	map<eventID_t, Event> 		_events;
 	
+	string 						_directoryPath;
 	mt19937						_rng;
 };
 #endif /* InsteonDB_hpp */

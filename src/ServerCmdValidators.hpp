@@ -57,6 +57,27 @@ public:
 	}
 
  
+	virtual bool getByteFromJSON(string_view key, const json &j, uint8_t &result) {
+		if( j.contains(key)) {
+			string k = string(key);
+		
+			if( j.at(k).is_string()){
+				string str = j.at(k);
+				
+				char* p;
+				long val = strtol(str.c_str(), &p, 0);
+				if(*p == 0){
+					result = (uint8_t)val;
+					return  true;;
+				}
+			}
+			else if( j.at(k).is_number()){
+				result = (uint8_t) j.at(k);
+				return true;
+			}
+		}
+		return  false;
+	}
 	virtual bool getIntFromJSON(string_view key, const json &j, int &result) {
 		if( j.contains(key)) {
 			string k = string(key);

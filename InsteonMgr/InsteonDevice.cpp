@@ -7,12 +7,15 @@
 
 #include <regex>
 #include <ctype.h>
+#include <iostream>
+
 #include "InsteonDevice.hpp"
 #include "DeviceID.hpp"
 #include "InsteonCmdQueue.hpp"
 #include "InsteonALDB.hpp"
 #include "InsteonDB.hpp"
 #include "Utils.hpp"
+
 
 #include "LogMgr.hpp"
 
@@ -291,6 +294,48 @@ bool InsteonKeypadDevice::setNonToggleMask(uint8_t mask, boolCallback_t callback
 	return true;
 }
 
+
+bool InsteonKeypadDevice::getKeypadLEDState(std::function<void(uint8_t mask, bool didSucceed)> cb){
+
+	SETUP_CMDQUEUE;
+ 
+	
+	cmdQueue->queueMessage(_deviceID,
+									InsteonParser::CMD_GET_ON_LEVEL, 0x01,
+									NULL, 0,
+									[=]( auto arg, bool didSucceed) {
+
+		if(cb) {
+			cb(arg.reply.cmd[1], didSucceed);
+		}
+
+	});
+	
+	return true;
+};
+
+
+bool InsteonKeypadDevice::setKeypadLEDState(uint8_t mask, boolCallback_t cb){
+	SETUP_CMDQUEUE;
+
+	uint8_t buffer[] = {
+		0x01, 0x09, mask, 0, 0,0, };
+ 
+	LOG_INFO("SET  KeyPad %02x \n",mask);
+
+	cmdQueue->queueMessage(_deviceID,
+								  0x2E, 0x00,
+								  buffer, sizeof(buffer),
+								  [=]( auto arg, bool didSucceed) {
+				
+		if(cb) {
+			cb(didSucceed && arg.reply.msgType == MSG_TYP_DIRECT_ACK);
+		}
+	});
+	
+	return true;
+}
+
 bool InsteonKeypadDevice::setKeypadLED(uint8_t button, bool turnOn, boolCallback_t callback){
 	SETUP_CMDQUEUE;
 	
@@ -351,6 +396,44 @@ bool InsteonKeypadDevice::setKeyButtonMode(bool eightKey, boolCallback_t callbac
 
 }
 
+bool InsteonKeypadDevice::test(){
+	
+	SETUP_CMDQUEUE;
+
+
+	cmdQueue->queueMessage(_deviceID,
+									InsteonParser::CMD_GET_ON_LEVEL, 0x01,
+									NULL, 0,
+									[=]( auto arg, bool didSucceed) {
+
+				
+	});
+	
+// 	uint8_t buffer[] = {
+//		01, 00};
+//
+//	cmdQueue->queueMessage(_deviceID,
+//								  0x2E, 0x00,
+//								  buffer, sizeof(buffer),
+//								  [=]( InsteonCmdQueue::msgReply_t arg, bool didSucceed) {
+//
+//		if(didSucceed){
+//
+//
+//			uint8_t* data  = &arg.reply.data[0];
+//
+//			for(size_t i = 0; i<14; i++) {
+//				cout << to_hex(data[i]) << " ";
+//			}
+//
+//			cout << "\n";
+//
+//		}
+//
+//	});
+
+	return true;
+}
 
 //
 //typedef struct {

@@ -525,7 +525,7 @@ void InsteonMgr::validatePLM(boolCallback_t callback){
 	 
  		_state = STATE_READY;
 		
-		updateLevels();
+ 	updateLevels();
 		
 		callback(true);
  
@@ -795,102 +795,146 @@ bool InsteonMgr::executeActionGroup(actionGroupID_t actionGroupID,
 		return true;
 	}
 	
+	LOG_INFO("\tEXECUTE ACTION.GROUP %04x \n",actionGroupID);
+
 	size_t* taskCount  = (size_t*) malloc(sizeof(size_t));
 	*taskCount = actions.size();
 	
 	for(auto ref :actions){
 		Action action = ref.get();
-		uint8_t level = action.level();
 		bool handled = false;
 		
-		switch (action.actionType()	) {
-				
-			case Action::ACTION_TYPE_DEVICE: {
-				
-				DeviceID deviceID = action.deviceID();
-				switch (action.cmd()) {
-						
-					case Action::ACTION_SET_LEVEL:
-						handled = setOnLevel(deviceID, level, [=](eTag_t eTag, bool didSucceed){
-							if(--(*taskCount) == 0) {
-							free(taskCount);
-							if(cb) (cb)( true);
-							}
-						});
-						
-						break;
-						
-					case Action::ACTION_BEEP:
-						handled =  InsteonDevice(deviceID).beep([=](bool didSucceed){
-							if(--(*taskCount) == 0) {
-							free(taskCount);
-							if(cb) (cb)( true);
-							}
-						});
-						break;
-						
-					case Action::ACTION_SET_LED_BRIGHTNESS:
-						handled = setLEDBrightness(deviceID, level, [=]( bool didSucceed){
-							if(--(*taskCount) == 0) {
-							free(taskCount);
-							if(cb) (cb)( true);
-							}
-						});
-						break;
-		
-					default:
-						break;
-				}
-				
+		handled = runAction(action, [=](bool didSucceed){
+			if(--(*taskCount) == 0) {
+				free(taskCount);
+				if(cb) (cb)( true);
 			}
-				break;
-
-			case Action::ACTION_TYPE_GROUP: {
-				GroupID groupID = action.groupID();
-				switch (action.cmd()) {
-						
-					case Action::ACTION_SET_LEVEL:
-						handled = setOnLevel(groupID, level, [=](bool didSucceed){
-							if(--(*taskCount) == 0) {
-							free(taskCount);
-							if(cb) (cb)( true);
-							}
-						});
-						
-						break;
-					default:
-						break;
-				}
-	
-			}
- 				break;
-
-			case Action::ACTION_TYPE_DEVICEGROUP: {
-				{
-					uint8_t devGroupID = action.deviceGroupID();
-		
-					handled = InsteonDeviceGroup(devGroupID).setOnLevel(level, [=](bool didSucceed){
-						if(--(*taskCount) == 0) {
-						free(taskCount);
-						if(cb) (cb)( true);
-						}
-					});
-				}
- 			}
- 				break;
-
-			default:
-				break;
-		}
+		});
 		
 		if(!handled)
 			if(--(*taskCount) == 0) {
-			free(taskCount);
-			if(cb) (cb)( false);
-		}
+				free(taskCount);
+				if(cb) (cb)( false);
+			}
 	};
 	
 	return true;
+}
+
+bool InsteonMgr::runAction(Action action,
+									std::function<void(bool didSucceed)> cb){
+	
+	uint8_t level = action.level();
+	bool handled = false;
+	
+	switch (action.actionType()	) {
+			
+		case Action::ACTION_TYPE_GROUP: {
+			GroupID groupID = action.groupID();
+			switch (action.cmd()) {
+					
+				case Action::ACTION_SET_LEVEL:
+					handled = setOnLevel(groupID, level, [=](bool didSucceed){
+						if(cb) (cb)( didSucceed);
+					});
+					break;
+					
+				default:
+					break;
+			}
+			
+		}
+			break;
+			
+		case Action::ACTION_TYPE_DEVICE: {
+			
+			DeviceID deviceID = action.deviceID();
+			switch (action.cmd()) {
+					
+				case Action::ACTION_SET_LEVEL:
+					handled = setOnLevel(deviceID, level, [=](eTag_t eTag, bool didSucceed){
+						if(cb) (cb)( didSucceed);
+					});
+					
+					break;
+					
+				case Action::ACTION_BEEP:
+					handled =  InsteonDevice(deviceID).beep([=](bool didSucceed){
+						if(cb) (cb)( didSucceed);
+					});
+					break;
+					
+				case Action::ACTION_SET_LED_BRIGHTNESS:
+					handled = setLEDBrightness(deviceID, level, [=]( bool didSucceed){
+						if(cb) (cb)( didSucceed);
+						
+					});
+					break;
+					
+				default:
+					break;
+			}
+			
+		}
+			break;
+			
+			
+		case Action::ACTION_TYPE_DEVICEGROUP: {
+			{
+				uint8_t devGroupID = action.deviceGroupID();
+				
+				handled = InsteonDeviceGroup(devGroupID).setOnLevel(level, [=](bool didSucceed){
+					if(cb) (cb)( didSucceed);
+				});
+			}
+		}
+			break;
+			
+		case Action::ACTION_TYPE_ACTIONGROUP: {
+			
+			// VINNIE  WATCH OUT FOR RECURSION!!
+			
+			actionGroupID_t actGrp =  action.actionGroupID();
+			handled =  executeActionGroup(actGrp, [=](bool didSucceed){
+				if(cb) (cb)( didSucceed);
+			});
+			
+			break;
+		}
+			
+		case Action::ACTION_TYPE_UNKNOWN:  
+			break;
+			
+	}
+	
+	return handled;
+}
+
+
+//MARK: -  events
+
+bool InsteonMgr::executeEvent(eventID_t eventID,
+										std::function<void(bool didSucceed)> cb){
+	
+	if( !(_state == STATE_READY  || _state == STATE_UPDATING))
+		return false;
+	
+	if(!_db.eventsIsValid(eventID))
+		return false;
+	
+	auto ref = _db.eventsGetEvent(eventID);
+	if(!ref)
+		return false;
+	
+	
+	Event event = ref->get();
+	Action action = event.getAction();
+	
+	bool handled = runAction(action, [=](bool didSucceed){
+		if(cb) (cb)( didSucceed);
+	});
+	
+	return handled;
 }
 
 // MARK: - Linking
@@ -1212,51 +1256,84 @@ bool  InsteonMgr::processBroadcastEvents(plm_result_t response) {
 		
 		if(msg.msgType == MSG_TYP_GROUP_BROADCAST){
 			
-			uint8_t group = msg.to[0];
-			uint8_t cmd = msg.cmd[0];
+			static struct{
+				deviceID_t 	from;
+				uint8_t 		group;
+				uint8_t 		cmd;
+			}lastBroadcast = {0,0,0, 0,0};
 			
-			didHandle = _eventMgr.handleEvent(deviceID, group, cmd);
+			uint8_t group 	= msg.to[0];
+			uint8_t cmd 		= msg.cmd[0];
 			
-			if(!didHandle){
-				switch (cmd) {
-					case InsteonParser::CMD_SUCCESS_REPORT:
-						// //  ignore?
-						didHandle = true;
-						break;
-						
-					case InsteonParser::CMD_LIGHT_ON:
-						_db.setDBOnLevel(deviceID, group,  0xff);
-						didHandle = true;
-						break;
-						
-					case InsteonParser::CMD_LIGHT_OFF:
-						_db.setDBOnLevel(deviceID, group, 0x0);
-						didHandle = true;
-						break;
-						
-					case InsteonParser::CMD_START_MANUAL_CHANGE:
-						//  ignore?
-						didHandle = true;
-						break;
-						
-					case InsteonParser::CMD_STOP_MANUAL_CHANGE:
-						InsteonDevice(deviceID).getOnLevel([=](uint8_t level, bool didSucceed) {
-							if(didSucceed){
-								_db.setDBOnLevel(deviceID, group, level);
-							}
-						});
-						didHandle = true;
-						break;
-						
-					default:
-						printf("-- (%02X) [%02x %02x] %s\n",
-								 msg.to[0], // group
-								 msg.cmd[0],
-								 msg.cmd[1],
-								 deviceID.string().c_str()) ;
-						didHandle = true;
+			// Insteon often sends duplicate ON/OFF broadcast messages.
+			// ignore them if they are the same
+			
+			didHandle = (deviceID.isEqual(lastBroadcast.from)
+							 && group == lastBroadcast.group
+							 && cmd == lastBroadcast.cmd
+							 && ( cmd == InsteonParser::CMD_LIGHT_OFF
+								|| cmd == InsteonParser::CMD_LIGHT_ON) );
+			
+			if(	!didHandle){
+				
+				didHandle = _eventMgr.handleEvent(deviceID, group, cmd);
+				
+				if(!didHandle){
+					switch (cmd) {
+						case InsteonParser::CMD_SUCCESS_REPORT:
+							// //  ignore?
+							didHandle = true;
+							break;
+							
+						case InsteonParser::CMD_LIGHT_ON:
+							_db.setDBOnLevel(deviceID, group,  0xff);
+							didHandle = true;
+							break;
+							
+						case InsteonParser::CMD_LIGHT_OFF:
+							_db.setDBOnLevel(deviceID, group, 0x0);
+							didHandle = true;
+							break;
+							
+						case InsteonParser::CMD_START_MANUAL_CHANGE:
+							//  ignore?
+							didHandle = true;
+							break;
+							
+						case InsteonParser::CMD_STOP_MANUAL_CHANGE:
+							InsteonDevice(deviceID).getOnLevel([=](uint8_t level, bool didSucceed) {
+								if(didSucceed){
+									_db.setDBOnLevel(deviceID, group, level);
+								}
+							});
+							didHandle = true;
+							break;
+							
+						default:
+							printf("-- (%02X) [%02x %02x] %s\n",
+									 msg.to[0], // group
+									 msg.cmd[0],
+									 msg.cmd[1],
+									 deviceID.string().c_str()) ;
+							didHandle = true;
+					}
+				}
+				
+				// fire off any events
+				auto evt = EventTrigger(deviceID, group, cmd);
+				auto eventIDs =  _db.matchingEventIDs(evt);
+				if(eventIDs.size() > 0){
+					// run these events.
+					
+					for (auto eventID : eventIDs) {
+						executeEvent(eventID);
+					}
 				}
 			}
+			
+			copyDevID(msg.from, lastBroadcast.from);
+			lastBroadcast.group = group;
+			lastBroadcast.cmd = cmd;
 		}
  		
 		if(didHandle){

@@ -79,7 +79,12 @@ class InsteonKeypadDevice : InsteonDevice{
 	
 	bool setKeypadLED(uint8_t button, bool turnOn, boolCallback_t callback = NULL);
 
+	bool getKeypadLEDState(std::function<void(uint8_t mask, bool didSucceed)> callback);
+	bool setKeypadLEDState(uint8_t mask, boolCallback_t callback = NULL);
 
+
+	bool test();
+	
 protected:
 	bool linkKeyPadButtonsToGroups( InsteonDB* db,
 											 InsteonALDB *aldb,

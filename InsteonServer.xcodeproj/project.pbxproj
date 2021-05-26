@@ -29,6 +29,7 @@
 		2E592EBE2620C9380041AA34 /* DeviceInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EAD2620C9380041AA34 /* DeviceInfo.cpp */; };
 		2E592EBF2620C9380041AA34 /* NotificationCenter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EAE2620C9380041AA34 /* NotificationCenter.cpp */; };
 		2E592EC32620C9660041AA34 /* catagories.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E592EC12620C9410041AA34 /* catagories.txt */; };
+		2E966416265B627C007A3D93 /* Event.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E966413265B141E007A3D93 /* Event.cpp */; };
 		2EC68B1A2644D35800541251 /* TimeStamp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EC68B162644D18200541251 /* TimeStamp.cpp */; };
 		2EC68B32264DA54600541251 /* helpfile.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2EC68B2D264DA3C600541251 /* helpfile.txt */; };
 		2EC68B38265303C200541251 /* Action.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EC68B36265303C200541251 /* Action.cpp */; };
@@ -113,6 +114,8 @@
 		2E592ED02620CEC10041AA34 /* deviceNames.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = deviceNames.txt; sourceTree = "<group>"; };
 		2E592ED12620CED70041AA34 /* PLMDB_52.18.42.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = PLMDB_52.18.42.txt; sourceTree = "<group>"; };
 		2E592EDC2630831F0041AA34 /* CommonIncludes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CommonIncludes.h; sourceTree = "<group>"; };
+		2E966413265B141E007A3D93 /* Event.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Event.cpp; sourceTree = "<group>"; };
+		2E966414265B141E007A3D93 /* Event.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Event.hpp; sourceTree = "<group>"; };
 		2EC68B162644D18200541251 /* TimeStamp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TimeStamp.cpp; sourceTree = "<group>"; };
 		2EC68B172644D18200541251 /* TimeStamp.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = TimeStamp.hpp; sourceTree = "<group>"; };
 		2EC68B2D264DA3C600541251 /* helpfile.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = helpfile.txt; sourceTree = "<group>"; };
@@ -196,6 +199,8 @@
 				2E592E8A2620C9370041AA34 /* InsteonMgr.cpp */,
 				2E592E9B2620C9380041AA34 /* InsteonDB.hpp */,
 				2E592E992620C9380041AA34 /* InsteonDB.cpp */,
+				2E966414265B141E007A3D93 /* Event.hpp */,
+				2E966413265B141E007A3D93 /* Event.cpp */,
 				2EC68B37265303C200541251 /* Action.hpp */,
 				2EC68B36265303C200541251 /* Action.cpp */,
 				2E592E952620C9380041AA34 /* InsteonParser.cpp */,
@@ -336,6 +341,7 @@
 				2E592E682620C2EC0041AA34 /* ServerCmdValidators.cpp in Sources */,
 				2E592EB92620C9380041AA34 /* InsteonPLM.cpp in Sources */,
 				2E592EB52620C9380041AA34 /* InsteonLinking.cpp in Sources */,
+				2E966416265B627C007A3D93 /* Event.cpp in Sources */,
 				2E592EBF2620C9380041AA34 /* NotificationCenter.cpp in Sources */,
 				2E592EBD2620C9380041AA34 /* LogMgr.cpp in Sources */,
 				2E592EBE2620C9380041AA34 /* DeviceInfo.cpp in Sources */,

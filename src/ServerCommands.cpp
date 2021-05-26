@@ -48,6 +48,7 @@ constexpr string_view NOUN_PLM			 		= "plm";
 constexpr string_view NOUN_GROUPS			 	= "groups";
 constexpr string_view NOUN_INSTEON_GROUPS		= "insteon.groups";
 constexpr string_view NOUN_ACTION_GROUPS		= "action.groups";
+constexpr string_view NOUN_EVENTS				= "events";
 
 constexpr string_view NOUN_LINK	 				= "link";
  
@@ -58,6 +59,12 @@ constexpr string_view SUBPATH_RUN_ACTION		= "run.actions";
 constexpr string_view JSON_ARG_DEVICEID 		= "deviceID";
 constexpr string_view JSON_ARG_GROUPID 		= "groupID";
 constexpr string_view JSON_ARG_ACTIONID 		= "actionID";
+constexpr string_view JSON_ARG_EVENTID 		= "eventID";
+//constexpr string_view JSON_ARG_INSTEON_GROUP = "insteon.group";
+//constexpr string_view JSON_ARG_CMD			 	= "cmd";
+constexpr string_view JSON_ARG_ACTION			= "action";
+constexpr string_view JSON_ARG_TRIGGER			= "trigger";
+
 
 constexpr string_view JSON_ARG_BEEP 			= "beep";
 constexpr string_view JSON_ARG_LEVEL 			= "level";
@@ -82,6 +89,7 @@ constexpr string_view JSON_ARG_FORCE			= "force";
 constexpr string_view JSON_ARG_PROPERTIES		= "properties";
 constexpr string_view JSON_ARG_NAME				= "name";
 constexpr string_view JSON_ARG_GROUPIDS		= "groupIDs";
+constexpr string_view JSON_ARG_EVENTIDS		= "eventIDs";
 constexpr string_view JSON_ARG_FILEPATH		= "filepath";
 
 constexpr string_view JSON_VAL_ALL				= "all";
@@ -91,6 +99,379 @@ constexpr string_view JSON_VAL_LEVELS			= "levels";
 
 
 // MARK: -
+
+// MARK:  EVENTS NOUN HANDLERS
+
+
+static bool Events_NounHandler_GET(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+											  ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	json reply;
+
+	auto db = insteon.getDB();
+
+	// GET /events
+	if(path.size() == 1) {;
+
+		json eventList;
+		auto eventIDs = db->allEventsIDs();
+		for(auto eventID : eventIDs){
+			json entry;
+
+ 			entry[string(JSON_ARG_NAME)] =  db->eventGetName(eventID);
+			eventList[ to_hex<unsigned short>(eventID)] = entry;
+ 		}
+
+		reply[string(JSON_ARG_EVENTIDS)] = eventList;
+		makeStatusJSON(reply,STATUS_OK);
+		(completion) (reply, STATUS_OK);
+		return true;
+
+	}
+		// GET /events/XXXX
+		else if(path.size() == 2) {
+			
+			eventID_t eventID;
+			
+			if( !str_to_EventID(path.at(1).c_str(), &eventID) || !db->eventsIsValid(eventID))
+				return false;
+	 
+			auto ref = db->eventsGetEvent(eventID);
+			if(ref) {
+				Event event = ref->get();
+				Action act = event.getAction();
+				if(act.isValid()){
+					reply[string(JSON_ARG_ACTION)]= act.JSON();
+				}
+				
+				EventTrigger trig = event.getEventTrigger();
+				if(trig.isValid()){
+					reply[string(JSON_ARG_TRIGGER)]= trig.JSON();
+				}
+
+				reply[string(JSON_ARG_EVENTID)] = event.idString();
+				reply[string(JSON_ARG_NAME)] 	=  db->eventGetName(eventID);
+				makeStatusJSON(reply,STATUS_OK);
+				(completion) (reply, STATUS_OK);
+			}
+		
+ //			json actions;
+//			auto acts = db->actionGroupGetActions(agID);
+//			for(auto ref :acts){
+//				Action a1 = ref.get();
+//				actions[a1.idString()] =  a1.JSON();
+//			}
+//			reply[string(JSON_ARG_ACTIONS)] = actions;
+ 	}
+ 
+	return false;
+}
+
+static bool Events_NounHandler_PUT(ServerCmdQueue* cmdQueue,
+												REST_URL url,
+												TCPClientInfo cInfo,
+													  ServerCmdQueue::cmdCallback_t completion) {
+	
+	using namespace rest;
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	json reply;
+	
+	auto db = insteon.getDB();
+	vector<DeviceID> deviceIDs;
+	string subpath;
+	
+	if(path.size() > 1){
+		subpath =   path.at(1);
+	}
+	
+	 if(path.size() == 3) {
+		if( subpath == SUBPATH_RUN_ACTION) {
+			
+			eventID_t eventID;
+			
+			if( !str_to_EventID(path.at(2).c_str(), &eventID) || !db->eventsIsValid(eventID))
+				return false;
+	 
+		 
+				bool queued = insteon.executeEvent(eventID, [=]( bool didSucceed){
+				
+				json reply;
+				
+				if(didSucceed){
+					reply[string(JSON_ARG_EVENTID)] = to_hex<unsigned short>(eventID);
+					makeStatusJSON(reply,STATUS_OK);
+					(completion) (reply, STATUS_OK);
+				}
+				else {
+					reply[string(JSON_ARG_EVENTID)] = to_hex<unsigned short>(eventID);
+					makeStatusJSON(reply, STATUS_BAD_REQUEST, "Run Event Failed" );;
+					(completion) (reply, STATUS_BAD_REQUEST);
+				}
+			});
+			
+			if(!queued) {
+				makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
+				(completion) (reply, STATUS_UNAVAILABLE);
+				return true;
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool Events_NounHandler_PATCH(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+												 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	
+	json reply;
+	
+	ServerCmdArgValidator v1;
+	auto db = insteon.getDB();
+	
+	if(path.size() == 2) {
+		
+		eventID_t eventID;
+		
+		if( !str_to_EventID(path.at(1).c_str(), &eventID) || !db->eventsIsValid(eventID))
+			return false;
+ 
+		string name;
+		// set name
+		if(v1.getStringFromJSON(JSON_ARG_NAME, url.body(), name)){
+			if(db->eventSetName(eventID, name)) {
+				reply[string(JSON_ARG_EVENTID)] = to_hex<unsigned short>(eventID);
+				reply[string(JSON_ARG_NAME)] = name;
+				
+				makeStatusJSON(reply,STATUS_OK);
+				(completion) (reply, STATUS_OK);
+			}
+			else {
+				reply[string(JSON_ARG_EVENTID)] = to_hex<unsigned short>(eventID);
+				makeStatusJSON(reply, STATUS_BAD_REQUEST, "Set Failed" );;
+				(completion) (reply, STATUS_BAD_REQUEST);
+			}
+		}
+		
+	}
+	return false;
+	
+}
+
+static bool createEventFromJSON( json  &j, Event& event) {
+	
+	bool statusOK = false;
+	Event evt;
+	
+	ServerCmdArgValidator 	v1;
+	DeviceIDArgValidator 	vDeviceID;
+	string str;
+	
+	Action action;
+	EventTrigger trigger;
+	
+	if( j.contains(JSON_ARG_ACTION)
+		&& j.at(string(JSON_ARG_ACTION)).is_object()){
+		auto a = j.at(string(JSON_ARG_ACTION));
+		action = Action(a);
+	}
+	
+	if(action.isValid()
+		&&  j.contains(JSON_ARG_TRIGGER)
+		&& j.at(string(JSON_ARG_TRIGGER)).is_object()){
+		auto t = j.at(string(JSON_ARG_TRIGGER));
+		trigger = EventTrigger(t);
+	};
+	
+	evt = Event(trigger, action);
+	statusOK = evt.isValid();
+	
+	if(statusOK){
+		event = evt;
+	}
+	
+	return statusOK;
+}
+
+ 
+static bool Events_NounHandler_POST(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+												ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	
+	json reply;
+	
+	ServerCmdArgValidator v1;
+
+	auto db = insteon.getDB();
+	
+	if(path.size() == 1) {
+		
+		string name;
+		// Create event
+		
+		if(v1.getStringFromJSON(JSON_ARG_NAME, url.body(), name)){
+			
+			eventID_t eventID;
+			if(db->eventFind(name, &eventID)){
+				name = db->eventGetName(eventID);
+				
+				reply[string(JSON_ARG_NAME)] = name;
+				reply[string(JSON_ARG_EVENTID)] = to_hex<unsigned short>(eventID);
+				makeStatusJSON(reply, STATUS_CONFLICT, "Name already used" );;
+				(completion) (reply, STATUS_CONFLICT);
+				return true;
+			}
+			else {
+				
+				Event event;
+				 
+				if(!createEventFromJSON(url.body(), event ) || !event.isValid())
+				{
+					makeStatusJSON(reply, STATUS_BAD_REQUEST, "Delete Failed" );;
+					(completion) (reply, STATUS_BAD_REQUEST);
+					return true;
+				}
+					
+				event.setName(name);
+				
+				if (db->eventSave(event, &eventID)) {
+					reply[string(JSON_ARG_EVENTID)] = to_hex<unsigned short>(eventID);
+					reply[string(JSON_ARG_NAME)] = name;
+					makeStatusJSON(reply,STATUS_OK);
+					(completion) (reply, STATUS_OK);
+					return true;
+				}
+				else {
+					makeStatusJSON(reply, STATUS_BAD_REQUEST, "Set Failed" );;
+					(completion) (reply, STATUS_BAD_REQUEST);
+					return true;
+				}
+			}
+		}
+	}
+	
+	
+	return false;
+}
+
+
+static bool Events_NounHandler_DELETE(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+														  ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	
+	json reply;
+	
+	ServerCmdArgValidator v1;
+	auto db = insteon.getDB();
+	ActionGroup group;
+	
+	eventID_t eventID;
+	
+	if( !str_to_EventID(path.at(1).c_str(), &eventID) || !db->eventsIsValid(eventID))
+		return false;
+
+	if(path.size() == 2) {
+		if(db->eventDelete(eventID)){
+			makeStatusJSON(reply,STATUS_NO_CONTENT);
+			(completion) (reply, STATUS_NO_CONTENT);
+		}
+		else {
+			reply[string(JSON_ARG_EVENTID)] = to_hex<unsigned short>(eventID);
+			makeStatusJSON(reply, STATUS_BAD_REQUEST, "Delete Failed" );;
+			(completion) (reply, STATUS_BAD_REQUEST);
+		}
+		return true;
+		
+	}
+	return false;
+}
+
+static void Events_NounHandler(ServerCmdQueue* cmdQueue,
+										 REST_URL url,
+										 TCPClientInfo cInfo,
+										 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	json reply;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	string noun;
+	
+	bool isValidURL = false;
+	
+	if(path.size() > 0) {
+		noun = path.at(0);
+	}
+	
+	// CHECK noun
+	if(noun != NOUN_EVENTS){
+		(completion) (reply, STATUS_NOT_FOUND);
+		return;
+	}
+	
+	// is server available?
+	if(!insteon.serverAvailable()) {
+		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
+		(completion) (reply, STATUS_UNAVAILABLE);
+		return;
+	}
+	
+	switch(url.method()){
+		case HTTP_GET:
+			isValidURL = Events_NounHandler_GET(cmdQueue,url,cInfo, completion);
+			break;
+			
+		case HTTP_PUT:
+ 			isValidURL = Events_NounHandler_PUT(cmdQueue,url,cInfo, completion);
+			break;
+			
+		case HTTP_PATCH:
+ 			isValidURL = Events_NounHandler_PATCH(cmdQueue,url,cInfo, completion);
+			break;
+	 
+		case HTTP_POST:
+			isValidURL = Events_NounHandler_POST(cmdQueue,url,cInfo, completion);
+			break;
+ 
+		case HTTP_DELETE:
+ 			isValidURL = Events_NounHandler_DELETE(cmdQueue,url,cInfo, completion);
+			break;
+  
+		default:
+			(completion) (reply, STATUS_INVALID_METHOD);
+			return;
+	}
+	
+	if(!isValidURL) {
+		(completion) (reply, STATUS_NOT_FOUND);
+	}
+	
+}
 
 // MARK:  ACTION GROUPS NOUN HANDLERS
 
@@ -2769,6 +3150,150 @@ static bool ActionCmdHandler( stringvector line,
 	return false;
 }
 
+static bool EventsCmdHandler( stringvector line,
+								  CmdLineMgr* mgr,
+									 boolCallback_t	cb){
+
+	using namespace rest;
+
+	string errorStr;
+	REST_URL url;
+	
+	string command = line[0];
+	string arg1;
+	string subcommand;
+	
+	if(	line.size() > 1)
+		subcommand = line[1];
+	
+	if(	line.size() > 2)
+		arg1 = line[2];
+ 
+
+	if(line.size() < 2){
+		errorStr =  "\x1B[36;1;4m"  + command + "\x1B[0m what?.";
+	}
+	else {
+		
+		if (subcommand == "list") {
+			std::ostringstream oss;
+			oss << "GET /events " <<  " HTTP/1.1\n";
+			oss << "Connection: close\n";
+			oss << "\n";
+			url.setURL(oss.str());
+		}
+		else if (subcommand == "details") {
+			if(	arg1.empty()) {
+				errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects actionID.";
+			}
+			else {
+				std::ostringstream oss;
+				oss << "GET /events/" <<  arg1 << " HTTP/1.1\n";
+				oss << "Connection: close\n";
+				oss << "\n";
+				url.setURL(oss.str());
+			}
+		}
+		else if (subcommand == "run") {
+			std::ostringstream oss;
+			oss << "PUT /events/run.actions/" <<  arg1 << " HTTP/1.1\n";
+			oss << "Connection: close\n";
+			oss << "\n";
+			url.setURL(oss.str());
+		}
+		
+		else {
+			errorStr =  "Command: \x1B[36;1;4m"  + subcommand + "\x1B[0m is an invalid function for " + command;
+		}
+	}
+ 
+	if(url.isValid()) {
+		
+		TCPClientInfo cInfo = mgr->getClientInfo();
+		ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
+			
+			bool success = didSucceed(reply);
+			if(success) {
+				
+				std::ostringstream oss;
+				
+				string key1 = string(JSON_ARG_EVENTIDS);
+				
+				if( reply.contains(key1)
+					&& reply.at(key1).is_object()){
+					auto entries = reply.at(key1);
+					
+					for (auto& [key, value] : entries.items()) {
+						
+						oss  << " " << key << " ";
+						string eventName = value[string(JSON_ARG_NAME)];
+						oss << "\"" << eventName << "\""  << "\r\n";
+					}
+					
+					mgr->sendReply(oss.str());
+				}
+				else {
+					Action act;
+					EventTrigger trig;
+					string eventName;
+					string eventID;
+					
+					string key1 = string(JSON_ARG_NAME);
+					string key2 = string(JSON_ARG_ACTION);
+					string key3 = string(JSON_ARG_TRIGGER);
+					string key4 = string(JSON_ARG_EVENTID);
+					
+					if( reply.contains(key1)
+						&& reply.at(key1).is_string())
+						eventName =  reply.at(key1);
+					
+					if( reply.contains(key4)
+						&& reply.at(key4).is_string())
+						eventID =  reply.at(key4);
+					
+					if( reply.contains(key2)
+						&& reply.at(key2).is_object()){
+						act = Action(reply.at(key2));
+					}
+					
+					if( reply.contains(key3)
+						&& reply.at(key3).is_object()){
+						trig = EventTrigger(reply.at(key3));
+					}
+		 
+					if(act.isValid() && trig.isValid()){
+						oss  << " " << eventID << " " << "\"" << eventName << "\""  << "\r\n";
+						oss  << " trigger: " << trig.printString() <<  "\r\n";
+						oss  << " action: " << act.printString() <<  "\r\n";
+					}
+					else if(subcommand == "run"){
+						mgr->sendReply( "OK\n\r" );
+					}
+					else {
+						// huh?
+						auto dump = reply.dump(4);
+						dump = replaceAll(dump, "\n","\r\n" );
+						cout << dump << "\n";
+						mgr->sendReply( "OK\n\r" );
+					}
+					
+					mgr->sendReply(oss.str());
+				}
+			}
+			else {
+				string error = errorMessage(reply);
+				mgr->sendReply( error + "\n\r");
+			}
+			
+			(cb) (success);
+		});
+		return true;
+	}
+	
+	mgr->sendReply(errorStr + "\n\r");
+	(cb)(false);
+	return false;
+}
 
 // MARK: -  register commands
 
@@ -2786,6 +3311,7 @@ void registerServerCommands() {
 	cmdQueue->registerNoun(NOUN_INSTEON_GROUPS,	InsteonGroups_NounHandler);
 	cmdQueue->registerNoun(NOUN_LINK,	Link_NounHandler);
 	cmdQueue->registerNoun(NOUN_ACTION_GROUPS, ActionGroups_NounHandler);
+	cmdQueue->registerNoun(NOUN_EVENTS,		 Events_NounHandler);
 		
 	// register command line commands
 	auto cmlR = CmdLineRegistry::shared();
@@ -2805,6 +3331,7 @@ void registerServerCommands() {
 	cmlR->registerCommand("all",			InsteonGroupCmdHandler);
 	cmlR->registerCommand("dump",		 DumpCmdHandler);
 	cmlR->registerCommand("action",		 ActionCmdHandler);
-	
+	cmlR->registerCommand("events",		 EventsCmdHandler);
+ 
 	CmdLineHelp::shared()->setHelpFile("helpfile.txt");
 }

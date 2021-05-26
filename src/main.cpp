@@ -42,74 +42,67 @@
 
 #endif
  
-void test(){
-	vector<string> actions;
+void linkKP(){
+	DeviceID deviceID =  DeviceID("33.4F.F6");
+	auto keypad = InsteonKeypadDevice(deviceID );
 	
-	actions.clear();
-	DeviceID deviceID =  DeviceID("01.02.03");
-	GroupID groupID =  GroupID("01.02.03");
-
-	auto db = insteon.getDB();
 	
-	for(int i = 0; i < 4; i++){
-		
-		actionGroupID_t agID1;
-		
-		string name = "group_" + to_string(i);
-		
-		if(db->actionGroupCreate(&agID1, name)){
-			if( db->actionGroupSetName(agID1, name + "_a")) {
-								
-				auto a1 = Action(deviceID, Action::ACTION_SET_LEVEL, 255);
-				db->actionGroupAddAction(agID1, a1);
-				db->actionGroupAddAction(agID1, Action(DeviceID("54.F5.2D"), Action::ACTION_BEEP));
-				db->actionGroupAddAction(agID1, Action(deviceID, Action::ACTION_SET_LED_BRIGHTNESS, 120));
- 				db->actionGroupAddAction(agID1,  Action(groupID, Action::ACTION_SET_LEVEL, 100));
-				db->actionGroupAddAction(agID1, Action(22, 255));
-				
-				
-				actionGroupID_t agID2;
-				string subName = "subgroup_" + to_string(i);
-				db->actionGroupCreate(&agID2, subName);
-				db->actionGroupAddAction(agID1,  Action(agID2));
-//		 		db->actionGroupDelete(agID1);
-				
-			}
-		}
-
-	}
 	
-	if(0){
+	START_VERBOSE;
+	
+	// link up the keypad button to groups.
+	vector<pair<uint8_t, uint8_t> > pairs =
+	{ {2, 0xA2},{3,0xA3},{4,0xA4},{5,0xA5},{6,0xA6},{7,0xA7},{8,0xA8},   };
+	
+	
+	insteon.linkKeyPadButtonsToGroups(deviceID, pairs, [=](bool didSucceed) {
 		
-		auto actionIDs = db->allActionGroupsIDs();
-		for(auto agID : actionIDs ){
-			
-			insteon.executeActionGroup(agID,[=](bool didSucceed) {
-				
-				string name = db->actionGroupGetName(agID);
-				auto actions = db->actionGroupGetActions(agID);
-				
-				printf("completed %x: %10s %ld\n", agID, name.c_str(), actions.size());
+		insteon.addResponderToDevice(deviceID, 0x02,  [=](bool didSucceed) {
+			insteon.addResponderToDevice(deviceID, 0x03,  [=](bool didSucceed) {
+				insteon.addResponderToDevice(deviceID, 0x04,  [=](bool didSucceed) {
+					insteon.addResponderToDevice(deviceID, 0x05,  [=](bool didSucceed) {
+						insteon.addResponderToDevice(deviceID, 0x06,  [=](bool didSucceed) {
+							insteon.addResponderToDevice(deviceID, 0x07,  [=](bool didSucceed) {
+								insteon.addResponderToDevice(deviceID, 0x08,  [=](bool didSucceed) {
+	
+									printf("success");
+									
+									
+								});
+							});
+						});
+					});
+				});
 			});
-			
+		});
+	});
+}
+ 
+void test(){
+ 	DeviceID deviceID =  DeviceID("33.4F.F6");
+
+//	InsteonKeypadDevice(deviceID).setNonToggleMask(00, [=]( bool didSucceed) {
+//	});
+//
+
+	InsteonKeypadDevice(deviceID).getKeypadLEDState( [=](uint8_t mask, bool didSucceed) {
+
+		if(didSucceed){
+			mask = ~mask;
+			InsteonKeypadDevice(deviceID).setKeypadLEDState(mask, [=](bool didSucceed) {
+
+				test();
+			});
+
 		}
-	}
-// 	for(auto agID : actionIDs ){
-//
-//		string name = db->actionGroupGetName(agID);
-//		auto actions = db->actionGroupGetActions(agID);
-//
-//		printf("%x: %10s %ld\n", agID, name.c_str(), actions.size());
-//
-//		for(auto ref :actions){
-//			Action a1 = ref.get();
-//			string str = a1.serialize();
-//			printf("\t%s", str.c_str());
-//
-//		}
-//
-//		db->actionGroupDelete(agID);
-//	}
+		else {
+			test();
+		}
+
+
+	});
+	
+						 
 }
 
 // MARK: - MAIN
@@ -129,8 +122,9 @@ int main(int argc, const char * argv[]) {
 			
  			insteon.syncPLM( [=](bool didSucceed) {
 				insteon.validatePLM( [](bool didSucceed) {
-					
-// 				test();
+			
+//					linkKP();
+ //				test();
 
 //					insteon.getDB()->saveToCacheFile();
 				});

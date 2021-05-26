@@ -244,7 +244,7 @@ std::string Action::printString() const {
 			
 		case ACTION_TYPE_DEVICEGROUP:
 			oss <<  stringForCmd(_cmd)
-				<< " Insteon.Group:" <<  to_hex(_deviceGroupID)  << "  "
+				<< " Insteon.Group:" <<  to_hex<uint8_t>(_deviceGroupID)  << "  "
 				<< InsteonDevice::onLevelString(_level);
 
 			break;
@@ -280,7 +280,7 @@ const nlohmann::json Action::JSON(){
 			break;
 
 		case ACTION_TYPE_DEVICEGROUP:
-			j[string(JSON_INSTEON_GROUPS)] = to_hex<unsigned short>(_deviceGroupID);
+			j[string(JSON_INSTEON_GROUPS)] = to_hex<uint8_t>(_deviceGroupID);
 			j[string(JSON_ACTION_CMD)] = JSON_CMD_SET;
 			j[string(JSON_ACTION_LEVEL)] = _level;
 			break;

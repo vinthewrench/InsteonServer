@@ -148,6 +148,7 @@ public:
 	const DeviceID 	deviceID(){return 	_deviceID;};
 	const GroupID 	groupID(){return 	_groupID;};
 	const uint8_t 	deviceGroupID(){return 	_deviceGroupID;};
+	const actionGroupID_t 	actionGroupID(){return 	_ActionGroupID;};
 
 private:
 	void initWithJSON(nlohmann::json j);
