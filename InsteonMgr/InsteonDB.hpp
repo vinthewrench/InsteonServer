@@ -171,16 +171,29 @@ public:
 	bool eventsIsValid(eventID_t eventID);
 	bool eventSave(Event event, eventID_t* eventIDOut = NULL);
 	bool eventFind(string name, eventID_t* eventID);
-
-	bool 	eventDelete(eventID_t eventID);
-	bool 	eventSetName(eventID_t eventID, string name);
+	bool eventDelete(eventID_t eventID);
+	bool eventSetName(eventID_t eventID, string name);
 	string eventGetName(eventID_t eventID);
-	
 	optional<reference_wrapper<Event>> eventsGetEvent(eventID_t eventID);
 	vector<eventID_t> allEventsIDs();
 	vector<eventID_t> matchingEventIDs(EventTrigger trig);
+	vector<eventID_t> eventsThatNeedToRun(solarTimes_t &solar, time_t localNow);
+	bool eventSetLastRunTime(eventID_t eventID, time_t localNow);
+	void reconcileEventGroups(const solarTimes_t &solar, time_t localNow);
 
-
+	// event groups
+	bool eventGroupIsValid(eventGroupID_t eventGroupID);
+	bool eventGroupCreate(eventGroupID_t* eventGroupID, const string name);
+	bool eventGroupDelete(eventGroupID_t eventGroupID);
+	bool eventGroupFind(string name, eventGroupID_t* eventGroupID);
+	bool eventGroupSetName(eventGroupID_t eventGroupID, string name);
+	string eventGroupGetName(eventGroupID_t eventGroupID);
+	bool eventGroupAddEvent(eventGroupID_t eventGroupID,  eventID_t eventID);
+	bool eventGroupRemoveEvent(eventGroupID_t eventGroupID, eventID_t eventID);
+	bool eventGroupContainsEventID(eventGroupID_t eventGroupID, eventID_t eventID);
+	vector<eventID_t> eventGroupGetEventIDs(eventGroupID_t eventGroupID);
+	vector<eventGroupID_t> allEventGroupIDs();
+	
   	// debugging
 	string dumpDB(bool printALDB = false);
 	void   dumpDBInfo(std::ostringstream &oss, DeviceID deviceID, bool printALDB = false );
@@ -235,6 +248,13 @@ private:
  
 	map<eventID_t, Event> 		_events;
 	
+	typedef struct {
+		string name;
+		set<eventID_t>  eventIDs;
+	} eventGroupInfo_t;
+
+	map<eventID_t, eventGroupInfo_t> 		_eventsGroups;
+
 	string 						_directoryPath;
 	mt19937						_rng;
 };

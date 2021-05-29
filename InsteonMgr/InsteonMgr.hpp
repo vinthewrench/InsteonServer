@@ -22,6 +22,7 @@
 #include "InsteonValidator.hpp"
 #include "InsteonException.hpp"
 #include "InsteonDeviceEventMgr.hpp"
+#include "ScheduleMgr.hpp"
 
 
 class InsteonMgr {
@@ -117,6 +118,8 @@ public:
 	bool executeEvent(eventID_t eventID,
 						 std::function<void(bool didSucceed)> callback = NULL);
 
+	bool getSolarEvents(solarTimes_t &solar);
+	
 	// events
 	
 	void registerEvent( DeviceID deviceID,
@@ -139,6 +142,7 @@ private:
 	InsteonPLM				_plm;
 	InsteonDB					_db;
 	InsteonDeviceEventMgr _eventMgr;
+	ScheduleMgr				_scdMgr;
 	
 	InsteonCmdQueue*			_cmdQueue;		// device state managmenr
 	InsteonALDB*				_aldb;		 	// used for syncing ALDB
@@ -163,7 +167,8 @@ private:
 
 	plm_result_t 		handleResponse(uint64_t timeout);
 	bool  					processBroadcastEvents(plm_result_t response);
- 
+	
+	void					idleLoop();		// do stuff here when we are not busy.
 	
 	timeval			_startTime;			// used for timeouts (IR REQ/Linkink)
 	uint64_t     	_timeout_LINKING;	// how long to wait LINKING

@@ -21,6 +21,8 @@ constexpr string_view JSON_DEVICEID 			= "deviceID";
 constexpr string_view JSON_INSTEON_GROUP 		= "insteon.group";
 constexpr string_view JSON_CMD			 		= "cmd";
 
+constexpr string_view JSON_TIME_BASE			= "timeBase";
+constexpr string_view JSON_TIME_OFFSET		 	= "mins";
 
 // MARK: - EventTrigger()
 
@@ -115,7 +117,11 @@ void EventTrigger::initWithJSON(nlohmann::json j){
 		
 		_eventType = EVENT_TYPE_DEVICE;
 	}
-//	else 	if( j.contains(string(JSON_TIMEBASE))
+	else 	if( j.contains(string(JSON_TIME_OFFSET))
+				&& j.contains(string(JSON_TIME_BASE))) {
+
+		_eventType = EVENT_TYPE_TIME;
+	}
 
 	if(_eventType == EVENT_TYPE_DEVICE) {
 		
@@ -125,7 +131,7 @@ void EventTrigger::initWithJSON(nlohmann::json j){
 		_deviceEvent.hasDeviceID = false;
 		_deviceEvent.hasGroupID 	= false;
 		_deviceEvent.hasCmd	 	= false;
-
+		
 		if( j.contains(string(JSON_DEVICEID))
 			&& j.at(string(JSON_DEVICEID)).is_string()){
 			string str = j.at(string(JSON_DEVICEID));
@@ -133,19 +139,23 @@ void EventTrigger::initWithJSON(nlohmann::json j){
 			if(str_to_deviceID(str.c_str(), rawDevID)) {
 				_deviceEvent.deviceID = DeviceID(rawDevID);
 				_deviceEvent.hasDeviceID = !_deviceEvent.deviceID.isNULL();
-				}
+			}
 		}
 		
 		if( j.contains(string(JSON_INSTEON_GROUP))
 			&& j.at(string(JSON_INSTEON_GROUP)).is_string()){
 			string str = j.at(string(JSON_INSTEON_GROUP));
 			
-			if( regex_match(string(str), std::regex("^[A-Fa-f0-9]{2}$"))){
-				uint8_t groupID;
-				if( std::sscanf(str.c_str(), "%hhx", &groupID) == 1){
-					_deviceEvent.insteonGroup = groupID;
-					_deviceEvent.hasGroupID = true;
-				}
+			uint8_t groupID = 0;
+			if( regex_match(string(str), std::regex("^[A-Fa-f0-9]{2}$"))
+				&& ( std::sscanf(str.c_str(), "%hhd", &groupID) == 1)){
+				_deviceEvent.insteonGroup = groupID;
+				_deviceEvent.hasGroupID = true;
+			}
+			else if( regex_match(string(str), std::regex("^0?[xX][0-9a-fA-F]{2}$"))
+					  && ( std::sscanf(str.c_str(), "%hhx", &groupID) == 1)){
+				_deviceEvent.insteonGroup = groupID;
+				_deviceEvent.hasGroupID = true;
 			}
 		}
 		
@@ -153,26 +163,41 @@ void EventTrigger::initWithJSON(nlohmann::json j){
 			&& j.at(string(JSON_CMD)).is_string()){
 			string str = j.at(string(JSON_CMD));
 			
- // USE "^0[xX][A-Fa-f0-9]{2}$" AND isxdigit To figure out if we are inputing hex or dec
-				if( regex_match(string(str), std::regex("^[A-Fa-f0-9]{2}$"))){
-				uint8_t cmd;
-				if( std::sscanf(str.c_str(), "%hhx", &cmd) == 1){
-					_deviceEvent.cmd = cmd;
-					_deviceEvent.hasCmd = cmd != 0;
-				}
+			uint8_t cmd = 0;
+			if( regex_match(string(str), std::regex("^[A-Fa-f0-9]{2}$"))
+				&& ( std::sscanf(str.c_str(), "%hhd", &cmd) == 1)){
+				_deviceEvent.cmd = cmd;
+				_deviceEvent.hasCmd = cmd != 0;
+			}
+			else if( regex_match(string(str), std::regex("^0?[xX][0-9a-fA-F]{2}$"))
+					  && ( std::sscanf(str.c_str(), "%hhx", &cmd) == 1)){
+				_deviceEvent.cmd = cmd;
+				_deviceEvent.hasCmd = cmd != 0;
 			}
 		}
 	}
 	else	if(_eventType == EVENT_TYPE_TIME) {
+		
 		_timeEvent.timeBase = TOD_INVALID;
 		_timeEvent.timeOfDay = 0;
+		_timeEvent.lastRun = 0;
+
+		if( j.contains(string(JSON_TIME_BASE))
+			&& j.at(string(JSON_TIME_BASE)).is_number()){
+			_timeEvent.timeBase = j.at(string(JSON_TIME_BASE));
+		}
+
+		if( j.contains(string(JSON_TIME_OFFSET))
+			&& j.at(string(JSON_TIME_OFFSET)).is_number()){
+			_timeEvent.timeOfDay = j.at(string(JSON_TIME_OFFSET));
+		}
 	}
 }
 
 
 nlohmann::json EventTrigger::JSON(){
 	json j;
-
+	
 	switch(_eventType){
 		case EVENT_TYPE_DEVICE:
 		{
@@ -183,31 +208,32 @@ nlohmann::json EventTrigger::JSON(){
 			}
 			
 			if(_deviceEvent.hasGroupID){
-				j1[string(JSON_INSTEON_GROUP)] =  to_hex<uint8_t>(_deviceEvent.insteonGroup);
+				j1[string(JSON_INSTEON_GROUP)] =  to_hex<uint8_t>(_deviceEvent.insteonGroup,true);
 			}
 			
 			if(_deviceEvent.hasCmd){
-				j1[string(JSON_CMD)] =  to_hex<uint8_t>(_deviceEvent.cmd);
+				j1[string(JSON_CMD)] =  to_hex<uint8_t>(_deviceEvent.cmd,true);
 			}
 			
 			// maybe this should be a subset
 			if(!j1.is_null())
 				j = j1;
-	
+			
 		}
 			break;
 			
 		case EVENT_TYPE_TIME:
 		{
+			json j1;
 			
+			j1[string(JSON_TIME_OFFSET)] =  _timeEvent.timeOfDay;
+			j1[string(JSON_TIME_BASE)] 	=  _timeEvent.timeBase;
+			j = j1;
 		}
-	
 			break;
-			
 		default:;
-			
 	}
-
+	
 	return j;
 }
 
@@ -224,8 +250,14 @@ bool EventTrigger::isValid(){
 	return (_eventType != EVENT_TYPE_UNKNOWN);
 }
 
+bool EventTrigger::setLastRun(time_t time){
+	if(_eventType == EVENT_TYPE_TIME){
+		_timeEvent.lastRun = time;
+		return true;
+	} else return false;
+}
 
-bool EventTrigger::shouldTrigger(EventTrigger a) {
+bool EventTrigger::shouldTriggerFromDeviceEvent(EventTrigger a) {
 	bool result = false;
 	
 	if(_eventType !=  a._eventType)
@@ -253,6 +285,95 @@ bool EventTrigger::shouldTrigger(EventTrigger a) {
 	return result;
 }
 
+bool EventTrigger::shouldTriggerFromTimeEvent(const solarTimes_t &solar, time_t localNow){
+	
+	bool result = false;
+	
+	if(_eventType == EVENT_TYPE_TIME){
+		
+		int16_t minsFromMidnight = 0;
+		
+		// when does it need to run today
+		if(calculateTriggerTime(solar,minsFromMidnight)) {
+			time_t schedTime = solar.previousMidnight + (minsFromMidnight * SECS_PER_MIN) ;
+			
+			if( schedTime < localNow) {
+				if( _timeEvent.lastRun  == 0
+					||  _timeEvent.lastRun < solar.previousMidnight )
+					result = true;
+			}
+		};
+	}
+	
+	return result;
+}
+
+
+bool EventTrigger::calculateTriggerTime(const solarTimes_t &solar, int16_t &minsFromMidnight) {
+	
+	bool result = false;
+	
+	if(_eventType == EVENT_TYPE_TIME){
+		int16_t actualTime  = _timeEvent.timeOfDay;
+		
+		switch(_timeEvent.timeBase){
+			case TOD_SUNRISE:
+				actualTime = solar.sunriseMins + actualTime;
+				result = true;
+				break;
+				
+			case TOD_SUNSET:
+				actualTime = solar.sunSetMins + actualTime;
+				result = true;
+				break;
+				
+			case TOD_CIVIL_SUNRISE:
+				actualTime = solar.civilSunRiseMins + actualTime;
+				result = true;
+				break;
+				
+			case TOD_CIVIL_SUNSET:
+				actualTime = solar.civilSunSetMins + actualTime;
+				result = true;
+				break;
+				
+			case TOD_ABSOLUTE:
+				actualTime = actualTime;
+				result = true;
+				break;
+				
+			case TOD_INVALID:
+				break;
+		}
+		
+		if(result)
+			minsFromMidnight = actualTime;
+	}
+ 
+	return result;
+}
+
+
+// MARK: - EventGroup
+ 
+bool str_to_EventGroupID(const char* str, eventGroupID_t *eventGroupIDOut){
+	bool status = false;
+	
+	eventID_t val = 0;
+ 	status = sscanf(str, "%hx", &val) == 1;
+	
+	if(eventGroupIDOut)  {
+		*eventGroupIDOut = val;
+	}
+	
+	return status;
+};
+
+ 
+string  EventGroupID_to_string(eventGroupID_t eventGroupID){
+		return to_hex<unsigned short>(eventGroupID);
+}
+
 // MARK: - Event()
  
 bool str_to_EventID(const char* str, eventID_t *eventIDOut){
@@ -271,6 +392,11 @@ bool str_to_EventID(const char* str, eventID_t *eventIDOut){
 };
 
  
+string  EventID_to_string(eventID_t eventID){
+		return to_hex<unsigned short>(eventID);
+}
+
+
 Event::Event(){
 	_rawEventID = 0;
 	_trigger 	= EventTrigger();

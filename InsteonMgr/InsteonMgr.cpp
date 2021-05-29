@@ -39,7 +39,47 @@ InsteonMgr::InsteonMgr(){
 	// clear database
 	_db.clear();
 	_state = STATE_NO_PLM;
+
+//  VINNIE
+	_scdMgr.setLatLong(42.235389 ,-122.865947);
+
+	{
+	solarTimes_t solar;
+	_scdMgr.getSolarEvents(solar);
+		
+		char timeStr[80] = {0};
+		static const char *kDateFormat = "%a %h-%d-%Y %r";
+		struct tm timeinfo = {0};
+		
+		// convert this to local time
+	 	 time_t lastMidnight = solar.previousMidnight;
+	 
+		time_t time = 0;
+		time = lastMidnight + (solar.civilSunRiseMins * 60);
+		gmtime_r(&time, &timeinfo);
+		::strftime(timeStr, sizeof(timeStr), kDateFormat, &timeinfo );
+		printf("%12s: %s\n", "civilSunRise", timeStr);
+		
+		time = lastMidnight + (solar.sunriseMins * 60);
+		gmtime_r(&time, &timeinfo);
+		::strftime(timeStr, sizeof(timeStr), kDateFormat, &timeinfo );
+		printf("%12s: %s\n", "sunRise", timeStr);
+		
+		time = lastMidnight + (solar.sunSetMins * 60);
+		gmtime_r(&time, &timeinfo);
+		::strftime(timeStr, sizeof(timeStr), kDateFormat, &timeinfo );
+		printf("%12s: %s\n", "sunSet", timeStr);
+		
+		time = lastMidnight + (solar.civilSunSetMins * 60);
+		gmtime_r(&time, &timeinfo);
+		::strftime(timeStr, sizeof(timeStr), kDateFormat, &timeinfo );
+		printf("%12s: %s\n", "civilSunSet", timeStr);
+		
+ 
+	
+	}
 }
+
 
 /**
  * @brief delete the InsteonMgr
@@ -310,6 +350,9 @@ string InsteonMgr::currentStateString(){
 	return result;
 }
 
+bool InsteonMgr::getSolarEvents(solarTimes_t &solar){
+	return _scdMgr.getSolarEvents(solar);
+}
 
 
 // MARK: - ALDB and PLM setup
@@ -1344,6 +1387,55 @@ bool  InsteonMgr::processBroadcastEvents(plm_result_t response) {
 	return didHandle;
 }
 
+// MARK: - idle processing
+
+
+void InsteonMgr::idleLoop() {
+
+	// limit this to once a minute
+	
+	static time_t lastRun = 0;
+
+	time_t now = time(NULL);
+	struct tm* tm = localtime(&now);
+	time_t localNow  = (now + tm->tm_gmtoff);
+
+	if(localNow > (lastRun + SECS_PER_MIN * 1)){
+		lastRun = localNow;
+		
+		if(_state == STATE_READY) {
+		
+			static bool didReconcileEvents = false;
+
+			// good place to check for events.
+			solarTimes_t solar;
+			if(_scdMgr.getSolarEvents(solar)){
+				
+				// combine any unrun events.
+				if(!didReconcileEvents) {
+					_db.reconcileEventGroups(solar, localNow);
+				}
+				
+				auto eventIDs = _db.eventsThatNeedToRun(solar, localNow);
+				
+				for (auto eventID : eventIDs) {
+					executeEvent(eventID, [=]( bool didSucceed) {
+						_db.eventSetLastRunTime(eventID, localNow);
+					});
+				}
+			}
+		 
+			if( _nextValidationCheck != 0 &&  (_nextValidationCheck < localNow)) {
+				startDeviceValidation();
+			}
+			
+		}
+	}
+ 
+	
+};
+
+
 // MARK: - PLM response
  
 plm_result_t InsteonMgr::handleResponse(uint64_t timeout){
@@ -1353,9 +1445,7 @@ plm_result_t InsteonMgr::handleResponse(uint64_t timeout){
 	if(!_hasPLM)
 		return PLR_NOTHING;
 	
-	time_t now = time(NULL);
-	
-	while(true) {
+		while(true) {
 		
 		bool didHandle = false;
 		
@@ -1467,12 +1557,7 @@ plm_result_t InsteonMgr::handleResponse(uint64_t timeout){
 		}
 		// we got no response  -- not busy>?
 		else if(result == PLR_NOTHING){
-			
-			if(_state == STATE_READY
-				&& _nextValidationCheck != 0
-				&&  (_nextValidationCheck < now)) {
-				startDeviceValidation();
-			}
+			idleLoop();
 			break;
 		}
 		
@@ -1647,7 +1732,10 @@ plm_result_t InsteonMgr::handleResponse(uint64_t timeout){
  */
 
 void InsteonMgr::updateLevels(){
-		
+
+	//VINNIE
+	return ;
+	
 	if(_state != STATE_READY)
 		return;
 	

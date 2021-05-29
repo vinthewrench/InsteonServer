@@ -13,9 +13,11 @@
 #include <stdbool.h>
 #include <functional>
 
+
+
 typedef std::function<void(bool didSucceed)> boolCallback_t;
 
 typedef  unsigned long eTag_t;
-
+ 
 
 #endif /* InsteonMgrDefs_h */

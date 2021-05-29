@@ -121,6 +121,31 @@ public:
 		}
 		return  false;
 	}
+	
+	
+	  virtual bool getDoubleFromJSON(string_view key, const json &j, double &result) {
+		  if( j.contains(key)) {
+			  string k = string(key);
+		  
+			  if( j.at(k).is_string()){
+				  string str = j.at(k);
+				  
+				  char* p;
+				  double val = strtod(str.c_str(), &p);
+				  if(*p == 0){
+					  result = val;
+					  return  true;;
+				  }
+			  }
+			  else if( j.at(k).is_number()){
+				  auto num = j.at(k);
+				  double dd = (double) num;
+				  result = dd;
+				  return true;
+			  }
+		  }
+		  return  false;
+	  }
  
 	virtual bool getBoolFromJSON(string_view key, const json &j, bool &result) {
 		if( j.contains(key)) {

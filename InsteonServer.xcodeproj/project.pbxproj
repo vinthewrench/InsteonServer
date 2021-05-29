@@ -30,6 +30,8 @@
 		2E592EBF2620C9380041AA34 /* NotificationCenter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EAE2620C9380041AA34 /* NotificationCenter.cpp */; };
 		2E592EC32620C9660041AA34 /* catagories.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E592EC12620C9410041AA34 /* catagories.txt */; };
 		2E966416265B627C007A3D93 /* Event.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E966413265B141E007A3D93 /* Event.cpp */; };
+		2E96641A265EACC8007A3D93 /* sunset.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E966418265EACC8007A3D93 /* sunset.cpp */; };
+		2E96641F265EB075007A3D93 /* ScheduleMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E96641D265EB075007A3D93 /* ScheduleMgr.cpp */; };
 		2EC68B1A2644D35800541251 /* TimeStamp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EC68B162644D18200541251 /* TimeStamp.cpp */; };
 		2EC68B32264DA54600541251 /* helpfile.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2EC68B2D264DA3C600541251 /* helpfile.txt */; };
 		2EC68B38265303C200541251 /* Action.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EC68B36265303C200541251 /* Action.cpp */; };
@@ -116,6 +118,10 @@
 		2E592EDC2630831F0041AA34 /* CommonIncludes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CommonIncludes.h; sourceTree = "<group>"; };
 		2E966413265B141E007A3D93 /* Event.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Event.cpp; sourceTree = "<group>"; };
 		2E966414265B141E007A3D93 /* Event.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Event.hpp; sourceTree = "<group>"; };
+		2E966418265EACC8007A3D93 /* sunset.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = sunset.cpp; sourceTree = "<group>"; };
+		2E966419265EACC8007A3D93 /* sunset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sunset.h; sourceTree = "<group>"; };
+		2E96641D265EB075007A3D93 /* ScheduleMgr.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ScheduleMgr.cpp; sourceTree = "<group>"; };
+		2E96641E265EB075007A3D93 /* ScheduleMgr.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ScheduleMgr.hpp; sourceTree = "<group>"; };
 		2EC68B162644D18200541251 /* TimeStamp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TimeStamp.cpp; sourceTree = "<group>"; };
 		2EC68B172644D18200541251 /* TimeStamp.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = TimeStamp.hpp; sourceTree = "<group>"; };
 		2EC68B2D264DA3C600541251 /* helpfile.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = helpfile.txt; sourceTree = "<group>"; };
@@ -197,6 +203,8 @@
 				2E592E9D2620C9380041AA34 /* InsteonMgrDefs.hpp */,
 				2E592E942620C9380041AA34 /* InsteonMgr.hpp */,
 				2E592E8A2620C9370041AA34 /* InsteonMgr.cpp */,
+				2E96641E265EB075007A3D93 /* ScheduleMgr.hpp */,
+				2E96641D265EB075007A3D93 /* ScheduleMgr.cpp */,
 				2E592E9B2620C9380041AA34 /* InsteonDB.hpp */,
 				2E592E992620C9380041AA34 /* InsteonDB.cpp */,
 				2E966414265B141E007A3D93 /* Event.hpp */,
@@ -237,6 +245,8 @@
 				2EC68B172644D18200541251 /* TimeStamp.hpp */,
 				2EC68B162644D18200541251 /* TimeStamp.cpp */,
 				2E592E912620C9380041AA34 /* xxhash.h */,
+				2E966418265EACC8007A3D93 /* sunset.cpp */,
+				2E966419265EACC8007A3D93 /* sunset.h */,
 			);
 			path = InsteonMgr;
 			sourceTree = "<group>";
@@ -337,6 +347,7 @@
 				2E592EB62620C9380041AA34 /* PLMStream.cpp in Sources */,
 				2E592EB22620C9380041AA34 /* InsteonParser.cpp in Sources */,
 				2E592EBC2620C9380041AA34 /* InsteonValidator.cpp in Sources */,
+				2E96641A265EACC8007A3D93 /* sunset.cpp in Sources */,
 				2E592EAF2620C9380041AA34 /* InsteonMgr.cpp in Sources */,
 				2E592E682620C2EC0041AA34 /* ServerCmdValidators.cpp in Sources */,
 				2E592EB92620C9380041AA34 /* InsteonPLM.cpp in Sources */,
@@ -347,6 +358,7 @@
 				2E592EBE2620C9380041AA34 /* DeviceInfo.cpp in Sources */,
 				2E592E422620C1150041AA34 /* main.cpp in Sources */,
 				2E592EB42620C9380041AA34 /* InsteonDB.cpp in Sources */,
+				2E96641F265EB075007A3D93 /* ScheduleMgr.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

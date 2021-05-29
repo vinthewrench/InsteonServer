@@ -21,6 +21,7 @@
 #include "InsteonDevice.hpp"
 #include "Utils.hpp"
 #include "Action.hpp"
+#include "ScheduleMgr.hpp"
 
 using namespace std;
 
@@ -34,16 +35,15 @@ class EventTrigger {
 	}eventType_t;
 
 	typedef enum {
-		TOD_INVALID = 0,
-		TOD_ABSOLUTE,
-		TOD_SUNRISE,
-		TOD_SUNSET,
-		TOD_CIVIL_SUNRISE,
-		TOD_CIVIL_SUNSET,
+		TOD_INVALID 	= 0,
+		TOD_ABSOLUTE	= 1,
+		TOD_SUNRISE		= 2,
+		TOD_SUNSET		= 3,
+		TOD_CIVIL_SUNRISE = 4,
+		TOD_CIVIL_SUNSET 	= 5,
 	} tod_offset_t;
 
 	typedef struct {
-		
 		DeviceID 		deviceID;
 		uint8_t		insteonGroup;
 		uint8_t		cmd;
@@ -77,13 +77,14 @@ public:
 	 
 	bool isValid();
 
-	bool shouldTrigger(EventTrigger a);
+	bool shouldTriggerFromDeviceEvent(EventTrigger a);
  
-	void setLastRun(time_t time){
-		if(_eventType == EVENT_TYPE_TIME)
-			_timeEvent.lastRun = time;
-	}
+	bool shouldTriggerFromTimeEvent(const solarTimes_t &solar, time_t time);
+ 
+	bool calculateTriggerTime(const solarTimes_t &solar, int16_t &minsFromMidnight);
 
+	bool setLastRun(time_t time);
+	
 	time_t getLastRun(){
 		return (_eventType == EVENT_TYPE_TIME)?_timeEvent.lastRun:0;
 	}
@@ -107,9 +108,13 @@ private:
 
 
 typedef  unsigned short eventID_t;
+typedef  unsigned short eventGroupID_t;
+
+bool str_to_EventGroupID(const char* str, eventGroupID_t *eventGroupIDOut = NULL);
+string  EventGroupID_to_string(eventGroupID_t eventGroupID);
 
 bool str_to_EventID(const char* str, eventID_t *eventIDOut = NULL);
-string  EventID_to_string(const char* str, eventID_t *eventIDOut = NULL);
+string  EventID_to_string(eventID_t eventID);
 
 class Event {
 	

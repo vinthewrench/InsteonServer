@@ -6,6 +6,7 @@
 //
 
 #include <iostream>
+#include <chrono>
 
 #include "ServerCmdQueue.hpp"
 #include "CmdLineHelp.hpp"
@@ -49,6 +50,7 @@ constexpr string_view NOUN_GROUPS			 	= "groups";
 constexpr string_view NOUN_INSTEON_GROUPS		= "insteon.groups";
 constexpr string_view NOUN_ACTION_GROUPS		= "action.groups";
 constexpr string_view NOUN_EVENTS				= "events";
+constexpr string_view NOUN_EVENTS_GROUPS		= "event.groups";
 
 constexpr string_view NOUN_LINK	 				= "link";
  
@@ -473,6 +475,337 @@ static void Events_NounHandler(ServerCmdQueue* cmdQueue,
 	
 }
 
+// MARK:  EVENT GROUPS NOUN HANDLERS
+
+static bool EventGroups_NounHandler_GET(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+											  ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	json reply;
+	
+	auto db = insteon.getDB();
+	vector<DeviceID> deviceIDs;
+	
+	// GET /event.groups
+	if(path.size() == 1) {;
+		
+		json groupsList;
+		auto groupIDs = db->allEventGroupIDs();
+		for(auto groupID : groupIDs){
+			json entry;
+			
+			entry[string(JSON_ARG_NAME)] =  db->eventGroupGetName(groupID);
+			groupsList[ EventGroupID_to_string(groupID)] = entry;
+		}
+		
+		reply[string(JSON_ARG_GROUPIDS)] = groupsList;
+		makeStatusJSON(reply,STATUS_OK);
+		(completion) (reply, STATUS_OK);
+		return true;
+		
+	}
+		// GET /event.groups/XXXX
+		else if(path.size() == 2) {
+			 
+			eventGroupID_t groupID;
+			
+			if( !str_to_EventGroupID(path.at(1).c_str(), &groupID) || !db->eventGroupIsValid(groupID))
+				return false;
+	 
+			reply[string(JSON_ARG_GROUPID)] = EventGroupID_to_string(groupID);
+			reply[string(JSON_ARG_NAME)] =  db->eventGroupGetName(groupID);
+	 		auto eventIDS = db->eventGroupGetEventIDs(groupID);
+			
+			vector<string> ids;
+			for (auto evtID : eventIDS) {
+				ids.push_back(EventID_to_string(evtID));
+			}
+		 	reply[string(JSON_ARG_EVENTID	)] = ids;
+
+			makeStatusJSON(reply,STATUS_OK);
+			(completion) (reply, STATUS_OK);
+
+	}
+	else {
+		
+	}
+	
+	return false;
+}
+
+
+static bool EventGroups_NounHandler_PUT(ServerCmdQueue* cmdQueue,
+												REST_URL url,
+												TCPClientInfo cInfo,
+													  ServerCmdQueue::cmdCallback_t completion) {
+	
+	using namespace rest;
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	json reply;
+	
+	auto db = insteon.getDB();
+ 
+	ServerCmdArgValidator v1;
+ 
+	eventGroupID_t groupID;
+ 
+	  if(path.size() < 1) {
+		  return false;
+	  }
+	  
+	  if( !str_to_EventGroupID(path.at(1).c_str(), &groupID)
+		  || !db->eventGroupIsValid(groupID))
+		  return false;
+	
+	
+	string str;
+	if(v1.getStringFromJSON(JSON_ARG_EVENTID, url.body(), str)){
+	 	eventID_t eventID;
+		
+		if( ! str_to_EventID(str.c_str(), &eventID) || !db->eventsIsValid(eventID))
+			return false;
+	 
+		if(db->eventGroupAddEvent(groupID, eventID)){
+			reply[string(JSON_ARG_GROUPID)] = EventGroupID_to_string(groupID);
+			reply[string(JSON_ARG_EVENTID)] = EventID_to_string(eventID);
+ 			makeStatusJSON(reply,STATUS_OK);
+			(completion) (reply, STATUS_OK);
+			
+		}
+		else {
+			reply[string(JSON_ARG_GROUPID)] = EventGroupID_to_string(groupID);
+			reply[string(JSON_ARG_EVENTID)] = EventID_to_string(eventID);
+	
+	 		makeStatusJSON(reply, STATUS_BAD_REQUEST, "Set Failed" );;
+			(completion) (reply, STATUS_BAD_REQUEST);
+		}
+		return  true;
+	}
+
+	return false;
+}
+
+static bool EventGroups_NounHandler_PATCH(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+												 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	
+	json reply;
+	
+	ServerCmdArgValidator v1;
+	auto db = insteon.getDB();
+ 
+	eventGroupID_t groupID;
+
+	if(path.size() < 1) {
+		return false;
+	}
+	
+	if( !str_to_EventGroupID(path.at(1).c_str(), &groupID)
+		|| !db->eventGroupIsValid(groupID))
+		return false;
+ 
+	
+	if(path.size() == 2) {
+		string name;
+		// set name
+		if(v1.getStringFromJSON(JSON_ARG_NAME, url.body(), name)){
+			if(db->eventGroupSetName(groupID, name)) {
+				reply[string(JSON_ARG_GROUPID)] =  EventGroupID_to_string(groupID);
+				reply[string(JSON_ARG_NAME)] = name;
+				
+				makeStatusJSON(reply,STATUS_OK);
+				(completion) (reply, STATUS_OK);
+			}
+			else {
+				reply[string(JSON_ARG_GROUPID)] =  EventGroupID_to_string(groupID);
+				makeStatusJSON(reply, STATUS_BAD_REQUEST, "Set Failed" );;
+				(completion) (reply, STATUS_BAD_REQUEST);
+			}
+		}
+	}
+	return false;
+	
+}
+
+static bool EventGroups_NounHandler_POST(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+												 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	
+	json reply;
+	
+	ServerCmdArgValidator v1;
+	auto db = insteon.getDB();
+	
+	if(path.size() == 1) {
+		
+		string name;
+		// Create group
+		if(v1.getStringFromJSON(JSON_ARG_NAME, url.body(), name)){
+			
+			eventGroupID_t groupID;
+			if(db->eventGroupFind(name, &groupID)){
+				name = db->eventGroupGetName(groupID);
+			}
+			else {
+				if (! db->eventGroupCreate(&groupID, name)) {
+					reply[string(JSON_ARG_NAME)] = name;
+					makeStatusJSON(reply, STATUS_BAD_REQUEST, "Set Failed" );;
+					(completion) (reply, STATUS_BAD_REQUEST);
+					return true;
+				}
+			}
+		 
+			reply[string(JSON_ARG_GROUPID)] = EventGroupID_to_string(groupID);
+			reply[string(JSON_ARG_NAME)] = name;
+			makeStatusJSON(reply,STATUS_OK);
+			(completion) (reply, STATUS_OK);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+
+static bool EventGroups_NounHandler_DELETE(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+														  ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	
+	json reply;
+	
+	ServerCmdArgValidator v1;
+	auto db = insteon.getDB();
+	eventGroupID_t groupID;
+
+	if(path.size() < 1) {
+		return false;
+	}
+	
+	if( !str_to_EventGroupID(path.at(1).c_str(), &groupID)
+		|| !db->eventGroupIsValid(groupID))
+		return false;
+ 
+	if(path.size() == 2) {
+ 		if(db->eventGroupDelete(groupID)){
+			makeStatusJSON(reply,STATUS_NO_CONTENT);
+			(completion) (reply, STATUS_NO_CONTENT);
+		}
+		else {
+			reply[string(JSON_ARG_GROUPID)] = EventGroupID_to_string(groupID);
+			makeStatusJSON(reply, STATUS_BAD_REQUEST, "Delete Failed" );;
+			(completion) (reply, STATUS_BAD_REQUEST);
+		}
+		return true;
+	}
+	else if(path.size() == 3) {
+		
+		eventID_t eventID;
+		
+		if( !str_to_EventID(path.at(2).c_str(), &eventID)
+			|| !db->eventsIsValid(eventID))
+			return false;
+		
+		if(db->eventGroupRemoveEvent(groupID, eventID)){
+			makeStatusJSON(reply,STATUS_NO_CONTENT);
+			(completion) (reply, STATUS_NO_CONTENT);
+		}
+		else {
+			reply[string(JSON_ARG_GROUPID)] = EventGroupID_to_string(groupID);
+			reply[string(JSON_ARG_EVENTID)] = EventID_to_string(eventID);
+			makeStatusJSON(reply, STATUS_BAD_REQUEST, "Delete Failed" );;
+			(completion) (reply, STATUS_BAD_REQUEST);
+		}
+	}
+ 	return false;
+}
+
+static void EventGroups_NounHandler(ServerCmdQueue* cmdQueue,
+										 REST_URL url,
+										 TCPClientInfo cInfo,
+										 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	json reply;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	string noun;
+	
+	bool isValidURL = false;
+	
+	if(path.size() > 0) {
+		noun = path.at(0);
+	}
+	
+	// CHECK noun
+	if(noun != NOUN_EVENTS_GROUPS){
+		(completion) (reply, STATUS_NOT_FOUND);
+		return;
+	}
+	
+	// is server available?
+	if(!insteon.serverAvailable()) {
+		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
+		(completion) (reply, STATUS_UNAVAILABLE);
+		return;
+	}
+	
+	switch(url.method()){
+		case HTTP_GET:
+			isValidURL = EventGroups_NounHandler_GET(cmdQueue,url,cInfo, completion);
+			break;
+			
+		case HTTP_PUT:
+			isValidURL = EventGroups_NounHandler_PUT(cmdQueue,url,cInfo, completion);
+			break;
+			
+		case HTTP_PATCH:
+			isValidURL = EventGroups_NounHandler_PATCH(cmdQueue,url,cInfo, completion);
+			break;
+	 
+		case HTTP_POST:
+			isValidURL = EventGroups_NounHandler_POST(cmdQueue,url,cInfo, completion);
+			break;
+ 
+		case HTTP_DELETE:
+			isValidURL = EventGroups_NounHandler_DELETE(cmdQueue,url,cInfo, completion);
+			break;
+  
+		default:
+			(completion) (reply, STATUS_INVALID_METHOD);
+			return;
+	}
+	
+	if(!isValidURL) {
+		(completion) (reply, STATUS_NOT_FOUND);
+	}
+	
+}
+
 // MARK:  ACTION GROUPS NOUN HANDLERS
 
 static bool ActionGroups_NounHandler_GET(ServerCmdQueue* cmdQueue,
@@ -655,11 +988,12 @@ static bool ActionGroups_NounHandler_PATCH(ServerCmdQueue* cmdQueue,
 				makeStatusJSON(reply, STATUS_BAD_REQUEST, "Set Failed" );;
 				(completion) (reply, STATUS_BAD_REQUEST);
 			}
+			
+			return true;
 		}
 		
 	}
 	return false;
-	
 }
 
 static bool ActionGroups_NounHandler_POST(ServerCmdQueue* cmdQueue,
@@ -2044,6 +2378,21 @@ static void Date_NounHandler(ServerCmdQueue* cmdQueue,
 	}
 	
 	reply["date"] = TimeStamp().RFC1123String();
+
+	solarTimes_t solar;
+	insteon.getSolarEvents(solar);
+
+	reply["civilSunRise"] = solar.civilSunRiseMins;
+	reply["sunRise"] = solar.sunriseMins;
+	reply["sunSet"] = solar.sunSetMins;
+	reply["civilSunSet"] = solar.civilSunSetMins;
+ 	reply["latitude"] = solar.latitude;
+	reply["longitude"] = solar.longitude;
+	reply["gmtOffset"] = solar.gmtOffset;
+	reply["timeZone"] = solar.timeZoneString;
+	reply["midnight"] = solar.previousMidnight;
+	reply["uptime"]	= solar.upTime;
+
 	makeStatusJSON(reply,STATUS_OK);
 	(completion) (reply, STATUS_OK);
 }
@@ -2178,6 +2527,22 @@ static bool VersionCmdHandler( stringvector line,
 	return true;
 };
 
+static void breakDuration(unsigned long secondsIn, tm &tm){
+	
+	long  remainingSeconds = secondsIn;
+		
+	tm.tm_mday =  (int)(remainingSeconds/SECS_PER_DAY);
+	remainingSeconds = secondsIn - (tm.tm_mday * SECS_PER_DAY);
+	
+	tm.tm_hour =  (int)(remainingSeconds/SECS_PER_HOUR);
+	remainingSeconds = secondsIn -   ((tm.tm_mday * SECS_PER_DAY) + (tm.tm_hour * SECS_PER_HOUR));
+	
+	tm.tm_min = (int)remainingSeconds/SECS_PER_MIN;
+	remainingSeconds = remainingSeconds - (tm.tm_min * SECS_PER_MIN);
+	
+	tm.tm_sec = (int) remainingSeconds;
+}
+
 static bool DATECmdHandler( stringvector line,
 									CmdLineMgr* mgr,
 									boolCallback_t	cb){
@@ -2186,23 +2551,111 @@ static bool DATECmdHandler( stringvector line,
 	
 	REST_URL url("GET /date\n\n");
 	ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
-		
+	
+		std::ostringstream oss;
+
 		string str;
-		
-		if(reply.count(JSON_ARG_DATE) ) {
-			string rfc1123 =  reply[string(JSON_ARG_DATE)] ;
-			
+		long  gmtOffset;
+		long 	midnight;
+		long 	uptime;
+	
+		string tz;
+		double dd, dd1;
+
+		const char *kTimeFormat = "%r";
+		const char *kDateFormat = "%a %h-%d-%Y %r";
+
+		ServerCmdArgValidator v1;
+
+		v1.getStringFromJSON("timeZone", reply, tz);
+		v1.getLongIntFromJSON("midnight", reply, midnight);
+		v1.getLongIntFromJSON("gmtOffset", reply, gmtOffset);
+		v1.getLongIntFromJSON("uptime", reply, uptime);
+	
+		time_t lastMidnight = midnight  - gmtOffset;
+	
+		if(v1.getStringFromJSON(JSON_ARG_DATE, reply, str)){
 			using namespace timestamp;
-			time_t tt =  TimeStamp(rfc1123).getTime();
+			time_t tt =  TimeStamp(str).getTime();
 
 			struct tm * timeinfo = localtime (&tt);
 			char timeStr[80] = {0};
-			static const char *kDateFormat = "%a %h-%d-%Y %r";
- 			::strftime(timeStr, sizeof(timeStr), kDateFormat, timeinfo );
-	 		str = string(timeStr);
-			mgr->sendReply(str + "\n\r");
+			::strftime(timeStr, sizeof(timeStr), kDateFormat, timeinfo );
+			oss << setw(10) << "TIME: " << setw(0) << string(timeStr);
+			if(!tz.empty()) oss << " " << tz;
+			oss << "\n\r";
+	 	}
+
+		double latitude, longitude;
+	
+ 
+		if(v1.getDoubleFromJSON("latitude", reply, latitude)
+			&& v1.getDoubleFromJSON("longitude", reply, longitude)){
+			oss << setw(10) << "LAT/LONG: " << setw(0) << latitude << ", " << longitude << "\n\r";
+ 		}
+
+		if(v1.getDoubleFromJSON("sunRise", reply, dd)
+			&& v1.getDoubleFromJSON("civilSunRise", reply, dd1)){
+	
+			char timeStr[80] = {0};
+			time_t time = 0;
+			struct tm timeinfo = {0};
+			time = lastMidnight + (dd1 * 60);
+			localtime_r(&time, &timeinfo);
+			::strftime(timeStr, sizeof(timeStr), kTimeFormat, &timeinfo );
+			
+			oss << setw(10) << "SUNRISE: "  << setw(0);
+			oss << string(timeStr) << " - ";
+			
+			time = lastMidnight + (dd * 60);
+			localtime_r(&time, &timeinfo);
+			::strftime(timeStr, sizeof(timeStr), kTimeFormat, &timeinfo );
+			oss << string(timeStr) <<  "\n\r";
+		}
+	
+		if(v1.getDoubleFromJSON("sunSet", reply, dd)
+			&& v1.getDoubleFromJSON("civilSunSet", reply, dd1)){
+			
+			char timeStr[80] = {0};
+			time_t time = 0;
+			struct tm timeinfo = {0};
+			
+			time = lastMidnight + (dd * 60);
+			localtime_r(&time, &timeinfo);
+			::strftime(timeStr, sizeof(timeStr), kTimeFormat, &timeinfo );
+			
+			oss << setw(10) << "SUNSET: "  << setw(0);
+			oss << string(timeStr) << " - ";
+			
+			time = lastMidnight + (dd1 * 60);
+			localtime_r(&time, &timeinfo);
+			::strftime(timeStr, sizeof(timeStr), kTimeFormat, &timeinfo );
+			oss << string(timeStr) <<  "\n\r";
 		}
 		
+		if(uptime){
+			char timeStr[80] = {0};
+			tm tm;
+			breakDuration(uptime, tm);
+	 
+			if(tm.tm_mday > 0){
+				
+				sprintf(timeStr, "%d %s, %01d:%02d:%02d" ,
+								  tm.tm_mday, (tm.tm_mday>1?"Days":"Day"),
+								  tm.tm_hour, tm.tm_min, tm.tm_sec);
+			}
+			else {
+				sprintf(timeStr, "%01d:%02d:%02d" ,
+								  tm.tm_hour, tm.tm_min, tm.tm_sec);
+	 		}
+
+			oss << setw(10) << "UPTIME: " << setw(0) << timeStr <<  "\n\r";;
+ 		}
+		
+  
+		oss << "\r\n";
+		mgr->sendReply(oss.str());
+
 		(cb) (code > 199 && code < 400);
 	});
 	
@@ -3312,7 +3765,8 @@ void registerServerCommands() {
 	cmdQueue->registerNoun(NOUN_LINK,	Link_NounHandler);
 	cmdQueue->registerNoun(NOUN_ACTION_GROUPS, ActionGroups_NounHandler);
 	cmdQueue->registerNoun(NOUN_EVENTS,		 Events_NounHandler);
-		
+	cmdQueue->registerNoun(NOUN_EVENTS_GROUPS,  EventGroups_NounHandler);
+ 
 	// register command line commands
 	auto cmlR = CmdLineRegistry::shared();
 	

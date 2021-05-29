@@ -162,25 +162,33 @@ void Action::initWithJSON(nlohmann::json j){
 	else if( j.contains(string(JSON_INSTEON_GROUPS))
 			  && j.at(string(JSON_INSTEON_GROUPS)).is_string()){
 		string str = j.at(string(JSON_INSTEON_GROUPS));
- 
-		if( regex_match(string(str), std::regex("^[A-Fa-f0-9]{2}$"))){
-			uint8_t groupID;
-			if( std::sscanf(str.c_str(), "%hhx", &groupID) == 1){
-				_deviceGroupID = groupID;
-				_actionType = ACTION_TYPE_DEVICEGROUP;
-			}
+		
+		uint8_t groupID = 0;
+		if( regex_match(string(str), std::regex("^[A-Fa-f0-9]{2}$"))
+			&& ( std::sscanf(str.c_str(), "%hhd", &groupID) == 1)){
+			_deviceGroupID = groupID;
+			_actionType = ACTION_TYPE_DEVICEGROUP;
+		}
+		else if( regex_match(string(str), std::regex("^0?[xX][0-9a-fA-F]{2}$"))
+				  && ( std::sscanf(str.c_str(), "%hhx", &groupID) == 1)){
+			_deviceGroupID = groupID;
+			_actionType = ACTION_TYPE_DEVICEGROUP;
 		}
 	}
 	else if( j.contains(string(JSON_ACTION_GROUP))
 			  && j.at(string(JSON_ACTION_GROUP)).is_string()){
 		string str = j.at(string(JSON_ACTION_GROUP));
  
-		if( regex_match(string(str), std::regex("^[A-Fa-f0-9]{4}$"))){
-			actionGroupID_t actionGroupID;
-			if( std::sscanf(str.c_str(), "%hx", &actionGroupID) == 1){
-				_ActionGroupID = actionGroupID;
-				_actionType = ACTION_TYPE_ACTIONGROUP;
-			}
+		actionGroupID_t actionGroupID = 0;
+		if( regex_match(string(str), std::regex("^[A-Fa-f0-9]{4}$"))
+			&& ( std::sscanf(str.c_str(), "%hd", &actionGroupID) == 1)){
+			_ActionGroupID = actionGroupID;
+			_actionType = ACTION_TYPE_ACTIONGROUP;
+		}
+		else if( regex_match(string(str), std::regex("^0?[xX][0-9a-fA-F]{4}$"))
+				  && ( std::sscanf(str.c_str(), "%hx", &actionGroupID) == 1)){
+			_ActionGroupID = actionGroupID;
+			_actionType = ACTION_TYPE_ACTIONGROUP;
 		}
 	}
 
@@ -188,16 +196,20 @@ void Action::initWithJSON(nlohmann::json j){
 		&& j.at(string(JSON_ACTIONID)).is_string()){
 		string str = j.at(string(JSON_ACTIONID));
 		
-		if( regex_match(string(str), std::regex("^[A-Fa-f0-9]{2}$"))){
-			actionID_t actionID;
-			if( std::sscanf(str.c_str(), "%hx", &actionID) == 1){
-				_actionID = actionID;
-			}
+		actionID_t actionID = 0;
+		if( regex_match(string(str), std::regex("^[A-Fa-f0-9]{4}$"))
+			&& ( std::sscanf(str.c_str(), "%hd", &actionID) == 1)){
+			_actionID = actionID;
+
+		}
+		else if( regex_match(string(str), std::regex("^0?[xX][0-9a-fA-F]{4}$"))
+				  && ( std::sscanf(str.c_str(), "%hx", &actionID) == 1)){
+			_actionID = actionID;
 		}
 		else
 			_actionType = ACTION_TYPE_UNKNOWN;
-		};
-
+	}
+	
 	if(_actionType == ACTION_TYPE_UNKNOWN)
 		_cmd = ACTION_INALID;
 }
@@ -244,14 +256,14 @@ std::string Action::printString() const {
 			
 		case ACTION_TYPE_DEVICEGROUP:
 			oss <<  stringForCmd(_cmd)
-				<< " Insteon.Group:" <<  to_hex<uint8_t>(_deviceGroupID)  << "  "
+				<< " Insteon.Group:" <<  to_hex<uint8_t>(_deviceGroupID, true)  << "  "
 				<< InsteonDevice::onLevelString(_level);
 
 			break;
 
 		case ACTION_TYPE_ACTIONGROUP:
 			oss <<  stringForCmd(_cmd)
-			<< " action.Group:" <<  to_hex(_ActionGroupID);
+			<< " action.Group:" <<  to_hex(_ActionGroupID, true);
 			break;
 			
 		default:
@@ -280,13 +292,13 @@ const nlohmann::json Action::JSON(){
 			break;
 
 		case ACTION_TYPE_DEVICEGROUP:
-			j[string(JSON_INSTEON_GROUPS)] = to_hex<uint8_t>(_deviceGroupID);
+			j[string(JSON_INSTEON_GROUPS)] = to_hex<uint8_t>(_deviceGroupID, true);
 			j[string(JSON_ACTION_CMD)] = JSON_CMD_SET;
 			j[string(JSON_ACTION_LEVEL)] = _level;
 			break;
 			
 		case ACTION_TYPE_ACTIONGROUP:
-			j[string(JSON_ACTION_GROUP)] = to_hex<unsigned short>(_ActionGroupID);
+			j[string(JSON_ACTION_GROUP)] = to_hex<unsigned short>(_ActionGroupID, true);
 			j[string(JSON_ACTION_CMD)] = JSON_CMD_EXECUTE;
 			break;
 

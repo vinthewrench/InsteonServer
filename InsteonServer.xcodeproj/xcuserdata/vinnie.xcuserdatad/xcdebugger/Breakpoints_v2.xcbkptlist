@@ -14,8 +14,8 @@
             filePath = "InsteonMgr/InsteonMgr.cpp"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "629"
-            endingLineNumber = "629"
+            startingLineNumber = "672"
+            endingLineNumber = "672"
             landmarkName = "InsteonMgr::validateDevice(deviceID, callback)"
             landmarkType = "7">
          </BreakpointContent>
@@ -55,16 +55,16 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "07281962-2753-45C3-BD26-E1FD1B16CE14"
+            uuid = "28F92216-7207-4604-B112-F24F27A638A5"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "InsteonMgr/Event.cpp"
+            filePath = "InsteonMgr/InsteonMgr.cpp"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "156"
-            endingLineNumber = "156"
-            landmarkName = "EventTrigger::initWithJSON(j)"
+            startingLineNumber = "693"
+            endingLineNumber = "693"
+            landmarkName = "InsteonMgr::validateDevice(deviceID, callback)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
