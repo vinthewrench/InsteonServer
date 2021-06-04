@@ -8,6 +8,7 @@
 #include "Event.hpp"
 #include "json.hpp"
 #include <regex>
+#include "TimeStamp.hpp"
 
 using namespace nlohmann;
 
@@ -239,17 +240,89 @@ nlohmann::json EventTrigger::JSON(){
 
 const std::string EventTrigger:: printString(){
 	std::ostringstream oss;
-	
+	using namespace timestamp;
+
 	auto j = JSON();
- 	oss << j.dump();
+	
+	 if(_eventType == EVENT_TYPE_TIME){
+
+		 solarTimes_t solar;
+		 ScheduleMgr::shared()->getSolarEvents(solar);
+			int16_t minsFromMidnight = 0;
+		 
+		 // when does it need to run today
+		 calculateTriggerTime(solar,minsFromMidnight);
+		time_t schedTime = solar.previousMidnight + (minsFromMidnight * SECS_PER_MIN) ;
+		 string timeString = TimeStamp(schedTime).ClockString();
+		 
+		 string offsetMinutes = "";
+		 
+		 if(_timeEvent.timeOfDay > 0)
+			 offsetMinutes = " + " + to_string(_timeEvent.timeOfDay) + " minutes";
+		 else if(_timeEvent.timeOfDay < 0)
+			 offsetMinutes =  " - " + to_string(abs(_timeEvent.timeOfDay)) + " minutes";
+		
+	 	 switch(_timeEvent.timeBase){
+			 case TOD_SUNRISE:
+				 oss << timeString << " (Sunrise"  << offsetMinutes << ")" ;
+				 break;
+				 
+			 case TOD_SUNSET:
+				 oss << timeString << " (Sunset"  << offsetMinutes << ")" ;
+			 break;
+				 
+			 case TOD_CIVIL_SUNRISE:
+				 oss << timeString << " (Civil Sunrise" << offsetMinutes << ")" ; ;
+				 break;
+				 
+			 case TOD_CIVIL_SUNSET:
+				 oss << timeString << " (Civil Sunset"  << offsetMinutes << ")";
+				 break;
+				 
+			 case TOD_ABSOLUTE:
+	 			 oss << timeString;
+ 				 break;
+				 
+			 case TOD_INVALID:
+				 oss <<  "Invalid Time:";
+				 break;
+		 }
+	}
+	else	{
+		oss << j.dump();
+	}
 	return  oss.str();
 
 }
  
+/*
+ static void breakDuration(unsigned long secondsIn, tm &tm){
+	 
+	 long  remainingSeconds = secondsIn;
+		 
+	 tm.tm_mday =  (int)(remainingSeconds/SECS_PER_DAY);
+	 remainingSeconds = secondsIn - (tm.tm_mday * SECS_PER_DAY);
+	 
+	 tm.tm_hour =  (int)(remainingSeconds/SECS_PER_HOUR);
+	 remainingSeconds = secondsIn -   ((tm.tm_mday * SECS_PER_DAY) + (tm.tm_hour * SECS_PER_HOUR));
+	 
+	 tm.tm_min = (int)remainingSeconds/SECS_PER_MIN;
+	 remainingSeconds = remainingSeconds - (tm.tm_min * SECS_PER_MIN);
+	 
+	 tm.tm_sec = (int) remainingSeconds;
+ }
+
+ */
 bool EventTrigger::isValid(){
 	return (_eventType != EVENT_TYPE_UNKNOWN);
 }
-
+bool EventTrigger::isTimed(){
+	return (_eventType == EVENT_TYPE_TIME);
+}
+bool EventTrigger::isDevice(){
+	return (_eventType == EVENT_TYPE_DEVICE);
+}
+ 
 bool EventTrigger::setLastRun(time_t time){
 	if(_eventType == EVENT_TYPE_TIME){
 		_timeEvent.lastRun = time;
@@ -285,6 +358,33 @@ bool EventTrigger::shouldTriggerFromDeviceEvent(EventTrigger a) {
 	return result;
 }
 
+
+
+bool EventTrigger::shouldTriggerInFuture(const solarTimes_t &solar, time_t localNow){
+	
+	bool result = false;
+	
+	if(_eventType == EVENT_TYPE_TIME){
+		
+		int16_t minsFromMidnight = 0;
+		
+		// when does it need to run today
+		if(calculateTriggerTime(solar,minsFromMidnight)) {
+			time_t schedTime = solar.previousMidnight + (minsFromMidnight * SECS_PER_MIN) ;
+//
+//			printf("\n sched: %s \n", timestamp::TimeStamp(schedTime).ClockString().c_str());
+//			printf(" now:  %s \n", timestamp::TimeStamp(localNow).ClockString().c_str());
+//
+			if( schedTime > localNow) {
+						result = true;
+			}
+		};
+	}
+	
+	return result;
+	
+}
+
 bool EventTrigger::shouldTriggerFromTimeEvent(const solarTimes_t &solar, time_t localNow){
 	
 	bool result = false;
@@ -296,7 +396,10 @@ bool EventTrigger::shouldTriggerFromTimeEvent(const solarTimes_t &solar, time_t 
 		// when does it need to run today
 		if(calculateTriggerTime(solar,minsFromMidnight)) {
 			time_t schedTime = solar.previousMidnight + (minsFromMidnight * SECS_PER_MIN) ;
-			
+//		
+//			printf("\n sched: %s \n", timestamp::TimeStamp(schedTime).ClockString().c_str());
+//			printf(" now:  %s \n", timestamp::TimeStamp(localNow).ClockString().c_str());
+//	
 			if( schedTime < localNow) {
 				if( _timeEvent.lastRun  == 0
 					||  _timeEvent.lastRun < solar.previousMidnight )

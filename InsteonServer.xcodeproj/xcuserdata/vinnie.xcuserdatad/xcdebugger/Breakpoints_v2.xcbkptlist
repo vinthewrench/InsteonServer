@@ -7,22 +7,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "B4A0914C-5B07-480B-92C3-DE5B084C6393"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "InsteonMgr/InsteonMgr.cpp"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "672"
-            endingLineNumber = "672"
-            landmarkName = "InsteonMgr::validateDevice(deviceID, callback)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "8064FF60-468D-4062-8EE1-82004F17207D"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
@@ -55,16 +39,16 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "28F92216-7207-4604-B112-F24F27A638A5"
+            uuid = "FDDEB564-7681-4550-96B3-DBE41BB7D8AA"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "InsteonMgr/InsteonMgr.cpp"
+            filePath = "Submodule/FooServer/src/REST/RESTServerConnection.cpp"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "693"
-            endingLineNumber = "693"
-            landmarkName = "InsteonMgr::validateDevice(deviceID, callback)"
+            startingLineNumber = "170"
+            endingLineNumber = "170"
+            landmarkName = "RESTServerConnection::validateRequestCredentials()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

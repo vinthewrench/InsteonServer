@@ -24,8 +24,12 @@ using namespace std;
 
 const char *  InsteonDB::DatabaseChangedNotification = "InsteonMgr::DatabaseChangedNotification";
 const char *  InsteonDB::DeviceStateChangedNotification = "InsteonMgr::DeviceStateChangedNotification";
- 
 
+constexpr static string_view KEY_START_CONFIG 		= "config-start";
+constexpr static string_view KEY_END_CONFIG 			= "config-end";
+constexpr static string_view KEY_CONFIG_PORT			= "port";
+constexpr static string_view KEY_CONFIG_LATLONG		= "lat-long";
+ 
 constexpr static string_view KEY_START_DEVICE 		= "device-start";
 constexpr static string_view KEY_END_DEVICE 			= "device-end";
 constexpr static string_view KEY_START_GROUP 			= "group-start";
@@ -47,6 +51,8 @@ constexpr static string_view KEY_GROUP_DEVICEID		= "dev";
 constexpr static string_view KEY_ACTIONGROUP_ACTION	= "act";
 constexpr static string_view KEY_EVENT_TRIGGER		= "trigger";
 constexpr static string_view KEY_EVENT_EVENTID		= "event";
+
+
 
 InsteonDB::InsteonDB() {
 	
@@ -546,8 +552,35 @@ bool InsteonDB::getDBOnLevel(DeviceID deviceID, uint8_t group, uint8_t *onLevel,
 }
 
 
-// MARK: - PLM tools
+// MARK: - Config Info
 
+bool 	InsteonDB::setPLMpath(string plmPath){
+	_plmPath = plmPath;
+	saveToCacheFile();
+	return true;
+};
+
+ 
+bool InsteonDB::setLatLong(double latitude, double longitude){
+	
+	_latitude = latitude;
+	_longitude = longitude;
+
+	saveToCacheFile();
+	return true;
+}
+
+bool InsteonDB::getLatLong(double &latitude, double &longitude){
+	
+	if(_latitude == 0 && _longitude == 0)
+		return false;
+	
+	latitude = _latitude;
+	longitude = _longitude;
+	return true;
+}
+
+// MARK: - PLM tools
 
 bool InsteonDB::addPLMEntries(vector<insteon_aldb_t> aldbEntries){
 	
@@ -630,8 +663,7 @@ bool InsteonDB::syncALDB(vector<insteon_aldb_t> aldbIn,
 // MARK: -  device cachefile
 
 string  InsteonDB::default_fileName(){
-	
-	string fileName = "PLMDB_" + _plmDeviceID.string() + ".txt";
+	string fileName = "PLMDB.txt";
 	return fileName;
  }
 
@@ -651,11 +683,28 @@ bool InsteonDB::backupCacheFile(string filepath){
 		if(ofs.fail())
 			return false;
 			
+		// save configuration info
+ 
 		{
 			time_t now = time(NULL);
 			char str[26] = {};
 			strftime(str, sizeof(str), kDateFormat, gmtime(&now));
-			ofs << "## PLM " << _plmDeviceID.string() << "  "<<  string(str) << "\n\n";
+			
+			ofs << "## INSTEON DATABASE " <<  string(str) << "\n\n";
+			
+			ofs << KEY_START_CONFIG << ": "<< "\n";
+			if(!_plmPath.empty())
+				ofs << KEY_CONFIG_PORT << ": " << _plmPath << "\n";
+			
+			if(_latitude != 0 && _longitude != 0) {
+				ofs << KEY_CONFIG_LATLONG << ": " ;
+				ofs << setprecision(11)  << _latitude << " " << _longitude << "\n";
+ 			}
+ 
+ 			ofs << KEY_END_CONFIG << ":\n";
+			ofs << "\n";
+
+	//		ofs << "## PLM " << _plmDeviceID.string() << "  "<<  string(str) << "\n\n";
 		}
 		 
 		// save device Info
@@ -817,6 +866,7 @@ bool InsteonDB::saveToCacheFile(string fileName ){
 
 typedef enum  {
 	RESTORE_UNKNOWN = 0,
+	RESTORE_CONFIG,
 	RESTORE_DEVICE,
 	RESTORE_GROUP,
 	RESTORE_ACTION_GROUP,
@@ -839,6 +889,8 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 		fileName = default_fileName();
 	string path = _directoryPath + fileName;
 	
+	LOG_INFO("READ_CACHEFILE: %s\n", path.c_str());
+
 	try{
 		string line;
 		std::lock_guard<std::mutex> lock(_mutex);
@@ -876,7 +928,15 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 			int cnt = 0;
 			
 			// set the state based on token
-			if(token == KEY_START_DEVICE){
+			if(token == KEY_START_CONFIG) {
+				state = RESTORE_CONFIG;
+				continue;
+			}
+			else if(token == KEY_END_CONFIG){
+				state = RESTORE_UNKNOWN;
+				continue;
+			}
+			else if(token == KEY_START_DEVICE){
 				deviceID_t	devID;
 				
 				if( sscanf(p, "%hhx.%hhx.%hhx %n",
@@ -977,9 +1037,29 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 			// process line based on state.
 			
 			switch( state){
+				case RESTORE_CONFIG:
+				{
+					if(token == KEY_CONFIG_PORT){
+						_plmPath  = string(p);
+						break;
+					}
+					else if(token == KEY_CONFIG_LATLONG){
+						
+						double d1 = 0;
+						double d2 = 0;
+						
+						if( sscanf(p, "%lf %lf%n", &d1, &d2, &n) == 2) {
+							_latitude = d1;
+							_longitude = d2;
+						}
+						
+					}
+					
+				}
+					break;
+					
 				case RESTORE_DEVICE:
 				{
-					
 					insteon_dbEntry_t* entry = findDBEntryWithDeviceID(deviceID);
 					if(!entry) {
 						state = RESTORE_UNKNOWN;
@@ -1168,6 +1248,8 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 
 	}
 	catch(std::ifstream::failure &err) {
+		
+		LOG_INFO("READ_CACHEFILE:FAIL: %s\n", err.what());
 		statusOk = false;
 	}
 	
@@ -1625,6 +1707,17 @@ vector<eventID_t> InsteonDB::eventsThatNeedToRun(solarTimes_t &solar, time_t loc
 
 	for (auto& [key, evt] : _events) {
 		if(evt._trigger	.shouldTriggerFromTimeEvent(solar, localNow))
+			events.push_back( key);
+	};
+		
+	return events;
+}
+
+vector<eventID_t> InsteonDB::eventsInTheFuture(solarTimes_t &solar, time_t localNow){
+	vector<eventID_t> events;
+
+	for (auto& [key, evt] : _events) {
+		if(evt._trigger	.shouldTriggerInFuture(solar, localNow))
 			events.push_back( key);
 	};
 		

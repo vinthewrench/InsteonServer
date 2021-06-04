@@ -16,6 +16,7 @@
 #include "Event.hpp"
 
 
+ScheduleMgr *ScheduleMgr::sharedInstance = NULL;
 
 ScheduleMgr::ScheduleMgr(){
 	_cachedSolar.previousMidnight = 0;
@@ -30,7 +31,10 @@ void ScheduleMgr::setLatLong(double latitude, double longitude){
 }
 
 bool  ScheduleMgr::calculateSolarEvents(){
-	bool success = false;
+	
+	if(_latitude == 0 || _longitude == 0)
+		return  false;
+	
 	_cachedSolar.previousMidnight = 0;
 
 	solarTimes_t solar = {0};
@@ -52,7 +56,7 @@ bool  ScheduleMgr::calculateSolarEvents(){
 	solar.timeZoneString		= string(tm->tm_zone);
 
 	_cachedSolar = solar;
-	return success;
+	return true;
 }
 
 bool ScheduleMgr::getSolarEvents(solarTimes_t& events){

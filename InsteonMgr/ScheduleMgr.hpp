@@ -13,6 +13,8 @@
 #include <string>
 
 #include <sys/time.h>
+
+#include "InsteonException.hpp"
  
 /* Useful Constants */
 #define SECS_PER_MIN  ((time_t)(60UL))
@@ -55,22 +57,31 @@ typedef struct {
 	
 } solarTimes_t;
 
-class InsteonMgr;
+//class InsteonMgr;
 
 class ScheduleMgr {
 
-	friend InsteonMgr;
+	public:
+ 
+	static ScheduleMgr *shared() {
+		if(!sharedInstance){
+			sharedInstance = new ScheduleMgr;
+		}
+		return sharedInstance;
+	}
+
+//	friend InsteonMgr;
 
 	ScheduleMgr();
 
 	void setLatLong(double latitude, double longitude);
 	bool getSolarEvents(solarTimes_t& events);
-	
-public:
+	bool calculateSolarEvents();
  
 private:
+	
+	static ScheduleMgr *sharedInstance;
 
-	bool  calculateSolarEvents();
 
 	SunSet 			_sun;
 

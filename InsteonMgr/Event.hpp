@@ -77,9 +77,13 @@ public:
 	 
 	bool isValid();
 
+	bool isTimed();
+	bool isDevice();
+
 	bool shouldTriggerFromDeviceEvent(EventTrigger a);
  
 	bool shouldTriggerFromTimeEvent(const solarTimes_t &solar, time_t time);
+	bool shouldTriggerInFuture(const solarTimes_t &solar, time_t time);
  
 	bool calculateTriggerTime(const solarTimes_t &solar, int16_t &minsFromMidnight);
 

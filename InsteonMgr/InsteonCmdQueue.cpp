@@ -12,7 +12,7 @@
 
 #include "LogMgr.hpp"
 
-InsteonCmdQueue *InsteonCmdQueue::sharedInstanced = NULL;
+InsteonCmdQueue *InsteonCmdQueue::sharedInstance = NULL;
 
 
 InsteonCmdQueue::InsteonCmdQueue(InsteonPLM* plm, InsteonDB* db){
@@ -23,7 +23,7 @@ InsteonCmdQueue::InsteonCmdQueue(InsteonPLM* plm, InsteonDB* db){
 	_cmdQueue.clear();
 	_entryCnt = 0;
 	
-	sharedInstanced = this;
+	sharedInstance = this;
 }
 
 InsteonCmdQueue::~InsteonCmdQueue(){

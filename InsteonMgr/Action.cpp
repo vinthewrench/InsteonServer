@@ -67,6 +67,10 @@ static std::string stringForCmd(Action::actionCmd_t cmd) {
 		case Action::ACTION_BEEP:
 			str = Action::JSON_CMD_BEEP;
 			break;
+		case Action::ACTION_EXECUTE:
+			str = Action::JSON_CMD_EXECUTE;
+			break;
+			
 		default:;
 	}
 	return  str;
@@ -249,21 +253,21 @@ std::string Action::printString() const {
 			
 		case ACTION_TYPE_GROUP:
 			oss <<  stringForCmd(_cmd)
-				<< " Group:" << _groupID.string()  << "  "
+				<< " Group: " << _groupID.string()  << "  "
 				<< InsteonDevice::onLevelString(_level);
 
 			break;
 			
 		case ACTION_TYPE_DEVICEGROUP:
 			oss <<  stringForCmd(_cmd)
-				<< " Insteon.Group:" <<  to_hex<uint8_t>(_deviceGroupID, true)  << "  "
+				<< " Insteon.Group: " <<  to_hex<uint8_t>(_deviceGroupID, true)  << "  "
 				<< InsteonDevice::onLevelString(_level);
 
 			break;
 
 		case ACTION_TYPE_ACTIONGROUP:
 			oss <<  stringForCmd(_cmd)
-			<< " action.Group:" <<  to_hex(_ActionGroupID, true);
+			<< " Action.Group: " <<  to_hex(_ActionGroupID, true);
 			break;
 			
 		default:

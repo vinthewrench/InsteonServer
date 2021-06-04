@@ -32,6 +32,7 @@ public:
 	typedef enum  {
 		STATE_UNKNOWN = 0,
 		STATE_INIT,
+		STATE_SETUP,
 		STATE_NO_PLM,
 		STATE_PLM_INIT,
 		STATE_PLM_ERROR,
@@ -50,8 +51,9 @@ public:
 	InsteonMgr();
 	~InsteonMgr();
 	
-	void begin(const char * plmPath, // path to PLM Serial
-				  boolCallback_t callback);
+	
+	void begin(string plmPath = "",  // path to PLM Serial
+				  boolCallback_t callback = NULL);
 	void stop();
 
 	void erasePLM(boolCallback_t callback);
@@ -59,6 +61,7 @@ public:
 	void readPLM(boolCallback_t callback);
 	void validatePLM(boolCallback_t callback);
 	void savePLMCacheFile();
+	bool loadCacheFile(string filePath = "");
 
 	mgr_state_t currentState() {return _state;};
 	bool serverAvailable() { return ( _state == STATE_READY
@@ -119,7 +122,7 @@ public:
 						 std::function<void(bool didSucceed)> callback = NULL);
 
 	bool getSolarEvents(solarTimes_t &solar);
-	
+	bool refreshSolarEvents();
 	// events
 	
 	void registerEvent( DeviceID deviceID,
@@ -133,6 +136,7 @@ private:
 	
 	bool 					_running;				//Flag for starting and terminating the main loop
 	std::thread 			_thread;				//Internal thread
+	
 	void run();
 
 	mgr_state_t				_state;
@@ -142,7 +146,6 @@ private:
 	InsteonPLM				_plm;
 	InsteonDB					_db;
 	InsteonDeviceEventMgr _eventMgr;
-	ScheduleMgr				_scdMgr;
 	
 	InsteonCmdQueue*			_cmdQueue;		// device state managmenr
 	InsteonALDB*				_aldb;		 	// used for syncing ALDB

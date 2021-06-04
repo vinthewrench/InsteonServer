@@ -26,7 +26,7 @@
 
 #include "ServerCmdValidators.hpp"
 #include "ServerCommands.hpp"
- 
+
 #include "CommonIncludes.h"
 
 #include "Action.hpp"
@@ -34,14 +34,14 @@
 #if __APPLE__
 //  #define SERIAL_DEVICE "/dev/cu.usbserial-AK05Z8CQ"
 //   #define SERIAL_DEVICE "/dev/cu.usbserial-AL02YD29"
- #define SERIAL_DEVICE "/dev/cu.usbserial-AK05ZAZ7"
+#define SERIAL_DEVICE "/dev/cu.usbserial-AK05ZAZ7"
 #elif __arm__
 #define SERIAL_DEVICE "/dev/ttyUSB0"
 #else
 #warning  NO CLUE
 
 #endif
- 
+
 void linkKP(){
 	DeviceID deviceID =  DeviceID("33.4F.F6");
 	auto keypad = InsteonKeypadDevice(deviceID );
@@ -64,7 +64,7 @@ void linkKP(){
 						insteon.addResponderToDevice(deviceID, 0x06,  [=](bool didSucceed) {
 							insteon.addResponderToDevice(deviceID, 0x07,  [=](bool didSucceed) {
 								insteon.addResponderToDevice(deviceID, 0x08,  [=](bool didSucceed) {
-	
+									
 									printf("success");
 									
 									
@@ -77,60 +77,42 @@ void linkKP(){
 		});
 	});
 }
- 
+
 void test(){
- 	DeviceID deviceID =  DeviceID("33.4F.F6");
-
-//	InsteonKeypadDevice(deviceID).setNonToggleMask(00, [=]( bool didSucceed) {
-//	});
-//
-
+	DeviceID deviceID =  DeviceID("33.4F.F6");
+	
+	//	InsteonKeypadDevice(deviceID).setNonToggleMask(00, [=]( bool didSucceed) {
+	//	});
+	//
+	
 	InsteonKeypadDevice(deviceID).getKeypadLEDState( [=](uint8_t mask, bool didSucceed) {
-
+		
 		if(didSucceed){
 			mask = ~mask;
 			InsteonKeypadDevice(deviceID).setKeypadLEDState(mask, [=](bool didSucceed) {
-
+				
 				test();
 			});
-
+			
 		}
 		else {
 			test();
 		}
-
-
+		
+		
 	});
 	
-						 
+	
 }
 
 // MARK: - MAIN
 [[clang::no_destroy]]  InsteonMgr	insteon;
- 
+
 int main(int argc, const char * argv[]) {
-	 
 	
-	printf("Open %s\n", SERIAL_DEVICE);
-
 	START_INFO;
-
-	insteon.begin(SERIAL_DEVICE,
-						[=](bool didSucceed) {
-		
-		if(didSucceed){
-			
- 			insteon.syncPLM( [=](bool didSucceed) {
-				insteon.validatePLM( [](bool didSucceed) {
-			
-//					linkKP();
- //				test();
-
-//					insteon.getDB()->saveToCacheFile();
-				});
-			});
-		};
-	});
+	
+	insteon.loadCacheFile();
 	
 	// create the server command processor
 	auto cmdQueue = ServerCmdQueue::shared();
@@ -148,22 +130,40 @@ int main(int argc, const char * argv[]) {
 	});
 	
 	// run the loop.
-	try {
+	while(true) {
+		auto state = insteon.currentState();
+		bool noPLM = state == InsteonMgr::STATE_NO_PLM || state == InsteonMgr::STATE_SETUP;
 		
-		while(true) {
-			 	sleep(30);
+		try{
+			if(noPLM){
+				
+				insteon.begin("",
+								  [=](bool didSucceed) {
+					
+					if(didSucceed){
+						insteon.syncPLM( [=](bool didSucceed) {
+							if(didSucceed){
+								insteon.validatePLM( [](bool didSucceed) {
+								});
+								
+							}
+						});
+					}
+					
+				});
+			}
 		}
-	}
 		catch ( const InsteonException& e)  {
-				printf("\tError %d %s\n\n", e.getErrorNumber(), e.what());
-			return -1;
+			printf("\tError %d %s\n\n", e.getErrorNumber(), e.what());
+			noPLM = true;
 		}
-		catch (std::invalid_argument& e)
-		{
-			printf("EXCEPTION: %s ",e.what() );
-			 return -1;
-		}
-
+		
+		if(noPLM)
+			sleep(5);
+		else
+			sleep(30);
+	}
+	
 	return 0;
 	
 }

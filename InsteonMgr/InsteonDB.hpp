@@ -69,12 +69,21 @@ public:
 	InsteonDB();
 	~InsteonDB();
 
+	//  config info
+	bool 	setPLMpath(string plmPath);
+	string getPLMPath(){ return _plmPath;};
+	
 	void 	setPlmDeviceID(DeviceID deviceID){
 		_plmDeviceID = deviceID;
 	}
 	
 	DeviceID getPlmDeviceID() { return _plmDeviceID;};
-	
+
+	bool setLatLong(double latitude, double longitude);
+	bool getLatLong(double &latitude, double &longitude);
+
+	// database API
+ 
 	void 	clear() {
 		_db.clear();
 		_plmDeviceID.clear();
@@ -178,6 +187,7 @@ public:
 	vector<eventID_t> allEventsIDs();
 	vector<eventID_t> matchingEventIDs(EventTrigger trig);
 	vector<eventID_t> eventsThatNeedToRun(solarTimes_t &solar, time_t localNow);
+	vector<eventID_t> eventsInTheFuture(solarTimes_t &solar, time_t localNow);
 	bool eventSetLastRunTime(eventID_t eventID, time_t localNow);
 	void reconcileEventGroups(const solarTimes_t &solar, time_t localNow);
 
@@ -204,9 +214,14 @@ public:
 	string cacheFileNameFromPLM(DeviceID deviceID);
 	
 private:
-	
+ 
 	string  default_fileName();
 	
+	// config info
+	string _plmPath;
+	double	_longitude;
+	double _latitude;
+
 	void  initDBEntry(insteon_dbEntry_t *newEntry,DeviceID deviceID);
 	
 	insteon_dbEntry_t*  findDBEntryWithDeviceID(DeviceID deviceID);

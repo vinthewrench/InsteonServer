@@ -22,6 +22,7 @@ public:
  	inline time_t getTime() { return _time; };
 	std::string RFC1123String();
 
+	std::string ClockString(bool isGMT = true);
 private:
 	
 	time_t _time;

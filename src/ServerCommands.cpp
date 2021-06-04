@@ -52,18 +52,23 @@ constexpr string_view NOUN_ACTION_GROUPS		= "action.groups";
 constexpr string_view NOUN_EVENTS				= "events";
 constexpr string_view NOUN_EVENTS_GROUPS		= "event.groups";
 
+constexpr string_view NOUN_CONFIG		 		= "config";
+
 constexpr string_view NOUN_LINK	 				= "link";
  
+//constexpr string_view JSON_ARG_CMD			 	= "cmd";
+
 constexpr string_view SUBPATH_INFO			 	= "info";
 constexpr string_view SUBPATH_DATABASE		 	= "database";
 constexpr string_view SUBPATH_RUN_ACTION		= "run.actions";
+constexpr string_view SUBPATH_PORT			 	= "port";
+
 
 constexpr string_view JSON_ARG_DEVICEID 		= "deviceID";
 constexpr string_view JSON_ARG_GROUPID 		= "groupID";
 constexpr string_view JSON_ARG_ACTIONID 		= "actionID";
 constexpr string_view JSON_ARG_EVENTID 		= "eventID";
 //constexpr string_view JSON_ARG_INSTEON_GROUP = "insteon.group";
-//constexpr string_view JSON_ARG_CMD			 	= "cmd";
 constexpr string_view JSON_ARG_ACTION			= "action";
 constexpr string_view JSON_ARG_TRIGGER			= "trigger";
 
@@ -73,6 +78,10 @@ constexpr string_view JSON_ARG_LEVEL 			= "level";
 constexpr string_view JSON_ARG_BACKLIGHT		= "backlight";
 constexpr string_view JSON_ARG_VALIDATE		= "validate";
 constexpr string_view JSON_ARG_DUMP		 		= "dump";			// for debug datat
+
+
+constexpr string_view JSON_ARG_LOAD 			= "load";
+constexpr string_view JSON_ARG_SAVE 			= "save";
 
 constexpr string_view JSON_ARG_DATE				= "date";
 constexpr string_view JSON_ARG_VERSION			= "version";
@@ -94,6 +103,12 @@ constexpr string_view JSON_ARG_GROUPIDS		= "groupIDs";
 constexpr string_view JSON_ARG_EVENTIDS		= "eventIDs";
 constexpr string_view JSON_ARG_FILEPATH		= "filepath";
 
+constexpr string_view JSON_ARG_TIMED_EVENTS	= "events.timed";
+constexpr string_view JSON_ARG_FUTURE_EVENTS		= "events.future";
+
+constexpr string_view JSON_ARG_LATITUDE		= "latitude";
+constexpr string_view JSON_ARG_LONGITUDE		= "longitude";
+ 
 constexpr string_view JSON_VAL_ALL				= "all";
 constexpr string_view JSON_VAL_VALID			= "valid";
 constexpr string_view JSON_VAL_DETAILS			= "details";
@@ -116,22 +131,82 @@ static bool Events_NounHandler_GET(ServerCmdQueue* cmdQueue,
 	auto headers = url.headers();
 	json reply;
 
+
 	auto db = insteon.getDB();
-
+	
 	// GET /events
-	if(path.size() == 1) {;
-
+	if(path.size() == 1) {
+	 
 		json eventList;
+		
 		auto eventIDs = db->allEventsIDs();
+
 		for(auto eventID : eventIDs){
 			json entry;
-
- 			entry[string(JSON_ARG_NAME)] =  db->eventGetName(eventID);
+			
+			entry[string(JSON_ARG_NAME)] =  db->eventGetName(eventID);
+			
+			auto ref = db->eventsGetEvent(eventID);
+			if(ref) {
+				Event event = ref->get();
+				Action act = event.getAction();
+				if(act.isValid()){
+					entry[string(JSON_ARG_ACTION)]= act.JSON();
+				}
+				
+				EventTrigger trig = event.getEventTrigger();
+				if(trig.isValid()){
+					entry[string(JSON_ARG_TRIGGER)]= trig.JSON();
+				}
+			}
+			
 			eventList[ to_hex<unsigned short>(eventID)] = entry;
- 		}
-
+		}
+		
 		reply[string(JSON_ARG_EVENTIDS)] = eventList;
-		makeStatusJSON(reply,STATUS_OK);
+		
+		// create a sorted vector of timed events
+		vector<std::pair<string, int16_t>> timedEvents;
+ 		solarTimes_t solar;
+		insteon.getSolarEvents(solar);
+
+		time_t now = time(NULL);
+		struct tm* tm = localtime(&now);
+		time_t localNow  = (now + tm->tm_gmtoff);
+		vector<eventID_t> fEvents  = db->eventsInTheFuture(solar, localNow);
+
+		vector<string> futureEvents;
+			for(auto eventID : fEvents){
+				futureEvents.push_back(to_hex<unsigned short>(eventID));
+ 	 	}
+
+		if(futureEvents.size()){
+			reply[string(JSON_ARG_FUTURE_EVENTS	)] = futureEvents;
+		}
+		
+		for(auto eventID : eventIDs){
+			auto ref = db->eventsGetEvent(eventID);
+			if(ref) {
+				Event event = ref->get();
+				EventTrigger trig = event.getEventTrigger();
+				if(trig.isTimed()){
+ 
+					int16_t minsFromMidnight = 0;
+					if(trig.calculateTriggerTime(solar,minsFromMidnight)) {
+						timedEvents.push_back(make_pair( event.idString(), minsFromMidnight));
+					}
+				}
+			}
+		}
+		if(timedEvents.size() > 0){
+			sort(timedEvents.begin(), timedEvents.end(),
+				  [] (const pair<string, int16_t>& a,
+						const pair<string, int16_t>& b) { return a.second < b.second; });
+			
+	 		reply[string(JSON_ARG_TIMED_EVENTS)] = timedEvents;
+ 		}
+  
+ 		makeStatusJSON(reply,STATUS_OK);
 		(completion) (reply, STATUS_OK);
 		return true;
 
@@ -220,7 +295,7 @@ static bool Events_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 			});
 			
 			if(!queued) {
-				makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
+				makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is not running" );;
 				(completion) (reply, STATUS_UNAVAILABLE);
 				return true;
 			}
@@ -436,12 +511,12 @@ static void Events_NounHandler(ServerCmdQueue* cmdQueue,
 		return;
 	}
 	
-	// is server available?
-	if(!insteon.serverAvailable()) {
-		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
-		(completion) (reply, STATUS_UNAVAILABLE);
-		return;
-	}
+//	// is server available?
+//	if(!insteon.serverAvailable()) {
+//		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
+//		(completion) (reply, STATUS_UNAVAILABLE);
+//		return;
+//	}
 	
 	switch(url.method()){
 		case HTTP_GET:
@@ -767,12 +842,12 @@ static void EventGroups_NounHandler(ServerCmdQueue* cmdQueue,
 		return;
 	}
 	
-	// is server available?
-	if(!insteon.serverAvailable()) {
-		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
-		(completion) (reply, STATUS_UNAVAILABLE);
-		return;
-	}
+//	// is server available?
+//	if(!insteon.serverAvailable()) {
+//		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
+//		(completion) (reply, STATUS_UNAVAILABLE);
+//		return;
+//	}
 	
 	switch(url.method()){
 		case HTTP_GET:
@@ -941,7 +1016,7 @@ static bool ActionGroups_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 			});
 			
 			if(!queued) {
-				makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
+				makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is not running" );;
 				(completion) (reply, STATUS_UNAVAILABLE);
 				return true;
 			}
@@ -1129,12 +1204,12 @@ static void ActionGroups_NounHandler(ServerCmdQueue* cmdQueue,
 		return;
 	}
 	
-	// is server available?
-	if(!insteon.serverAvailable()) {
-		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
-		(completion) (reply, STATUS_UNAVAILABLE);
-		return;
-	}
+//	// is server available?
+//	if(!insteon.serverAvailable()) {
+//		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
+//		(completion) (reply, STATUS_UNAVAILABLE);
+//		return;
+//	}
 	
 	switch(url.method()){
 		case HTTP_GET:
@@ -1300,7 +1375,7 @@ static bool Groups_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 			});
 			
 			if(!queued) {
-				makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
+				makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is not running" );;
 				(completion) (reply, STATUS_UNAVAILABLE);
 				return true;
 			}
@@ -1487,12 +1562,12 @@ static void Groups_NounHandler(ServerCmdQueue* cmdQueue,
 		return;
 	}
 	
-	// is server available?
-	if(!insteon.serverAvailable()) {
-		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
-		(completion) (reply, STATUS_UNAVAILABLE);
-		return;
-	}
+//	// is server available?
+//	if(!insteon.serverAvailable()) {
+//		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
+//		(completion) (reply, STATUS_UNAVAILABLE);
+//		return;
+//	}
 	
 	switch(url.method()){
 		case HTTP_GET:
@@ -1550,12 +1625,12 @@ static void InsteonGroups_NounHandler(ServerCmdQueue* cmdQueue,
 		return;
 	}
 	
-	if(!insteon.serverAvailable()) {
-		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
-		(completion) (reply, STATUS_UNAVAILABLE);
-		return;
-	}
-	
+//	if(!insteon.serverAvailable()) {
+//		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
+//		(completion) (reply, STATUS_UNAVAILABLE);
+//		return;
+//	}
+//
 	// CHECK METHOD
 	if(url.method() != HTTP_PUT ) {
 		(completion) (reply, STATUS_INVALID_METHOD);
@@ -1590,7 +1665,7 @@ static void InsteonGroups_NounHandler(ServerCmdQueue* cmdQueue,
 					});
 					
 					if(!queued) {
-						makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
+						makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is not running" );;
 						(completion) (reply, STATUS_UNAVAILABLE);
 					}
 					return;
@@ -1805,7 +1880,7 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 				});
 				
 				if(!queued) {
-					makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
+					makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is not running" );;
 					(completion) (reply, STATUS_UNAVAILABLE);
 					return true;
 				}
@@ -1863,7 +1938,7 @@ static bool Devices_NounHandler_DELETE(ServerCmdQueue* cmdQueue,
 			}
 		});
 		if(!queued) {
-			makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
+			makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is not running" );;
 			(completion) (reply, STATUS_UNAVAILABLE);
 		}
 		return true;
@@ -1941,7 +2016,7 @@ static bool Devices_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 				});
 				
 				if(!queued) {
-					makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
+					makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is not running" );;
 					(completion) (reply, STATUS_UNAVAILABLE);
 					return false;
 				}
@@ -1967,7 +2042,7 @@ static bool Devices_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 				});
 				
 				if(!queued) {
-					makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is busy" );;
+					makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is not running" );;
 					(completion) (reply, STATUS_UNAVAILABLE);
 					return false;
 				}
@@ -1989,7 +2064,7 @@ static bool Devices_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 			}
 			else if(v1.getBoolFromJSON(JSON_ARG_VALIDATE, url.body(), shouldValidate)){
 				
-				insteon.validateDevice(deviceID,[=](bool didSucceed){
+				bool queued =  insteon.validateDevice(deviceID,[=](bool didSucceed){
 					json reply;
 					
 					if(didSucceed){
@@ -2003,6 +2078,12 @@ static bool Devices_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 						(completion) (reply, STATUS_BAD_REQUEST);
 					}
 				});
+				
+				if(!queued) {
+					makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is not running" );;
+					(completion) (reply, STATUS_UNAVAILABLE);
+					return false;
+				}
 				return true;
 			}
 			
@@ -2107,12 +2188,12 @@ static void Devices_NounHandler(ServerCmdQueue* cmdQueue,
 		return;
 	}
 	
-	// is server available?
-	if(!insteon.serverAvailable()) {
-		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
-		(completion) (reply, STATUS_UNAVAILABLE);
-		return;
-	}
+//	// is server available?
+//	if(!insteon.serverAvailable()) {
+//		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
+//		(completion) (reply, STATUS_UNAVAILABLE);
+//		return;
+//	}
 	
 	switch(url.method()){
 		case HTTP_GET:
@@ -2158,6 +2239,8 @@ static bool PLM_NounHandler_GET(ServerCmdQueue* cmdQueue,
 	DeviceID deviceID;
 	DeviceInfo deviceInfo;
 	
+	auto db = insteon.getDB();
+
 	if(path.size() == 2) {
 		
 		string subpath =   path.at(1);
@@ -2174,11 +2257,18 @@ static bool PLM_NounHandler_GET(ServerCmdQueue* cmdQueue,
 				return true;
 			}
 			else {
-				makeStatusJSON(reply,STATUS_INTERNAL_ERROR);
-				(completion) (reply, STATUS_INTERNAL_ERROR);
+				makeStatusJSON(reply, STATUS_UNAVAILABLE, "PLM is not setup" );;
+				(completion) (reply, STATUS_UNAVAILABLE);
 				return true;
 				
 			}
+		} else if(subpath == SUBPATH_PORT){
+			
+			string path = db->getPLMPath();
+			reply[string(JSON_ARG_FILEPATH)] = path;
+			makeStatusJSON(reply,STATUS_OK);
+			(completion) (reply, STATUS_OK);
+			return true;
 		}
 	}
 
@@ -2188,43 +2278,70 @@ static bool PLM_NounHandler_GET(ServerCmdQueue* cmdQueue,
 static bool PLM_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 												REST_URL url,
 												TCPClientInfo cInfo,
-												ServerCmdQueue::cmdCallback_t completion) {
+										  ServerCmdQueue::cmdCallback_t completion) {
 	
 	using namespace rest;
 	auto path = url.path();
 	auto queries = url.queries();
 	auto headers = url.headers();
-
+	
 	ServerCmdArgValidator v1;
 	auto db = insteon.getDB();
-
-
+	
+	
 	json reply;
-
+	
 	if(path.size() == 2) {
 		
 		string subpath =   path.at(1);
 		if(subpath == SUBPATH_DATABASE){
 			
 			string filepath;
-			if(v1.getStringFromJSON(JSON_ARG_FILEPATH, url.body(), filepath)){
+			
+			if(v1.getStringFromJSON(JSON_ARG_SAVE, url.body(), filepath)){
 				
-	 			bool success = db->backupCacheFile(filepath);
- 				if(success){
+				bool success = db->backupCacheFile(filepath);
+				if(success){
 					
 					makeStatusJSON(reply,STATUS_OK);
 					(completion) (reply, STATUS_OK);
- 				}
+				}
 				else {
 					string lastError =  string("Error: ") + to_string(errno);
 					string lastErrorString = string(::strerror(errno));
-
+					
 					makeStatusJSON(reply, STATUS_BAD_REQUEST, lastError, lastErrorString);;
 					(completion) (reply, STATUS_BAD_REQUEST);
 				}
 				return true;
 			}
-		
+			else if(v1.getStringFromJSON(JSON_ARG_LOAD, url.body(), filepath)){
+				bool success = insteon.loadCacheFile(filepath);
+				if(success){
+					
+					makeStatusJSON(reply,STATUS_OK);
+					(completion) (reply, STATUS_OK);
+				}
+				else {
+					string lastError =  string("Error: ") + to_string(errno);
+					string lastErrorString = string(::strerror(errno));
+					
+					makeStatusJSON(reply, STATUS_BAD_REQUEST, lastError, lastErrorString);;
+					(completion) (reply, STATUS_BAD_REQUEST);
+				}
+				return true;
+
+			}
+		}	else if(subpath == SUBPATH_PORT){
+			
+			string filepath;
+			
+			if(v1.getStringFromJSON(JSON_ARG_FILEPATH, url.body(), filepath)){
+				db->setPLMpath(filepath);
+				makeStatusJSON(reply,STATUS_OK);
+				(completion) (reply, STATUS_OK);
+				return true;
+			}
 		}
 	}
 	return false;
@@ -2264,7 +2381,8 @@ static void PLM_NounHandler(ServerCmdQueue* cmdQueue,
 		case HTTP_PUT:
 			isValidURL = PLM_NounHandler_PUT(cmdQueue,url,cInfo, completion);
 			break;
-	
+
+			
  		default:
 			(completion) (reply, STATUS_INVALID_METHOD);
 			return;
@@ -2275,6 +2393,105 @@ static void PLM_NounHandler(ServerCmdQueue* cmdQueue,
 	}
 	
 };
+
+// MARK: CONFIG - NOUN HANDLER
+
+
+static bool Config_NounHandler_PATCH(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+												 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	
+	json reply;
+	
+	ServerCmdArgValidator v1;
+	auto db = insteon.getDB();
+	
+	if(path.size() == 1) {
+				
+		double latitude, longitude;
+		
+		if(v1.getDoubleFromJSON(JSON_ARG_LATITUDE, url.body(), latitude)
+			&& v1.getDoubleFromJSON(JSON_ARG_LONGITUDE, url.body(), longitude)){
+			
+			if(latitude != 0 && longitude != 0){
+				db->setLatLong(latitude, longitude);
+				insteon.refreshSolarEvents();
+				
+				makeStatusJSON(reply,STATUS_OK);
+				(completion) (reply, STATUS_OK);
+				return true;
+			}
+		}
+		
+		
+		
+	}
+	return false;
+	
+}
+
+static void Config_NounHandler(ServerCmdQueue* cmdQueue,
+										 REST_URL url,
+										 TCPClientInfo cInfo,
+										 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	json reply;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	string noun;
+	
+	bool isValidURL = false;
+	
+	if(path.size() > 0) {
+		noun = path.at(0);
+	}
+	
+	// CHECK noun
+	if(noun != NOUN_CONFIG){
+		(completion) (reply, STATUS_NOT_FOUND);
+		return;
+	}
+ 
+	switch(url.method()){
+		case HTTP_GET:
+	//		isValidURL = Events_NounHandler_GET(cmdQueue,url,cInfo, completion);
+			break;
+			
+		case HTTP_PUT:
+	//		isValidURL = Events_NounHandler_PUT(cmdQueue,url,cInfo, completion);
+			break;
+			
+		case HTTP_PATCH:
+			isValidURL = Config_NounHandler_PATCH(cmdQueue,url,cInfo, completion);
+			break;
+	 
+		case HTTP_POST:
+//			isValidURL = Events_NounHandler_POST(cmdQueue,url,cInfo, completion);
+			break;
+ 
+		case HTTP_DELETE:
+//			isValidURL = Events_NounHandler_DELETE(cmdQueue,url,cInfo, completion);
+			break;
+  
+		default:
+			(completion) (reply, STATUS_INVALID_METHOD);
+			return;
+	}
+	
+	if(!isValidURL) {
+		(completion) (reply, STATUS_NOT_FOUND);
+	}
+	
+}
+
 
 // MARK:  OTHER REST NOUN HANDLERS
 
@@ -2386,8 +2603,8 @@ static void Date_NounHandler(ServerCmdQueue* cmdQueue,
 	reply["sunRise"] = solar.sunriseMins;
 	reply["sunSet"] = solar.sunSetMins;
 	reply["civilSunSet"] = solar.civilSunSetMins;
- 	reply["latitude"] = solar.latitude;
-	reply["longitude"] = solar.longitude;
+ 	reply[string(JSON_ARG_LATITUDE)] = solar.latitude;
+	reply[string(JSON_ARG_LONGITUDE)] = solar.longitude;
 	reply["gmtOffset"] = solar.gmtOffset;
 	reply["timeZone"] = solar.timeZoneString;
 	reply["midnight"] = solar.previousMidnight;
@@ -2479,7 +2696,6 @@ static void Link_NounHandler(ServerCmdQueue* cmdQueue,
 }
 
 
-
 // MARK: - COMMAND LINE FUNCTIONS
 
 static bool VersionCmdHandler( stringvector line,
@@ -2563,8 +2779,6 @@ static bool DATECmdHandler( stringvector line,
 		double dd, dd1;
 
 		const char *kTimeFormat = "%r";
-		const char *kDateFormat = "%a %h-%d-%Y %r";
-
 		ServerCmdArgValidator v1;
 
 		v1.getStringFromJSON("timeZone", reply, tz);
@@ -2576,12 +2790,10 @@ static bool DATECmdHandler( stringvector line,
 	
 		if(v1.getStringFromJSON(JSON_ARG_DATE, reply, str)){
 			using namespace timestamp;
+			
 			time_t tt =  TimeStamp(str).getTime();
-
-			struct tm * timeinfo = localtime (&tt);
-			char timeStr[80] = {0};
-			::strftime(timeStr, sizeof(timeStr), kDateFormat, timeinfo );
-			oss << setw(10) << "TIME: " << setw(0) << string(timeStr);
+			
+			oss << setw(10) << "TIME: " << setw(0) <<  TimeStamp(tt).ClockString(false);
 			if(!tz.empty()) oss << " " << tz;
 			oss << "\n\r";
 	 	}
@@ -2589,8 +2801,8 @@ static bool DATECmdHandler( stringvector line,
 		double latitude, longitude;
 	
  
-		if(v1.getDoubleFromJSON("latitude", reply, latitude)
-			&& v1.getDoubleFromJSON("longitude", reply, longitude)){
+		if(v1.getDoubleFromJSON(JSON_ARG_LATITUDE, reply, latitude)
+			&& v1.getDoubleFromJSON(JSON_ARG_LONGITUDE, reply, longitude)){
 			oss << setw(10) << "LAT/LONG: " << setw(0) << latitude << ", " << longitude << "\n\r";
  		}
 
@@ -3237,7 +3449,7 @@ static bool PLMCmdHandler( stringvector line,
 				oss << "Connection: close\n";
 
 		 		json request;
-				request[string(JSON_ARG_FILEPATH)] =  line[2];
+				request[string(JSON_ARG_SAVE)] =  line[2];
 					
 				string jsonStr = request.dump(4);
 				oss << "Content-Length: " << jsonStr.size() << "\n\n";
@@ -3630,7 +3842,7 @@ static bool EventsCmdHandler( stringvector line,
 		
 		if (subcommand == "list") {
 			std::ostringstream oss;
-			oss << "GET /events " <<  " HTTP/1.1\n";
+			oss << "GET /events" <<  " HTTP/1.1\n";
 			oss << "Connection: close\n";
 			oss << "\n";
 			url.setURL(oss.str());
@@ -3671,18 +3883,123 @@ static bool EventsCmdHandler( stringvector line,
 				std::ostringstream oss;
 				
 				string key1 = string(JSON_ARG_EVENTIDS);
-				
+				string keyTimed = string(JSON_ARG_TIMED_EVENTS);
+				string keyAction = string(JSON_ARG_ACTION);
+				string keyTrigger= string(JSON_ARG_TRIGGER);
+				string keyfuture = string(JSON_ARG_FUTURE_EVENTS	);
+	 
+	 
 				if( reply.contains(key1)
 					&& reply.at(key1).is_object()){
 					auto entries = reply.at(key1);
+			
+					vector<string> timedEvents;
+					vector<string> futureEvents;
 					
-					for (auto& [key, value] : entries.items()) {
-						
-						oss  << " " << key << " ";
-						string eventName = value[string(JSON_ARG_NAME)];
-						oss << "\"" << eventName << "\""  << "\r\n";
+					if( reply.contains(keyTimed)){
+						auto ent = reply.at(keyTimed);
+						for (auto& [_, val] : ent.items()) {
+							timedEvents.push_back( val[0]);
+	 					}
+					}
+		 
+					if( reply.contains(keyfuture)
+						&& reply.at(keyfuture).is_array()){
+						auto futureIDS = reply.at(keyfuture);
+						for(string eventID :futureIDS) {
+							futureEvents.push_back(eventID);
+						}
 					}
 					
+					for(auto key : timedEvents){
+						
+						if(entries.count(key)){
+							
+							json value = entries.at(key);
+							Action act;
+							EventTrigger trig;
+							
+							string eventName = value[string(JSON_ARG_NAME)];
+
+							if( value.contains(keyAction)
+								&& value.at(keyAction).is_object()){
+								act = Action(value.at(keyAction));
+							}
+							
+							if( value.contains(keyTrigger)
+								&& value.at(keyTrigger).is_object()){
+								trig = EventTrigger(value.at(keyTrigger));
+							}
+							
+							oss  << " " << key << " " ;
+							// print event name
+							oss << setiosflags(ios::left);
+							constexpr size_t maxlen = 20;
+								size_t len = eventName.size();
+								if(len<maxlen){
+									oss << setw(maxlen);
+									oss << eventName;
+								}
+								else {
+									oss << eventName.substr(0,maxlen -1);
+									oss << "…";
+								}
+			
+							oss << " ";
+							
+							
+							if(find(futureEvents.begin(), futureEvents.end(), key) != futureEvents.end())
+								oss << "* ";
+							else
+								oss << "  ";
+						 
+							oss   << setw(32) << trig.printString() <<  setw(0) <<  " ";
+							oss << act.printString() <<  " ";
+							oss << "\n\r";
+							
+						}
+					}
+				 
+					/*for (auto& [key, value] : entries.items()) {
+						
+						Action act;
+						EventTrigger trig;
+			
+						string key2 = string(JSON_ARG_ACTION);
+						string key3 = string(JSON_ARG_TRIGGER);
+						string eventName = value[string(JSON_ARG_NAME)];
+		
+						if( value.contains(key2)
+							&& value.at(key2).is_object()){
+							act = Action(value.at(key2));
+						}
+						
+						if( value.contains(key3)
+							&& value.at(key3).is_object()){
+							trig = EventTrigger(value.at(key3));
+						}
+		
+						oss  << " " << key << " " ;
+						// print event name
+						oss << setiosflags(ios::left);
+						constexpr size_t maxlen = 20;
+							size_t len = eventName.size();
+							if(len<maxlen){
+								oss << setw(maxlen);
+								oss << eventName;
+							}
+							else {
+								oss << eventName.substr(0,maxlen -1);
+								oss << "…";
+							}
+		
+						oss << " ";
+						if(act.isValid() && trig.isValid()){
+							oss   << trig.printString() <<  " ";
+	//						oss  << act.printString() <<  " ";
+						}
+					}
+		*/
 					mgr->sendReply(oss.str());
 				}
 				else {
@@ -3754,7 +4071,8 @@ void registerServerCommands() {
 	
 	// create the server command processor
 	auto cmdQueue = ServerCmdQueue::shared();
-	
+	 
+	cmdQueue->registerNoun(NOUN_CONFIG, 	Config_NounHandler);
 	cmdQueue->registerNoun(NOUN_STATUS, 	Status_NounHandler);
 	cmdQueue->registerNoun(NOUN_VERSION, 	Version_NounHandler);
 	cmdQueue->registerNoun(NOUN_DATE, 		Date_NounHandler);

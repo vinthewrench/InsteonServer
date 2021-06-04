@@ -23,6 +23,7 @@
 #include <sys/uio.h>
  #include <unistd.h>
 
+#include "InsteonException.hpp"
 
 PLMStream::PLMStream(){
 	
@@ -149,8 +150,12 @@ int PLMStream::available(){
 		
 		// device is broken
  		if(lastError == ENXIO ) {
-			_isSetup = false;
-			return -1;
+			
+			throw PLMStreamException(std::string(strerror(lastError)), lastError);
+
+//			_isSetup = false;
+//
+//			return -1;
 		}
 		
 	}else if(n == 1) {

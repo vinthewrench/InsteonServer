@@ -38,12 +38,13 @@ InsteonMgr::InsteonMgr(){
 	
 	// clear database
 	_db.clear();
-	_state = STATE_NO_PLM;
 
-//  VINNIE
-	_scdMgr.setLatLong(42.235389 ,-122.865947);
+//  VINNIE -- read this from DB
+//	_scdMgr.setLatLong(42.235389 ,-122.865947);
+//	_db.setLatLong(42.235389 , -122.865947);
+	
 
-	{
+/*	{
 	solarTimes_t solar;
 	_scdMgr.getSolarEvents(solar);
 		
@@ -74,10 +75,9 @@ InsteonMgr::InsteonMgr(){
 		gmtime_r(&time, &timeinfo);
 		::strftime(timeStr, sizeof(timeStr), kDateFormat, &timeinfo );
 		printf("%12s: %s\n", "civilSunSet", timeStr);
-		
- 
+ 	}
+*/
 	
-	}
 }
 
 
@@ -120,31 +120,71 @@ InsteonMgr::~InsteonMgr(){
 }
 
 void InsteonMgr::run(){
-	while(_running){
+	
+	try{
 		
-		if( _hasPLM) {
+		while(_running){
 			
-			// wait for DB response
-			plm_result_t result = this->handleResponse(InsteonPLM::defaultCmdTimeout);
+			if( _hasPLM) {
+				
+				// wait for DB response
+				plm_result_t result = this->handleResponse(InsteonPLM::defaultCmdTimeout);
+				
+				if(result == PLR_CONTINUE) continue;
+				
+				if(result == PLR_ERROR){
+					_hasPLM = false;
+					_state = STATE_PLM_ERROR;
+				}
+				else if(result == PLR_INVALID) {
+					_state = STATE_PLM_ERROR;
+				}
+			}
+			else { // no PLM
+				sleep(1);
+			}
+			
+		};
 		
-			if(result == PLR_CONTINUE) continue;
-	 
-			if(result == PLR_ERROR){
-				_hasPLM = false;
-				_state = STATE_PLM_ERROR;
-			}
-			else if(result == PLR_INVALID) {
-				_state = STATE_PLM_ERROR;
-			}
- 		}
-		else { // no PLM
-			sleep(1);
+
+	
+	}
+	catch ( const PLMStreamException& e)  {
+		printf("\tError %d %s\n\n", e.getErrorNumber(), e.what());
+		
+		if(e.getErrorNumber()	 == ENXIO){
+			stop();
+	
+			
+//			if (_thread.joinable()){
+//				_thread.join();
+//			}
+
 		}
- 
-	};
+	}
 }
 
 
+bool InsteonMgr::loadCacheFile(string filePath){
+	
+	bool success = false;
+	_db.clear();
+	success =  _db.restoreFromCacheFile(filePath);
+	
+	if(success) {
+		_state = STATE_SETUP;
+		
+		double dLat, dLong;
+		if(_db.getLatLong(dLat, dLong)){
+			ScheduleMgr::shared()->setLatLong(dLat ,dLong);
+		}
+		_isSetup = true;
+	}
+	
+ 	return success;
+}
+
+	
 /**
  * @brief set the device path for the PLM
  *
@@ -155,7 +195,7 @@ void InsteonMgr::run(){
  *
  */
 
-void InsteonMgr::begin(const char * plmPath,
+void InsteonMgr::begin(string plmPath,
 			  boolCallback_t callback){
 
 	int  errnum = 0;
@@ -165,8 +205,18 @@ void InsteonMgr::begin(const char * plmPath,
 	_plmDeviceID 	=  DeviceID();
 	_plmDeviceInfo 	=  DeviceInfo();
 	_hasInfo			= false;
+	
+	if(plmPath.empty())
+		plmPath = _db.getPLMPath();
+	 
+	if(plmPath.empty()){
+		callback(false);
+		return;
+	}
 
-	if(! _stream.begin(plmPath, errnum))
+	LOG_INFO("PLM_OPEN: %s\n", plmPath.c_str());
+
+	if(! _stream.begin(plmPath.c_str(), errnum))
 		throw InsteonException(string(strerror(errnum)), errnum);
 
 	_plm.begin(&_stream, InsteonPLM::defaultCmdTimeout);
@@ -185,6 +235,11 @@ void InsteonMgr::begin(const char * plmPath,
 
 	// start the thread running
 	_running = true;
+	
+	// cleanup from previose thread?
+	if(_thread.joinable())
+		_thread.join();
+	
 	_thread = std::thread(&InsteonMgr::run, this);
 
 // Step: 1 -- get the PLM info to check if its there?
@@ -249,13 +304,20 @@ void InsteonMgr::begin(const char * plmPath,
 
 void InsteonMgr::stop(){
 	
+	
 	if(_hasPLM) {
 		_plm.stop();
 		_stream.stop();
-		
+		_plmDeviceID 	=  DeviceID();
+		_plmDeviceInfo 	=  DeviceInfo();
+		_hasInfo			= false;
+
 		_state = STATE_NO_PLM;
 		_hasPLM = false;
 	}
+
+	_cmdQueue->abort();
+ 
 }
 
 
@@ -311,6 +373,9 @@ string InsteonMgr::currentStateString(){
 		case STATE_INIT:
 			result = "Initializing";
 			break;
+		case STATE_SETUP:
+			result = "Database Loaded";
+			break;
 		case STATE_NO_PLM:
 			result = "No PLM Found";
 			break;
@@ -351,7 +416,17 @@ string InsteonMgr::currentStateString(){
 }
 
 bool InsteonMgr::getSolarEvents(solarTimes_t &solar){
-	return _scdMgr.getSolarEvents(solar);
+	return ScheduleMgr::shared()->getSolarEvents(solar);
+}
+
+bool InsteonMgr::refreshSolarEvents(){
+	
+	double dLat, dLong;
+	
+	_db.getLatLong(dLat, dLong);
+	ScheduleMgr::shared()->setLatLong(dLat ,dLong);
+ 
+	return ScheduleMgr::shared()->calculateSolarEvents();
 }
 
 
@@ -408,6 +483,13 @@ void InsteonMgr::syncPLM(boolCallback_t callback){
 	if(!_aldb)
 		throw InsteonException("aldb not setup");
 
+	if(!_isSetup){
+		if(!loadCacheFile()) {
+			callback(false);
+			return ;
+		}
+	}
+
 	_state = STATE_READING_PLM;
 	_aldb->readPLM([this, callback]( auto aldbEntries) {
 		
@@ -417,15 +499,8 @@ void InsteonMgr::syncPLM(boolCallback_t callback){
 		vector<insteon_aldb_t> plmRemove;
 		vector<insteon_aldb_t> plmAdd;
 	 
-		_db.clear();
-		
 		// reset the deviceID for the PLM database
 		_db.setPlmDeviceID(_plmDeviceID);
- 
-		// VINNIE --- THINK ABOUT THIS?
-		// we don't care if this fails
-		if(! _db.restoreFromCacheFile())
-			throw InsteonException("restoreFromCacheFile failed");
  
 		if(_db.syncALDB(aldbEntries, &plmRemove, &plmAdd)){
 			
@@ -1400,7 +1475,8 @@ void InsteonMgr::idleLoop() {
 	struct tm* tm = localtime(&now);
 	time_t localNow  = (now + tm->tm_gmtoff);
 
-	if(localNow > (lastRun + SECS_PER_MIN * 1)){
+	if(localNow > (lastRun + SECS_PER_MIN * 1))
+	{
 		lastRun = localNow;
 		
 		if(_state == STATE_READY) {
@@ -1409,7 +1485,7 @@ void InsteonMgr::idleLoop() {
 
 			// good place to check for events.
 			solarTimes_t solar;
-			if(_scdMgr.getSolarEvents(solar)){
+			if(ScheduleMgr::shared()->getSolarEvents(solar)){
 				
 				// combine any unrun events.
 				if(!didReconcileEvents) {
@@ -1732,9 +1808,6 @@ plm_result_t InsteonMgr::handleResponse(uint64_t timeout){
  */
 
 void InsteonMgr::updateLevels(){
-
-	//VINNIE
-	return ;
 	
 	if(_state != STATE_READY)
 		return;

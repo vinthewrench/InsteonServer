@@ -40,10 +40,10 @@ class InsteonCmdQueue{
 	
 public:
 		static InsteonCmdQueue *shared() {
-		if(!sharedInstanced)
+		if(!sharedInstance)
 			throw InsteonException("InsteonCmdQueue not setup");
  
-		return sharedInstanced;
+		return sharedInstance;
 	}
 
 	typedef struct  {
@@ -111,7 +111,7 @@ public:
 	
  private:
 	
-	static InsteonCmdQueue *sharedInstanced;
+	static InsteonCmdQueue *sharedInstance;
 	
 	mutable std::mutex _mutex;
 
