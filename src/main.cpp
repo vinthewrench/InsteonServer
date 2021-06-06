@@ -46,8 +46,6 @@ void linkKP(){
 	DeviceID deviceID =  DeviceID("33.4F.F6");
 	auto keypad = InsteonKeypadDevice(deviceID );
 	
-	
-	
 	START_VERBOSE;
 	
 	// link up the keypad button to groups.
@@ -116,7 +114,8 @@ int main(int argc, const char * argv[]) {
 	
 	// create the server command processor
 	auto cmdQueue = ServerCmdQueue::shared();
-	
+	cmdQueue->apiSecretCreate("foobar","12345" );
+
 	registerServerCommands();
 	
 	TCPServer telnet_server(cmdQueue);

@@ -40,6 +40,8 @@
 #define previousSunday(_time_) ((_time_) - elapsedSecsThisWeek(_time_))      // time at the start of the week for the given time
 #define nextSunday(_time_) (previousSunday(_time_)+SECS_PER_WEEK)          // time at the end of the week for the given time
 
+#define nextInterval(_time_, _minutesRange_)  (((_time_) / (_minutesRange_ * SECS_PER_MIN) * (_minutesRange_ * SECS_PER_MIN)) + (_minutesRange_ * SECS_PER_MIN))
+
 #include "sunset.h"
  
 typedef struct {
