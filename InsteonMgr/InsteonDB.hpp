@@ -25,7 +25,6 @@
 #include "Action.hpp"
 #include "Event.hpp"
 
-#include "InsteonPLM.hpp"  // for deviceID_t
 //#include "InsteonDBValidator.hpp"
 //#include "InventoryMgmt.hpp"
  
@@ -65,11 +64,19 @@ public:
  
 	static const char * DatabaseChangedNotification;
 	static const char * DeviceStateChangedNotification;
+ 
+	static InsteonDB *shared() {
+			if (!sharedInstance)
+				sharedInstance = new InsteonDB;
+			return sharedInstance;
+		}
+
+	static InsteonDB *sharedInstance;
 
 	InsteonDB();
 	~InsteonDB();
 
-	//  config info
+// MARK: - config info
 	bool 	setPLMpath(string plmPath);
 	string getPLMPath(){ return _plmPath;};
 	
@@ -82,7 +89,7 @@ public:
 	bool setLatLong(double latitude, double longitude);
 	bool getLatLong(double &latitude, double &longitude);
 
-	// database API
+	// MARK: - database API
  
 	void 	clear() {
 		_db.clear();
@@ -150,7 +157,7 @@ public:
 	bool clearDeviceALDB(DeviceID deviceID);
 	bool removeDevice(DeviceID deviceID);
 	
-	// groups
+	// MARK: -  groups
 	bool groupIsValid(GroupID groupID);
 	bool groupCreate(GroupID* groupID, const string name);
 	bool groupDelete(GroupID groupID);
@@ -163,7 +170,7 @@ public:
 	vector<GroupID> allGroups();
 	vector<GroupID> groupsContainingDevice(DeviceID deviceID);
 
-	// actions
+	// MARK: -   actions
 	bool actionGroupIsValid(actionGroupID_t actionGroupID);
 	bool actionGroupCreate(actionGroupID_t* actionGroupID, const string name);
 	bool actionGroupDelete(actionGroupID_t actionGroupID);
@@ -176,7 +183,7 @@ public:
 	vector<reference_wrapper<Action>> actionGroupGetActions(actionGroupID_t groupID);
 	vector<actionGroupID_t> allActionGroupsIDs();
 	
-	// events
+	// MARK: -   events
 	bool eventsIsValid(eventID_t eventID);
 	bool eventSave(Event event, eventID_t* eventIDOut = NULL);
 	bool eventFind(string name, eventID_t* eventID);
@@ -191,7 +198,7 @@ public:
 	bool eventSetLastRunTime(eventID_t eventID, time_t localNow);
 	void reconcileEventGroups(const solarTimes_t &solar, time_t localNow);
 
-	// event groups
+	// MARK: -  event groups
 	bool eventGroupIsValid(eventGroupID_t eventGroupID);
 	bool eventGroupCreate(eventGroupID_t* eventGroupID, const string name);
 	bool eventGroupDelete(eventGroupID_t eventGroupID);
@@ -204,7 +211,13 @@ public:
 	vector<eventID_t> eventGroupGetEventIDs(eventGroupID_t eventGroupID);
 	vector<eventGroupID_t> allEventGroupIDs();
 	
-  	// debugging
+	// MARK: -  API Secrets
+	bool apiSecretCreate(string APIkey, string APISecret);
+	bool apiSecretDelete(string APIkey);
+	bool apiSecretSetSecret(string APIkey, string APISecret);
+	bool apiSecretGetSecret(string APIkey, string &APISecret);
+
+	// MARK: -   debugging
 	string dumpDB(bool printALDB = false);
 	void   dumpDBInfo(std::ostringstream &oss, DeviceID deviceID, bool printALDB = false );
 	
@@ -212,7 +225,8 @@ public:
 	string getDirectoryPath() { return _directoryPath;};
 	
 	string cacheFileNameFromPLM(DeviceID deviceID);
-	
+
+	// MARK: - private
 private:
  
 	string  default_fileName();
@@ -269,6 +283,8 @@ private:
 	} eventGroupInfo_t;
 
 	map<eventID_t, eventGroupInfo_t> 		_eventsGroups;
+	
+	map<string,  string> 					_APISecrets;
 
 	string 						_directoryPath;
 	mt19937						_rng;

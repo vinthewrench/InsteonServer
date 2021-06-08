@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		2E431A162634E6EF000BEAF8 /* libFOOServer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E431A0E2634E6DD000BEAF8 /* libFOOServer.a */; };
+		2E51ECD1266EDEAA00DC2548 /* InsteonAPISecretMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E51ECCD266EDB6100DC2548 /* InsteonAPISecretMgr.cpp */; };
 		2E592E422620C1150041AA34 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E412620C1150041AA34 /* main.cpp */; };
 		2E592E682620C2EC0041AA34 /* ServerCmdValidators.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E662620C2EC0041AA34 /* ServerCmdValidators.cpp */; };
 		2E592E6D2620C3990041AA34 /* ServerCommands.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E6B2620C3990041AA34 /* ServerCommands.cpp */; };
@@ -70,6 +71,8 @@
 
 /* Begin PBXFileReference section */
 		2E431A082634E6DD000BEAF8 /* FooServer.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = FooServer.xcodeproj; path = Submodule/FooServer/FooServer.xcodeproj; sourceTree = "<group>"; };
+		2E51ECCD266EDB6100DC2548 /* InsteonAPISecretMgr.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = InsteonAPISecretMgr.cpp; sourceTree = "<group>"; };
+		2E51ECCE266EDB6100DC2548 /* InsteonAPISecretMgr.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = InsteonAPISecretMgr.hpp; sourceTree = "<group>"; };
 		2E592E302620C09C0041AA34 /* InsteonServer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = InsteonServer; sourceTree = BUILT_PRODUCTS_DIR; };
 		2E592E412620C1150041AA34 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		2E592E662620C2EC0041AA34 /* ServerCmdValidators.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ServerCmdValidators.cpp; sourceTree = "<group>"; };
@@ -203,6 +206,8 @@
 				2E592E9D2620C9380041AA34 /* InsteonMgrDefs.hpp */,
 				2E592E942620C9380041AA34 /* InsteonMgr.hpp */,
 				2E592E8A2620C9370041AA34 /* InsteonMgr.cpp */,
+				2E51ECCE266EDB6100DC2548 /* InsteonAPISecretMgr.hpp */,
+				2E51ECCD266EDB6100DC2548 /* InsteonAPISecretMgr.cpp */,
 				2E96641E265EB075007A3D93 /* ScheduleMgr.hpp */,
 				2E96641D265EB075007A3D93 /* ScheduleMgr.cpp */,
 				2E592E9B2620C9380041AA34 /* InsteonDB.hpp */,
@@ -336,6 +341,7 @@
 			files = (
 				2E592EB02620C9380041AA34 /* DeviceID.cpp in Sources */,
 				2E592EB72620C9380041AA34 /* xxhash.c in Sources */,
+				2E51ECD1266EDEAA00DC2548 /* InsteonAPISecretMgr.cpp in Sources */,
 				2E592EB82620C9380041AA34 /* InsteonDevice.cpp in Sources */,
 				2E592EBB2620C9380041AA34 /* InsteonALDB.cpp in Sources */,
 				2E592EB32620C9380041AA34 /* sleep.c in Sources */,

@@ -8,6 +8,8 @@
 #include <iostream>
 
 #include "ServerCmdQueue.hpp"
+#include "InsteonAPISecretMgr.hpp"
+
 #include <regex>
 #include <string>
 #include <iostream>
@@ -110,12 +112,15 @@ int main(int argc, const char * argv[]) {
 	
 	START_INFO;
 	
+// load the database cachefile
 	insteon.loadCacheFile();
+
+//set up the api secrets
+	InsteonAPISecretMgr apiSecrets(insteon.getDB());
+//	apiSecrets.apiSecretCreate("foobar","12345" );
 	
 	// create the server command processor
-	auto cmdQueue = ServerCmdQueue::shared();
-	cmdQueue->apiSecretCreate("foobar","12345" );
-
+	auto cmdQueue = new ServerCmdQueue(&apiSecrets);
 	registerServerCommands();
 	
 	TCPServer telnet_server(cmdQueue);

@@ -29,7 +29,8 @@ constexpr static string_view KEY_START_CONFIG 		= "config-start";
 constexpr static string_view KEY_END_CONFIG 			= "config-end";
 constexpr static string_view KEY_CONFIG_PORT			= "port";
 constexpr static string_view KEY_CONFIG_LATLONG		= "lat-long";
- 
+constexpr static string_view KEY_CONFIG_APIKEY		= "apikey";
+
 constexpr static string_view KEY_START_DEVICE 		= "device-start";
 constexpr static string_view KEY_END_DEVICE 			= "device-end";
 constexpr static string_view KEY_START_GROUP 			= "group-start";
@@ -53,6 +54,8 @@ constexpr static string_view KEY_EVENT_TRIGGER		= "trigger";
 constexpr static string_view KEY_EVENT_EVENTID		= "event";
 
 
+InsteonDB *InsteonDB::sharedInstance = 0;
+
 
 InsteonDB::InsteonDB() {
 	
@@ -62,6 +65,7 @@ InsteonDB::InsteonDB() {
 	_deviceGroups.clear();
 	_actionGroups.clear();
 	_eventsGroups.clear();
+	_APISecrets.clear();
 	_events.clear();
 	_eTag = 0;
 	
@@ -76,10 +80,13 @@ InsteonDB::InsteonDB() {
 }
 
 InsteonDB::~InsteonDB() {
-	
 	_db.clear();
-	
-}
+	_deviceGroups.clear();
+	_actionGroups.clear();
+	_eventsGroups.clear();
+	_APISecrets.clear();
+	_events.clear();
+	_eTag = 0;}
 
 // MARK: - public API
 
@@ -701,7 +708,12 @@ bool InsteonDB::backupCacheFile(string filepath){
 				ofs << setprecision(11)  << _latitude << " " << _longitude << "\n";
  			}
  
- 			ofs << KEY_END_CONFIG << ":\n";
+			for (auto& [key, secret] : _APISecrets) {
+				ofs << KEY_CONFIG_APIKEY << ": " ;
+				ofs << key << " " << secret  << "\n";
+			}
+			
+	 		ofs << KEY_END_CONFIG << ":\n";
 			ofs << "\n";
 
 	//		ofs << "## PLM " << _plmDeviceID.string() << "  "<<  string(str) << "\n\n";
@@ -1052,9 +1064,17 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 							_latitude = d1;
 							_longitude = d2;
 						}
-						
+					} else if(token == KEY_CONFIG_APIKEY){
+						string str  = Utils::trimStart(string(p));
+							
+						vector<string> v = split<string>(str, " ");
+						if(v.size() != 2)
+							break;
+							
+						string key = v.at(0);
+						string secret = v.at(1);
+						_APISecrets[key] = secret;
 					}
-					
 				}
 					break;
 					
@@ -1916,6 +1936,38 @@ void InsteonDB::reconcileEventGroups(const solarTimes_t &solar, time_t localNow)
 	
 }
  
+// MARK: -  API Secrets
+bool InsteonDB::apiSecretCreate(string APIkey, string APISecret){
+	_APISecrets[APIkey] = APISecret;
+	saveToCacheFile();
+	return true;
+}
+
+bool InsteonDB::apiSecretSetSecret(string APIkey, string APISecret){
+ 
+	if(_APISecrets.count(APIkey) == 0)
+		return false;
+
+	_APISecrets[APIkey] = APISecret;
+	saveToCacheFile();
+	return true;
+ }
+
+bool InsteonDB::apiSecretDelete(string APIkey){
+	
+	_APISecrets[APIkey].erase();
+	return true;
+}
+
+bool InsteonDB::apiSecretGetSecret(string APIkey, string &APISecret){
+	
+	if(_APISecrets.count(APIkey) == 0)
+		return false;
+	
+	APISecret = _APISecrets[APIkey];
+	return true;
+}
+
 
 //MARK: - private API
 
