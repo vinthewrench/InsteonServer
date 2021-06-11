@@ -1,3 +1,6 @@
+# export CC=/usr/local/clang_9.0.0/bin/clang
+# export CXX=/usr/local/clang_9.0.0/bin/clang++
+
 cmake_minimum_required(VERSION 3.0)
 
 project(InsteonMgr)      
@@ -56,6 +59,10 @@ set_target_properties(InsteonMgr PROPERTIES
             CXX_EXTENSIONS OFF
             )
             
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+target_link_libraries(InsteonMgr PRIVATE Threads::Threads)
+
 target_include_directories(InsteonMgr
 	PRIVATE 
 	src
