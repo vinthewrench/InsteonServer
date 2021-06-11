@@ -1,0 +1,377 @@
+## INSTEON DATABASE 2021-05-29 22:30:34
+
+config-start:
+port: /dev/cu.usbserial-AK05ZAZ7
+lat-long: 42.235389 -122.865947
+config-end:
+
+device-start: 52.AC.35
+name: Bedroom light
+cntl: 40 ff 01 20 45 02
+aldb: 0fff aa 01 2C.DE.42 fe 1c
+aldb: 0ff7 e2 01 53.C2.B8 03 1f
+aldb: 0fef aa 01 54.FA.39 00 1c
+aldb: 0fe7 aa fe 53.C2.B8 00 1c
+aldb: 0fdf aa fe 52.18.42 00 1c
+latlong: (xxxxx,xxxxxxx)
+some-prop: some stupid string goes here
+device-end:
+
+device-start: 57.2F.51
+name: couch lights
+cntl: 40 ff 01 20 45 02
+resp: 00 01
+aldb: 0fff e2 01 53.C2.B8 03 1f
+aldb: 0ff7 aa ff 52.18.42 fe 1c
+aldb: 0fef aa 01 29.B9.6E 00 1c
+aldb: 0fe7 e2 01 29.B9.6E 03 1c
+aldb: 0fdf ea 00 53.C2.B8 03 1c
+aldb: 0fd7 ea 00 53.C2.B8 03 1c
+aldb: 0fcf ea 00 53.C2.B8 03 1c
+aldb: 0fc7 ea 00 53.C2.B8 03 1c
+aldb: 0fbf aa fe 53.C2.B8 00 1c
+device-end:
+
+device-start: 54.F6.F9
+name: living room string led
+cntl: 40 ff 02 38 43 02
+resp: 00 01
+aldb: 0fff a2 ff 52.18.42 ff 00
+aldb: 0ff7 02 00 00.00.00 00 00
+aldb: 0fef e2 01 53.C2.B8 03 00
+aldb: 0fe7 a2 fe 53.C2.B8 00 00
+device-end:
+
+device-start: 2A.4D.D6
+name: flood garage
+cntl: 40 ff 02 2a 43 02
+aldb: 0fff e2 01 53.C2.B8 03 1f
+aldb: 0ff7 aa ff 52.18.42 00 1c
+aldb: 0fef aa fe 53.C2.B8 00 1c
+device-end:
+
+device-start: 52.B6.E4
+name: flood back porch
+cntl: 40 ff 02 2a 45 02
+aldb: 0fff e2 01 53.C2.B8 03 1f
+aldb: 0ff7 aa ff 52.18.42 00 1c
+aldb: 0fef e2 01 4E.82.96 03 1c
+aldb: 0fe7 aa 01 4E.82.96 00 1c
+aldb: 0fdf aa fe 52.18.42 00 1c
+aldb: 0fd7 ea 00 53.C2.B8 03 1c
+aldb: 0fcf ea 00 53.C2.B8 03 1c
+aldb: 0fc7 aa fe 53.C2.B8 00 1c
+device-end:
+
+device-start: 2A.50.AD
+name: Front Deck lights
+cntl: 40 ff 02 2a 43 02
+aldb: 0fff ea 01 53.C2.B8 03 1f
+aldb: 0ff7 02 00 00.00.00 00 00
+aldb: 0fe7 ea 01 2C.DE.42 03 1c
+aldb: 0fdf ea 00 53.C2.B8 03 1c
+aldb: 0fd7 ea 00 53.C2.B8 03 1c
+aldb: 0fcf aa fe 53.C2.B8 00 1c
+device-end:
+
+device-start: 29.B6.49
+name: hall lights
+cntl: 40 ff 01 20 41 02
+aldb: 0fff e2 01 53.C2.B8 03 1f
+aldb: 0ff7 aa ff 52.18.42 00 1c
+aldb: 0fef 02 00 00.00.00 00 00
+aldb: 0fe7 02 00 00.00.00 00 00
+aldb: 0fdf aa 01 2C.DE.42 00 1c
+aldb: 0fd7 02 00 00.00.00 00 00
+aldb: 0fcf aa fe 53.C2.B8 00 1c
+device-end:
+
+device-start: 54.F6.99
+name: House Christmas Light
+cntl: 40 ff 02 38 43 02
+aldb: 0fff a2 ff 52.18.42 00 00
+aldb: 0ff7 02 00 00.00.00 00 00
+aldb: 0fef e2 01 53.C2.B8 03 00
+aldb: 0fe7 a2 fe 53.C2.B8 00 00
+device-end:
+
+device-start: 29.B9.04
+name: Kitchen
+cntl: 40 ff 01 20 41 02
+aldb: 0fff ea 01 53.C2.B8 03 1f
+aldb: 0ff7 aa ff 52.18.42 00 1c
+aldb: 0fef aa 01 2C.DE.42 00 1c
+aldb: 0fe7 02 00 00.00.00 00 00
+aldb: 0fdf aa fe 53.C2.B8 00 1c
+device-end:
+
+device-start: 54.F5.56
+name: Living Room LED
+cntl: 40 ff 02 38 43 02
+aldb: 0fe7 e2 01 53.C2.B8 03 00
+aldb: 0fdf a2 fe 53.C2.B8 00 00
+aldb: 0fef a2 fe 52.18.42 ff 00
+device-end:
+
+device-start: 57.2F.FA
+name: Bathroom
+cntl: 40 ff 01 20 45 02
+aldb: 0fff e2 01 53.C2.B8 03 1f
+aldb: 0ff7 aa ff 52.18.42 00 1c
+aldb: 0fef ea 00 53.C2.B8 03 1c
+aldb: 0fe7 ea 00 53.C2.B8 03 1c
+aldb: 0fdf aa fe 53.C2.B8 00 1c
+device-end:
+
+device-start: 29.AA.FF
+name: counter lights
+cntl: 40 ff 01 20 41 02
+aldb: 0fff ea 01 53.C2.B8 03 1f
+aldb: 0ff7 aa 01 2C.DE.42 00 1c
+aldb: 0fef 02 00 00.00.00 00 00
+aldb: 0fe7 aa ff 52.18.42 00 1c
+aldb: 0fdf aa fe 53.C2.B8 00 1c
+device-end:
+
+device-start: 54.7E.26
+name: Driveway Lights
+cntl: 40 ff 02 38 43 02
+aldb: 0ff7 e2 01 2A.4D.D6 03 00
+aldb: 0fef a2 fe 53.C2.B8 00 00
+aldb: 0fe7 a2 ff 52.18.42 00 00
+device-end:
+
+device-start: 4E.82.96
+name: flood back porch 2
+cntl: 40 ff 02 2a 45 02
+aldb: 0fff e2 01 53.C2.B8 03 1f
+aldb: 0ff7 aa ff 52.18.42 00 1c
+aldb: 0fef aa 01 52.B6.E4 00 1c
+aldb: 0fcf aa fe 53.C2.B8 00 1c
+device-end:
+
+device-start: 54.FA.39
+name: Garage Christmas Lights
+cntl: 40 ff 02 38 43 02
+aldb: 0fff e2 01 53.C2.B8 03 1f
+aldb: 0ff7 e2 01 52.AC.35 03 00
+aldb: 0fef a2 fe 53.C2.B8 00 00
+aldb: 0fe7 a2 ff 52.18.42 00 00
+device-end:
+
+device-start: 4D.BC.2A
+name: flood shop
+cntl: 40 ff 02 2a 45 02
+aldb: 0fff f2 01 53.C2.B8 03 1f
+aldb: 0ff7 aa ff 52.18.42 00 1c
+aldb: 0fdf aa fe 53.C2.B8 00 1c
+device-end:
+
+device-start: 54.F6.C6
+name: Back Deck Railing
+cntl: 40 ff 02 38 43 02
+aldb: 0fff a2 ff 52.18.42 00 00
+aldb: 0fef e2 01 53.C2.B8 03 00
+device-end:
+
+device-start: 53.20.59
+name: Driveway lights 2
+cntl: 40 ff 02 38 43 02
+aldb: 0ff7 02 00 00.00.00 00 00
+aldb: 0fef a2 ff 52.18.42 00 00
+aldb: 0fe7 a2 fe 53.C2.B8 00 00
+device-end:
+
+device-start: 17.39.51
+name: Back Deck Lights
+cntl: 40 fe 01 19 38 01
+aldb: 0fff a2 01 14.F2.C8 fe 1c
+aldb: 0ff7 e2 01 14.F2.C8 03 1c
+aldb: 0fef a2 07 15.62.08 fe 1c
+aldb: 0fe7 e2 01 15.62.08 03 1c
+aldb: 0fdf e2 01 14.8A.02 03 1c
+aldb: 0fd7 e2 01 17.B6.78 03 1f
+aldb: 0fcf e2 01 53.C2.B8 03 1f
+aldb: 0fc7 a2 fe 52.18.42 00 1c
+device-end:
+
+device-start: 1B.3F.74
+name: Kara's Room
+cntl: 40 fe 02 16 39 01
+aldb: 00ff c2 fe 52.18.42 00 00
+aldb: 00f7 82 01 52.18.42 00 00
+device-end:
+
+device-start: 29.AA.F5
+name: living room
+cntl: 40 fe 01 20 41 02
+aldb: 0fff 82 fe 53.C2.B8 00 00
+aldb: 0ff7 c2 01 53.C2.B8 00 00
+aldb: 0fef 82 fe 52.18.42 00 00
+aldb: 0fe7 c2 01 52.18.42 00 00
+device-end:
+
+device-start: 2E.A1.12
+name: LampLinc 1
+cntl: 40 fe 01 0e 43 02
+aldb: 0fff a2 fe 52.18.42 00 1c
+aldb: 0ff7 c2 01 52.18.42 00 00
+device-end:
+
+device-start: 54.F5.2D
+name: Outdoor Box 1
+cntl: 40 fe 02 38 43 02
+aldb: 0fff a2 fe 52.18.42 ff 00
+aldb: 0ff7 c2 01 52.18.42 00 00
+device-end:
+
+device-start: 56.79.30
+name: bedroom keypad
+cntl: 40 fe 01 41 45 02
+aldb: 0fff e2 01 53.C2.B8 03 1f
+aldb: 0ff7 e2 02 53.C2.B8 03 1f
+aldb: 0fef e2 03 53.C2.B8 03 1f
+aldb: 0fe7 e2 04 53.C2.B8 03 1f
+aldb: 0fdf e2 05 53.C2.B8 03 1f
+aldb: 0fd7 e2 06 53.C2.B8 03 1f
+aldb: 0fcf e2 07 53.C2.B8 03 1f
+aldb: 0fc7 e2 08 53.C2.B8 03 1f
+aldb: 0fbf aa ff 52.18.42 00 1c
+aldb: 0fb7 a2 02 53.C2.B8 ff 1f
+aldb: 0faf a2 01 53.C2.B8 ff 1f
+aldb: 0fa7 a2 03 53.C2.B8 ff 1f
+aldb: 0f9f a2 04 53.C2.B8 ff 1f
+aldb: 0f97 a2 05 53.C2.B8 ff 1f
+aldb: 0f8f ea 00 53.C2.B8 03 1c
+aldb: 0f87 aa fe 53.C2.B8 00 1c
+aldb: 0f7f aa fe 52.18.42 00 1c
+device-end:
+
+device-start: 33.4F.F6
+name: Test Keypad
+cntl: 40 fe 02 2c 41 02
+aldb: 0fff aa fe 52.18.42 00 1c
+aldb: 0ff7 c2 01 52.18.42 00 00
+aldb: 0fef aa a8 52.18.42 ff 00
+aldb: 0fe7 aa a5 52.18.42 ff 00
+aldb: 0fdf aa a4 52.18.42 ff 00
+aldb: 0fd7 aa a3 52.18.42 ff 00
+aldb: 0fcf aa a2 52.18.42 ff 00
+aldb: 0fc7 c2 02 52.18.42 00 00
+aldb: 0fbf c2 03 52.18.42 00 00
+aldb: 0fb7 c2 04 52.18.42 00 00
+aldb: 0fa7 c2 08 52.18.42 00 00
+device-end:
+
+group-start: 0aec Test Group
+dev: 57.2F.FA
+dev: 56.79.30
+dev: 54.FA.39
+dev: 4E.82.96
+dev: 4D.BC.2A
+dev: 29.B6.49
+dev: 29.AA.FF
+group-end:
+
+group-start: 1698 new group
+dev: 57.2F.51
+dev: 54.F6.F9
+dev: 54.F5.56
+dev: 29.AA.F5
+group-end:
+
+group-start: 2799 Some Other group
+dev: 2A.4D.D6
+dev: 29.B9.04
+group-end:
+
+group-start: 6c15 Evening Lights
+dev: 57.2F.51
+dev: 54.F6.C6
+dev: 54.F6.99
+dev: 54.F5.2D
+dev: 4D.BC.2A
+dev: 2E.A1.12
+dev: 2A.50.AD
+dev: 2A.4D.D6
+dev: 29.B9.04
+dev: 1B.3F.74
+dev: 17.39.51
+group-end:
+
+group-start: 6f2b Lights that go on at Night
+dev: 57.2F.51
+dev: 54.F6.F9
+dev: 54.F5.56
+dev: 54.F5.2D
+dev: 54.7E.26
+dev: 52.B6.E4
+dev: 4E.82.96
+dev: 2E.A1.12
+dev: 2A.4D.D6
+dev: 29.B9.04
+dev: 29.B6.49
+dev: 29.AA.F5
+dev: 1B.3F.74
+group-end:
+
+group-start: a4c0 Outside Lights
+dev: 57.2F.FA
+dev: 54.F5.2D
+dev: 53.20.59
+dev: 52.B6.E4
+dev: 2E.A1.12
+dev: 29.B9.04
+dev: 29.AA.FF
+dev: 17.39.51
+group-end:
+
+group-start: c439 3BpGijbh
+dev: 56.79.30
+dev: 54.F5.2D
+dev: 2A.50.AD
+dev: 2A.4D.D6
+dev: 29.B9.04
+dev: 1B.3F.74
+group-end:
+
+action_group-start: 0001 evening on
+act: 0001 {"cmd":"set","deviceID":"54.F6.F9","level":255}
+act: 0002 {"cmd":"set","deviceID":"54.F5.56","level":255}
+act: e325 {"cmd":"set","insteon.groups":"0xa2","level":255}
+action_group-end:
+
+action_group-start: 0002 evening off
+act: 0001 {"cmd":"set","deviceID":"54.F6.F9","level":0}
+act: 0002 {"cmd":"set","deviceID":"54.F5.56","level":0}
+act: e325 {"cmd":"set","insteon.groups":"0xa2","level":0}
+action_group-end:
+
+action_group-start: 0003 Button B On
+act: e325 {"cmd":"set","insteon.groups":"0xa2","level":255}
+action_group-end:
+
+action_group-start: 0004 Button B Off
+act: e325 {"cmd":"set","insteon.groups":"0xa2","level":0}
+action_group-end:
+
+event-start: 0001 group B on
+act: {"action.group":"0x0001","cmd":"execute"}
+trigger: {"cmd":"0x11","deviceID":"33.4F.F6","insteon.group":"0x02"}
+event-end:
+
+event-start: 0002 group B off
+act: {"action.group":"0x0002","cmd":"execute"}
+trigger: {"cmd":"0x13","deviceID":"33.4F.F6","insteon.group":"0x02"}
+event-end:
+
+event-start: 0004 timed event1
+act: {"action.group":"0x0001","cmd":"execute"}
+trigger: {"mins":1236,"timeBase":1}
+event-end:
+
+event-start: 0005 ten past  Sunset
+act: {"action.group":"0x0002","cmd":"execute"}
+trigger: {"mins":10,"timeBase":5}
+event-end:
+

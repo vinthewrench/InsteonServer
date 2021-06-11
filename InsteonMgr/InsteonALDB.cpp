@@ -66,11 +66,11 @@ void InsteonALDB::continueReadPLM() {
 						? InsteonParser::IM_ALDB_GETFIRST
 						: InsteonParser::IM_ALDB_GETNEXT;
  
-	LOG_DEBUG("ALDB COMMAND: (%02X)\n", command);
+	LOG_DEBUG("\tALDB COMMAND: (%02X)\n", command);
 	_cmdQueue->queueCommand(command,
 								  NULL, 0, [this]( auto reply, bool didSucceed) {
 		if(!didSucceed) {
-			LOG_DEBUG("\t ALDB_COMMAND: NAK\n") ;
+			LOG_DEBUG("\tALDB_COMMAND: NAK\n") ;
 
 			_isReadingPLM = false;
 			_readALDBcallback(_plmDB);
@@ -648,7 +648,7 @@ bool InsteonALDB::processPLMresponse(plm_result_t response){
 				&& diff.tv_sec >=  _timeout_ALDB_RESPONSE  ) {
 				
 				// Timeout occured
-				LOG_DEBUG("\t REQ ID TIMEOUT for PLR_ALDB_RESPONSE \n") ;
+				LOG_DEBUG("\tREQ ID TIMEOUT for PLR_ALDB_RESPONSE \n") ;
 				didHandle = true;
 				
 			}
@@ -661,7 +661,7 @@ bool InsteonALDB::processPLMresponse(plm_result_t response){
 				
 				DeviceID deviceID = DeviceID(aldb.devID);
 				
-				LOG_DEBUG("\t ALDB_RESPONSE <%s>\n",
+				LOG_DEBUG("\tALDB_RESPONSE <%s>\n",
 							deviceID.string().c_str() ) ;
 			}
 			_plm->_parser.reset();

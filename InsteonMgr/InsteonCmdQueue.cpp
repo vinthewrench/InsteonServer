@@ -120,7 +120,7 @@ void InsteonCmdQueue::processTimeout() {
 				case CMD_ENTRY_MSG:
 				{
 					DeviceID deviceID = DeviceID(entry->send.to);
-					LOG_DEBUG("TIMEOUT-MSG %s [%02x, %02x]\n",
+					LOG_DEBUG("\tTIMEOUT-MSG %s [%02x, %02x]\n",
 								deviceID.string().c_str(),
 								entry->send.cmd[0], entry->send.cmd[0] );
 		
@@ -128,7 +128,7 @@ void InsteonCmdQueue::processTimeout() {
 					break;
 				case CMD_ENTRY_CMD:
 				{
-	 				LOG_DEBUG("TIMEOUT-CMD (%02X) \n",
+	 				LOG_DEBUG("\tTIMEOUT-CMD (%02X) \n",
 								entry->command );
  				}
 					break;
@@ -148,12 +148,13 @@ void InsteonCmdQueue::processTimeout() {
 
 bool InsteonCmdQueue::processNext(bool withDelay){
 	bool status = false;
- 
+	
+	if(withDelay){
+		// give the PLM a short break before sending the next one.
+		sleep_ms(500);
+	}
+
  	if(auto cmdEntry = getNextAvailEntry(); cmdEntry != NULL) {
-		if(withDelay){
-			// give the PLM a short break before sending the next one.
-			sleep_ms(500);
-		}
 		status = processEntry(cmdEntry);
 	}
 	
@@ -173,7 +174,7 @@ bool InsteonCmdQueue::processEntry( cmd_entry_t* entry) {
 										  entry->send.cmd,
 										  entry->send.data);
 
-			LOG_DEBUG("SEND-MSG_GROUP (%d) %s %02X [%02x, %02x]\n",
+			LOG_DEBUG("\tSEND-MSG_GROUP (%d) %s %02X [%02x, %02x]\n",
 						 entry->sendCount,
 						 status?"":"FAIL ",
 						 entry->send.to[0],
@@ -194,7 +195,7 @@ bool InsteonCmdQueue::processEntry( cmd_entry_t* entry) {
 										  entry->send.cmd,
 										  entry->send.data);
 			
-			LOG_DEBUG("SEND-MSG (%d) %s%s [%02x, %02x]\n",
+			LOG_DEBUG("\tSEND-MSG (%d) %s%s [%02x, %02x]\n",
 						 entry->sendCount,
 						 status?"":"FAIL ",
 						 deviceID.string().c_str(),
@@ -213,7 +214,7 @@ bool InsteonCmdQueue::processEntry( cmd_entry_t* entry) {
 										entry->params,
 										entry->paramLen); ;
 	
-			LOG_DEBUG("DO-CMD (%02X)\n", entry->command);
+			LOG_DEBUG("\tDO-CMD (%02X)\n", entry->command);
 		  
 			if(status) {
 				entry->sendCount++;
@@ -323,12 +324,7 @@ void InsteonCmdQueue::performCompletion(cmd_entry_t* entry,
 // MARK: - public API
 
 void InsteonCmdQueue:: abort(){
-	
-//	for (auto e = _cmdQueue.begin(); e != _cmdQueue.end(); e++) {
-//		performCompletion(&(*e), false);
-//	};
-	
-	_cmdQueue.clear();
+ 	_cmdQueue.clear();
 	
 }
 
@@ -354,7 +350,7 @@ void InsteonCmdQueue::queueCommand(uint8_t command,
 	entry.sendCount = 0;
  
 	entry.cmdCallback = callback;
-	LOG_DEBUG("QUEUE-CMD (%02X)\n", entry.command);
+	LOG_DEBUG("\tQUEUE-CMD (%02X)\n", entry.command);
  	
 	// queue it
 	_cmdQueue.push_back(entry);
@@ -384,7 +380,7 @@ void InsteonCmdQueue::queueMessageToGroup( uint8_t command,
 	
  	entry.msgCallback = callback;
  
-	LOG_DEBUG("QUEUE-MSG_GROUP %02X  [%02x, %02x]\n",
+	LOG_DEBUG("\tQUEUE-MSG_GROUP %02X  [%02x, %02x]\n",
 	 			group,
 				command,arg );
 	
@@ -428,7 +424,7 @@ void InsteonCmdQueue::queueMessage(DeviceID deviceID,
 	
 	entry.msgCallback = callback;
 	
-	LOG_DEBUG("QUEUE-MSG %s [%02x, %02x]\n",
+	LOG_DEBUG("\tQUEUE-MSG %s [%02x, %02x]\n",
 				deviceID.string().c_str(),
 				command,arg );
 	
@@ -463,12 +459,12 @@ bool InsteonCmdQueue::processPLMresponse(plm_result_t response) {
 			if(cmdEntry){
 				
 				if(cmdEntry->typ == CMD_ENTRY_MSG_GROUP){
-					LOG_DEBUG("%-8s GROUP(%02X)\n",
+					LOG_DEBUG("\t%-8s GROUP(%02X)\n",
 								msgOut.ack == InsteonParser::ACK?"SEND-ACK":"SEND-NAK",
 								 msgOut.to[0]);
 				}
 				else {
-					LOG_DEBUG("%-8s %s \n",
+					LOG_DEBUG("\t%-8s %s \n",
 								msgOut.ack == InsteonParser::ACK?"SEND-ACK":"SEND-NAK",
 								deviceID.string().c_str());
 				}
@@ -519,7 +515,7 @@ bool InsteonCmdQueue::processPLMresponse(plm_result_t response) {
 				
 				if(cmdEntry && (cmdEntry->sendCount > 0)){
 					
-					LOG_DEBUG("RECV-%s  %s \n",
+					LOG_DEBUG("\tRECV-%s  %s \n",
 								reply.msgType == MSG_TYP_DIRECT_ACK?"ACK":"NAK",
 								deviceID.string().c_str() );
 					
@@ -541,7 +537,7 @@ bool InsteonCmdQueue::processPLMresponse(plm_result_t response) {
 			
 			if(cmdEntry && (cmdEntry->sendCount > 0)){
 				
-				LOG_DEBUG("CMD-%s (%02x)\n",
+				LOG_DEBUG("\tCMD-%s (%02X)\n",
 							 cmdIn.ack == InsteonParser::ACK?"ACK":"NAK",
 							 cmdIn.cmd);
 				

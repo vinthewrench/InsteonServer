@@ -23,3 +23,7 @@ bool InsteonAPISecretMgr::apiSecretDelete(string APIkey){
 bool InsteonAPISecretMgr::apiSecretGetSecret(string APIkey, string &APISecret){
 	return _db->apiSecretGetSecret(APIkey, APISecret);
 }
+
+bool InsteonAPISecretMgr::apiSecretMustAuthenticate(){
+	return _db->apiSecretMustAuthenticate();
+}

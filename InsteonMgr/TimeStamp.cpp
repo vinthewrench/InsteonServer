@@ -12,11 +12,19 @@ using namespace std;
  
 namespace timestamp {
 	static const char *kDateFormat = "%a, %d %b %Y %T GMT";
+	static const char *kLogFormat = "%d.%m.%y %T"; 
 	static const char *kClockFormat = "%l:%M %p";
 
 
-	TimeStamp::TimeStamp() {
+	TimeStamp::TimeStamp(bool isGMT){
+		struct tm timeinfo = {0};
 		_time = time(NULL);
+
+		if(!isGMT){
+	 		localtime_r(&_time, &timeinfo);
+			_time += timeinfo.tm_gmtoff;
+		}
+ 
 	}
 
 	TimeStamp::TimeStamp(const string str){
@@ -32,6 +40,14 @@ namespace timestamp {
 		::strftime(timeStr, sizeof(timeStr), kDateFormat,  gmtime(&_time));
 		return string(timeStr);
 	}
+
+
+std::string TimeStamp::logFileString(){
+	enum { RFC1123_GMT_LEN = 29, RFC1123_GMT_SIZE };
+	char timeStr[RFC1123_GMT_SIZE] = {0};
+	::strftime(timeStr, sizeof(timeStr), kLogFormat,  gmtime(&_time));
+	return string(timeStr);
+}
 
 
 	std::string TimeStamp::ClockString(bool isGMT){

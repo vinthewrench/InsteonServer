@@ -1,0 +1,37 @@
+#
+###  DeviceID and Names
+#
+
+14.E1.C5	bathroom sink
+56.79.30	bedroom keypad
+52.AC.35	Bedroom
+54.F5.2D	Outdoor Box 1
+57.2F.51	couch lights
+29.AA.FF	counter lights
+54.7E.26	Driveway Lights
+53.20.59	Driveway lights 2
+52.B6.E4	flood back porch
+4E.82.96	flood back porch 2
+2A.A4.15	flood front porch
+2A.4D.D6	flood garage
+4D.BC.2A	flood shop
+50.c2.C1	flood side porch
+2A.50.AD	Front Deck lights
+54.FA.39	Garage Christmas Lights
+29.B6.49	hall lights
+54.F6.99	House Christmas Light
+29.B9.04	Kitchen
+29.AA.F5	living room
+54.F5.56	Living Room LED
+54.F6.F9	living room string led
+33.4F.F6	Test KeyPad
+54.79.C7	Outdoor Box 2
+2E.A1.12 LampLinc 1
+17.39.51 Back Deck Lights
+1B.3F.74 Kara's Room
+54.F6.C6 Back Deck Railing
+57.2F.FA Bathroom
+
+53.C2.B8 Indigo PLM
+48.F0.13 Spare PLM
+52.18.42	Test PLM

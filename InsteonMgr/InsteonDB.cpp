@@ -31,6 +31,9 @@ constexpr static string_view KEY_CONFIG_PORT			= "port";
 constexpr static string_view KEY_CONFIG_LATLONG		= "lat-long";
 constexpr static string_view KEY_CONFIG_APIKEY		= "apikey";
 
+constexpr static string_view KEY_CONFIG_LOGFILE_PATH	= "log-path";
+constexpr static string_view KEY_CONFIG_LOGFILE_FLAGS	= "log-flags";
+
 constexpr static string_view KEY_START_DEVICE 		= "device-start";
 constexpr static string_view KEY_END_DEVICE 			= "device-end";
 constexpr static string_view KEY_START_GROUP 			= "group-start";
@@ -667,7 +670,7 @@ bool InsteonDB::syncALDB(vector<insteon_aldb_t> aldbIn,
 }
 
 
-// MARK: -  device cachefile
+// MARK: -  database cachefile
 
 string  InsteonDB::default_fileName(){
 	string fileName = "PLMDB.txt";
@@ -712,6 +715,11 @@ bool InsteonDB::backupCacheFile(string filepath){
 				ofs << KEY_CONFIG_APIKEY << ": " ;
 				ofs << key << " " << secret  << "\n";
 			}
+			
+			if(!_logFilePath.empty())
+				ofs << KEY_CONFIG_LOGFILE_PATH << ": " << _logFilePath << "\n";
+	
+			ofs << KEY_CONFIG_LOGFILE_FLAGS << ": " << to_hex(_logFileFlags, true) << "\n";
 			
 	 		ofs << KEY_END_CONFIG << ":\n";
 			ofs << "\n";
@@ -920,8 +928,7 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 		// open the file
 		ifs.open(path, ios::in);
 		if(!ifs.is_open()) return false;
-		
-		
+	
 		while ( std::getline(ifs, line) ) {
 			
 			// split the line looking for a token: and rest and ignore comments
@@ -1066,14 +1073,30 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 						}
 					} else if(token == KEY_CONFIG_APIKEY){
 						string str  = Utils::trimStart(string(p));
-							
+						
 						vector<string> v = split<string>(str, " ");
 						if(v.size() != 2)
 							break;
-							
+						
 						string key = v.at(0);
 						string secret = v.at(1);
 						_APISecrets[key] = secret;
+					}
+					else if(token == KEY_CONFIG_LOGFILE_PATH){
+						_logFilePath  = string(p);
+						if(!_logFilePath.empty()) {
+							LogMgr::shared()->setLogFilePath(_logFilePath);
+						}
+						break;
+					}
+					else if(token == KEY_CONFIG_LOGFILE_FLAGS){
+						
+						uint8_t flag;
+						if( sscanf(p, "%hhx %n", &flag ,&n) == 1){
+							_logFileFlags = flag;
+							LogMgr::shared()->_logFlags = _logFileFlags;
+						}
+						break;
 					}
 				}
 					break;
@@ -1966,6 +1989,41 @@ bool InsteonDB::apiSecretGetSecret(string APIkey, string &APISecret){
 	
 	APISecret = _APISecrets[APIkey];
 	return true;
+}
+
+bool InsteonDB::apiSecretMustAuthenticate(){
+	return _APISecrets.size() > 0;
+}
+
+// MARK: -  LogFile prefs
+bool InsteonDB::logFileSetFlags(uint8_t logFlags){
+	_logFileFlags = logFlags;
+	saveToCacheFile();
+	return true;
+}
+
+bool InsteonDB::logFileGetFlags(uint8_t &logFlags){
+	
+	logFlags = _logFileFlags;
+	return true;
+}
+
+bool InsteonDB::logFileSetPath(string path){
+
+	_logFilePath = path;
+	saveToCacheFile();
+	return true;
+}
+
+bool InsteonDB::logFileGetPath(string &path)
+{
+	bool statusOk = false;
+
+	if(!_logFilePath.empty()){
+		path = _logFilePath;
+		statusOk = true;
+	}
+	return statusOk;
 }
 
 

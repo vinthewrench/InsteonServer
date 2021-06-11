@@ -57,7 +57,7 @@ bool InsteonValidator::startValidation(std::vector<DeviceID> deviceList,
 
 	_isValidating = true;
 
-	LOG_DEBUG("\tVALIDATION START\n");
+	LOGT_INFO("VALIDATION START");
 	
 	// Add each device to the list
 	for (DeviceID deviceID : deviceList) {
@@ -232,7 +232,7 @@ bool InsteonValidator::processPLMresponse(plm_result_t response){
 		if(_val.size() == 0){
 			_isValidating = false;
 			
-			LOG_DEBUG("\tVALIDATION COMPLETE\n");
+			LOGT_INFO("VALIDATION COMPLETE");
 			if(_callback)
 				_callback(_results);
 		}

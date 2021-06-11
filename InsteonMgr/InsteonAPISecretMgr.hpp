@@ -22,6 +22,7 @@ public:
 	virtual bool apiSecretCreate(string APIkey, string APISecret);
 	virtual bool apiSecretDelete(string APIkey);
 	virtual bool apiSecretGetSecret(string APIkey, string &APISecret);
+	virtual bool apiSecretMustAuthenticate();
 	
 private:
 	InsteonDB* 	 		_db;

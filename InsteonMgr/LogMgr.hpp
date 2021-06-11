@@ -13,13 +13,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <string>
+#include <mutex>
+#include <stdio.h>
+#include <iostream>
+#include <fstream>
 
 
-#define DO_PRAGMA(X) _Pragma(#X)
-#define DISABLE_WARNING(warningName) \
-	 DO_PRAGMA(GCC diagnostic ignored #warningName)
-#define DISABLE_WARNING_POP           \
-	DO_PRAGMA(GCC diagnostic pop)
  
 #define DPRINTF LogMgr::shared()->debugPrintf
 #define TRACE_DATA_OUT(_buf_, _len_)  LogMgr::shared()->dumpTraceData(true,(const uint8_t* ) _buf_, (size_t)_len_)
@@ -35,9 +35,10 @@
 #define STOP_VERBOSE {LogMgr::shared()->_logFlags  &= ~LogMgr::LogLevelVerbose;}
 
  
+using namespace std;
 
 class LogMgr {
- 
+
 	static LogMgr *sharedInstance;
 
 public:
@@ -116,23 +117,41 @@ public:
 
 	LogMgr();
 	
-	void logMessage(logFLag_t level, const char *fmt, ...);
-	void dumpTraceData(bool outgoing, const uint8_t* data, size_t len);
-	void writeToLog(const uint8_t*, size_t);
+	bool setLogFilePath(string path );
+ 
+	void logMessage(logFLag_t level, bool logTime, string str);
+	void logMessage(logFLag_t level, bool logTime, const char *fmt, ...);
+	void logTimedStampString(const string  str);
 
+	void dumpTraceData(bool outgoing, const uint8_t* data, size_t len);
+	void writeToLog(const string str);
+  
 	bool _logBufferData;
 	
 	uint8_t _logFlags;
 
+
 private:
+	
+	void writeToLog(const uint8_t*, size_t);
+
+	mutable std::mutex _mutex;
+	std::ofstream		_ofs;
+
 };
 
 
-#define LOG_MESSAGE(_level_, _msg_, ...)  LogMgr::shared()->logMessage(_level_, _msg_, ##__VA_ARGS__)
-#define LOG_DEBUG( _msg_, ...)  LogMgr::shared()->logMessage(LogMgr::LogFlagDebug, _msg_, ##__VA_ARGS__)
-#define LOG_INFO( _msg_, ...)  LogMgr::shared()->logMessage(LogMgr::LogFlagInfo, _msg_, ##__VA_ARGS__)
-#define LOG_WARNING( _msg_, ...)  LogMgr::shared()->logMessage(LogMgr::LogFlagWarning, _msg_, ##__VA_ARGS__)
-#define LOG_ERROR( _msg_, ...)  LogMgr::shared()->logMessage(LogMgr::LogFlagError, _msg_, ##__VA_ARGS__)
+#define LOG_MESSAGE(_level_, _msg_, ...)  LogMgr::shared()->logMessage(_level_, false, _msg_, ##__VA_ARGS__)
+#define LOG_DEBUG( _msg_, ...)  LogMgr::shared()->logMessage(LogMgr::LogFlagDebug,  false, _msg_, ##__VA_ARGS__)
+#define LOG_INFO( _msg_, ...)  LogMgr::shared()->logMessage(LogMgr::LogFlagInfo,  false, _msg_, ##__VA_ARGS__)
+#define LOG_WARNING( _msg_, ...)  LogMgr::shared()->logMessage(LogMgr::LogFlagWarning,  false, _msg_, ##__VA_ARGS__)
+#define LOG_ERROR( _msg_, ...)  LogMgr::shared()->logMessage(LogMgr::LogFlagError,  false, _msg_, ##__VA_ARGS__)
+
+#define LOGT_MESSAGE(_level_, _msg_, ...)  LogMgr::shared()->logMessage(_level_,  true,_msg_, ##__VA_ARGS__)
+#define LOGT_DEBUG( _msg_, ...)  LogMgr::shared()->logMessage(LogMgr::LogFlagDebug, true,_msg_, ##__VA_ARGS__)
+#define LOGT_INFO( _msg_, ...)  LogMgr::shared()->logMessage(LogMgr::LogFlagInfo, true,_msg_, ##__VA_ARGS__)
+#define LOGT_WARNING( _msg_, ...)  LogMgr::shared()->logMessage(LogMgr::LogFlagWarning,true, _msg_, ##__VA_ARGS__)
+#define LOGT_ERROR( _msg_, ...)  LogMgr::shared()->logMessage(LogMgr::LogFlagError, true, _msg_, ##__VA_ARGS__)
 
  
 #endif /* LogMgr_hpp */

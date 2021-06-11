@@ -571,7 +571,7 @@ done:
 	if(result == PLR_INVALID){
 		uint8_t sav =  LogMgr::shared()->_logFlags;
 		START_VERBOSE;
-		LogMgr::shared()->writeToLog((const uint8_t* )"INVALID: ", 9);
+ 		LogMgr::shared()->logTimedStampString("PLR_INVALID: ");
 		_parser.dumpBuf();
 		LogMgr::shared()->_logFlags = sav;
 		return result;

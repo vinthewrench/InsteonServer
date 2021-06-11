@@ -15,12 +15,16 @@
 
 #define CHK_STATUS if(!status) goto done;
 
+
+const char* 	InsteonMgr::InsteonMgr_Version = "1.0.0";
+
 /**
  * @brief Initialize the InsteonMgr
  *
  */
 
 InsteonMgr::InsteonMgr(){
+
 	_isSetup = false;
 	_hasPLM = false;
 	_hasInfo = false;
@@ -121,6 +125,8 @@ InsteonMgr::~InsteonMgr(){
 
 void InsteonMgr::run(){
 	
+	  LOGT_INFO("InsteonMgr %s START", InsteonMgr_Version);
+
 	try{
 		
 		while(_running){
@@ -145,9 +151,6 @@ void InsteonMgr::run(){
 			}
 			
 		};
-		
-
-	
 	}
 	catch ( const PLMStreamException& e)  {
 		printf("\tError %d %s\n\n", e.getErrorNumber(), e.what());
@@ -162,6 +165,8 @@ void InsteonMgr::run(){
 
 		}
 	}
+	
+	LOGT_INFO("InsteonMgr STOP");
 }
 
 
@@ -199,7 +204,7 @@ void InsteonMgr::begin(string plmPath,
 			  boolCallback_t callback){
 
 	int  errnum = 0;
-	
+
 	_state 			= STATE_NO_PLM;
 	_hasPLM 			= false;
 	_plmDeviceID 	=  DeviceID();
@@ -214,13 +219,6 @@ void InsteonMgr::begin(string plmPath,
 		return;
 	}
 
-	LOG_INFO("PLM_OPEN: %s\n", plmPath.c_str());
-
-	if(! _stream.begin(plmPath.c_str(), errnum))
-		throw InsteonException(string(strerror(errnum)), errnum);
-
-	_plm.begin(&_stream, InsteonPLM::defaultCmdTimeout);
- 
 	// setup plm command queue
 	if(!_cmdQueue){
 		_cmdQueue = new InsteonCmdQueue(&_plm, &_db);
@@ -229,21 +227,28 @@ void InsteonMgr::begin(string plmPath,
 	if(!_aldb){
 		_aldb = new InsteonALDB(_cmdQueue);
 	}
- 
-	_hasPLM 	= true;
-	_state 	= STATE_SETUP_PLM;
-
+  
 	// start the thread running
 	_running = true;
 	
-	// cleanup from previose thread?
+	// cleanup from previous thread?
 	if(_thread.joinable())
 		_thread.join();
 	
 	_thread = std::thread(&InsteonMgr::run, this);
 
+	LOGT_INFO("PLM_START: %s", plmPath.c_str());
+
+	if(! _stream.begin(plmPath.c_str(), errnum))
+		throw InsteonException(string(strerror(errnum)), errnum);
+
+	_plm.begin(&_stream, InsteonPLM::defaultCmdTimeout);
+ 
+	_hasPLM 	= true;
+	_state 	= STATE_SETUP_PLM;
+
 // Step: 1 -- get the PLM info to check if its there?
-	LOG_INFO("PLM_SETUP: IM_INFO\n");
+	LOG_DEBUG("\tPLM_SETUP: GET IM_INFO\n");
 	_cmdQueue->queueCommand(InsteonParser::IM_INFO,
 								  NULL, 0, [this, callback]( auto reply, bool didSucceed) {
 		
@@ -259,13 +264,13 @@ void InsteonMgr::begin(string plmPath,
 			// set the deviceID for the PLM database
 			_db.setPlmDeviceID(_plmDeviceID);
 			
-	
-			LOG_INFO("IM_INFO: %s - %s\n",
+			LOG_INFO("\tPLM INFO: %s - %s %s\n",
 						_plmDeviceID.string().c_str(),
-						_plmDeviceInfo.string().c_str());
+						_plmDeviceInfo.string().c_str(),
+						_plmDeviceInfo.description_cstr());
 			
 // Step:2 -- Cancel any linking in progress?
-			LOG_INFO("PLM_SETUP: IM_CANCEL_LINKING\n");
+			LOG_DEBUG("\tPLM_SETUP: IM_CANCEL_LINKING\n");
 			_cmdQueue->queueCommand(InsteonParser::IM_CANCEL_LINKING,
 										  NULL, 0, [this, callback]( auto reply, bool didSucceed) {
 				
@@ -278,7 +283,7 @@ void InsteonMgr::begin(string plmPath,
 					uint8_t cmdArgs[]  = {  InsteonParser::IM_CONFIG_FLAG_MONITOR
 					/*	| InsteonParser::IM_CONFIG_FLAG_LED */ };
 					
-					LOG_INFO("PLM_SETUP: IM_SET_CONFIG (%02X) \n", cmdArgs[0]);
+					LOG_DEBUG("\tPLM_SETUP: IM_SET_CONFIG (%02X) \n", cmdArgs[0]);
 					_cmdQueue->queueCommand(InsteonParser::IM_SET_CONFIG,
 												  cmdArgs, sizeof(cmdArgs),
 												  [this, callback]( auto reply, bool didSucceed) {
@@ -303,9 +308,13 @@ void InsteonMgr::begin(string plmPath,
  */
 
 void InsteonMgr::stop(){
-	
-	
+
 	if(_hasPLM) {
+		
+		LOGT_INFO("PLM_STOP");
+
+		_cmdQueue->abort();
+
 		_plm.stop();
 		_stream.stop();
 		_plmDeviceID 	=  DeviceID();
@@ -314,10 +323,8 @@ void InsteonMgr::stop(){
 
 		_state = STATE_NO_PLM;
 		_hasPLM = false;
+		_running = false;
 	}
-
-	_cmdQueue->abort();
- 
 }
 
 
@@ -440,7 +447,7 @@ bool InsteonMgr::refreshSolarEvents(){
 
 void InsteonMgr::erasePLM(boolCallback_t callback){
 
-	LOG_INFO("ERASE_PLM: \n");
+	LOGT_INFO("ERASE_PLM:");
 
 	if(!_hasPLM)
 		throw InsteonException("PLM is not setup");
@@ -475,7 +482,7 @@ void InsteonMgr::erasePLM(boolCallback_t callback){
  */
 void InsteonMgr::syncPLM(boolCallback_t callback){
 	
-	LOG_INFO("SYNC_PLM: \n");
+	LOGT_INFO("SYNC_PLM:");
 
 	if(_state != STATE_PLM_INIT)
 		throw InsteonException("_state == STATE_PLM_INIT");
@@ -493,7 +500,7 @@ void InsteonMgr::syncPLM(boolCallback_t callback){
 	_state = STATE_READING_PLM;
 	_aldb->readPLM([this, callback]( auto aldbEntries) {
 		
-		LOG_INFO("SYNC_PLM: READ %d entries \n", aldbEntries.size());
+		LOG_INFO("\tSYNC_PLM: READ %d entries \n", aldbEntries.size());
 
 		// SYNC ALDB Data
 		vector<insteon_aldb_t> plmRemove;
@@ -504,7 +511,7 @@ void InsteonMgr::syncPLM(boolCallback_t callback){
  
 		if(_db.syncALDB(aldbEntries, &plmRemove, &plmAdd)){
 			
-			LOG_INFO("SYNC_PLM: SYNC ALDB  add: %d remove: %d \n",
+			LOG_INFO("\tSYNC_PLM: SYNC ALDB  add: %d remove: %d \n",
 						plmAdd.size(), plmRemove.size() );
 
 			/* set a count of how many tasks related to PLM we need to complete
@@ -543,7 +550,7 @@ void InsteonMgr::syncPLM(boolCallback_t callback){
 				_aldb->create(deviceID, isController, e.group, DeviceInfo(e.info),
 								  [this, taskCount, callback](bool didSucceed){
 					if(--(*taskCount) == 0) {
-						LOG_INFO("SYNC_PLM: DONE\n");
+						LOGT_INFO("SYNC_PLM: DONE");
 						free(taskCount);
 						_state = STATE_READY;
 						callback(true);
@@ -553,7 +560,7 @@ void InsteonMgr::syncPLM(boolCallback_t callback){
 			}
 		}
 		else {
-			LOG_INFO("SYNC_PLM: DONE\n");
+			LOGT_INFO("SYNC_PLM: DONE");
 			_state = STATE_READY;
 
 			callback(true);
@@ -565,7 +572,7 @@ void InsteonMgr::syncPLM(boolCallback_t callback){
  
 void InsteonMgr::readPLM(boolCallback_t callback){
 	
-	LOG_INFO("READ_PLM:\n");
+	LOGT_INFO("READ_PLM:\n");
 	
 	if(!_hasPLM)
 	 throw InsteonException("PLM is not setup");
@@ -620,7 +627,7 @@ void InsteonMgr::validatePLM(boolCallback_t callback){
 	
 //	START_VERBOSE
 	_validator->startValidation(val_list,
-										 [this, callback]( auto result) {
+										 [=]( auto result) {
 		
 		for(auto e : result){
 			if(e.validated){
@@ -643,9 +650,10 @@ void InsteonMgr::validatePLM(boolCallback_t callback){
 	 
  		_state = STATE_READY;
 		
- 	updateLevels();
+ 		updateLevels();
 		
-		callback(true);
+		if(callback)
+			callback(true);
  
 	});
 }
@@ -769,7 +777,6 @@ bool InsteonMgr::validateDevice(DeviceID deviceID,
 		
 		if(cb)
 			(cb)(success);
-			
 	});
 	
 	return true;
@@ -1585,27 +1592,27 @@ plm_result_t InsteonMgr::handleResponse(uint64_t timeout){
 				switch(msg.msgType) {
 						
 					case MSG_TYP_BROADCAST:
-						LOG_INFO("\t\tBROADCAST%s ",msg.ext?"-EXT":"");
+						LOG_INFO("\tBROADCAST%s ",msg.ext?"-EXT":"");
 						LOG_INFO("From %s ", deviceID.string().c_str());
 						LOG_INFO("[%02X %02X %02X] ", 	msg.to[2],msg.to[1],msg.to[0]);
 						LOG_INFO("CMD: %02X %02X \n", 	msg.cmd[0],msg.cmd[1]);
 						break;
 						
 					case MSG_TYP_GROUP_BROADCAST:
-						LOG_INFO("\t\tGROUP%s :%02x ",msg.ext?"-EXT":"", msg.to[0]);
+						LOG_INFO("\tGROUP%s :%02x ",msg.ext?"-EXT":"", msg.to[0]);
 						LOG_INFO("From %s ", deviceID.string().c_str());
 						LOG_INFO("CMD: %02X %02X \n", 	msg.cmd[0],msg.cmd[1]);
 						break;
 						
 					case MSG_TYP_DIRECT:
-						LOG_INFO("\t\tMESSAGE%s ",msg.ext?"-EXT":"");
+						LOG_INFO("\tMESSAGE%s ",msg.ext?"-EXT":"");
 						LOG_INFO("From %s ", deviceID.string().c_str() );
 						LOG_INFO("<%02X.%02X.%02X>  ", msg.to[2],msg.to[1],msg.to[0]);
 						LOG_INFO("CMD: %02X %02X \n", 	msg.cmd[0],msg.cmd[1]);
 						break;
 						
 					case MSG_TYP_GROUP_CLEANUP:
-						LOG_INFO("\t\tCLEANUP%s ", 	  msg.ext?"-EXT":"");
+						LOG_INFO("\tCLEANUP%s ", 	  msg.ext?"-EXT":"");
 						LOG_INFO("From %s ", deviceID.string().c_str());
 						LOG_INFO("<%02X.%02X.%02X> GROUP:%02x  CMD:%02x\n",
 									msg.to[2],msg.to[1],msg.to[0],
@@ -1613,7 +1620,7 @@ plm_result_t InsteonMgr::handleResponse(uint64_t timeout){
 						break;
 						
 					case MSG_TYP_DIRECT_ACK:
-//						LOG_INFO("\t\tUNHANDLED ACK%s ", msg.ext?"-EXT":"");
+//						LOG_INFO("\tUNHANDLED ACK%s ", msg.ext?"-EXT":"");
 //						LOG_INFO("From %s \"%s\" ", deviceID.string().c_str(), deviceID.name_cstr());
 //						LOG_INFO("<%02X.%02X.%02X>  ",msg.to[2],msg.to[1],msg.to[0]);
 //						LOG_INFO(" %02X %02X \n", 	msg.cmd[0],msg.cmd[1]);
@@ -1621,7 +1628,7 @@ plm_result_t InsteonMgr::handleResponse(uint64_t timeout){
 						
 					default:
 						
-						LOG_INFO("\t\tOTHER%s ", msg.ext?"-EXT":"");
+						LOG_INFO("\tOTHER%s ", msg.ext?"-EXT":"");
 						LOG_INFO("From %s ", deviceID.string().c_str());
 						LOG_INFO("(%d) <%02X.%02X.%02X>  ",msg.msgType,  msg.to[2],msg.to[1],msg.to[0]);
 						LOG_INFO(" %02X %02X \n", 	msg.cmd[0],msg.cmd[1]);
@@ -1821,7 +1828,7 @@ void InsteonMgr::updateLevels(){
 		
 		_state = STATE_UPDATING;
 
-		LOG_DEBUG("\tUPDATING LEVELS START\n");
+		LOGT_INFO("UPDATING LEVELS START");
 
 		for(auto deviceID : devices) {
 			
@@ -1837,7 +1844,7 @@ void InsteonMgr::updateLevels(){
 					free(taskCount);
 					_state = STATE_READY;
 
-					LOG_DEBUG("\tUPDATING LEVELS COMPLETE\n");
+					LOGT_INFO("UPDATING LEVELS COMPLETE");
 
 				}
 			});

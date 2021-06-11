@@ -133,40 +133,44 @@ int main(int argc, const char * argv[]) {
 		return new RESTServerConnection();
 	});
 	
-	// run the loop.
+	// run the main loop.
 	while(true) {
-		auto state = insteon.currentState();
-		bool noPLM = state == InsteonMgr::STATE_NO_PLM || state == InsteonMgr::STATE_SETUP;
-		
-		try{
-			if(noPLM){
-				
-				insteon.begin("",
-								  [=](bool didSucceed) {
-					
-					if(didSucceed){
-						insteon.syncPLM( [=](bool didSucceed) {
-							if(didSucceed){
-								insteon.validatePLM( [](bool didSucceed) {
-								});
-								
-							}
-						});
-					}
-					
-				});
-			}
-		}
-		catch ( const InsteonException& e)  {
-			printf("\tError %d %s\n\n", e.getErrorNumber(), e.what());
-			noPLM = true;
-		}
-		
-		if(noPLM)
-			sleep(5);
-		else
-			sleep(30);
+		sleep(60);
 	}
+	
+//		auto state = insteon.currentState();
+//		bool noPLM = state == InsteonMgr::STATE_NO_PLM || state == InsteonMgr::STATE_SETUP;
+//
+//	/*
+//	 try{
+//			if(noPLM){
+//
+//				insteon.begin("",
+//								  [=](bool didSucceed) {
+//
+//					if(didSucceed){
+//						insteon.syncPLM( [=](bool didSucceed) {
+//							if(didSucceed){
+//								insteon.validatePLM( [](bool didSucceed) {
+//								});
+//
+//							}
+//						});
+//					}
+//
+//				});
+//			}
+//		}
+//		catch ( const InsteonException& e)  {
+//			printf("\tError %d %s\n\n", e.getErrorNumber(), e.what());
+//			noPLM = true;
+//		}
+//*/
+//		if(noPLM)
+//			sleep(5);
+//		else
+//			sleep(30);
+//	}
 	
 	return 0;
 	

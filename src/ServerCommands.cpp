@@ -34,6 +34,7 @@
 #include "ServerCommands.hpp"
 #include "CommonIncludes.h"
 #include "InsteonDevice.hpp"
+#include "LogMgr.hpp"
 
 #include "Utils.hpp"
 
@@ -45,6 +46,7 @@ constexpr string_view NOUN_VERSION		 		= "version";
 constexpr string_view NOUN_DATE		 			= "date";
 constexpr string_view NOUN_DEVICES	 			= "devices";
 constexpr string_view NOUN_STATUS		 		= "status";
+constexpr string_view NOUN_LOG		 			= "log";
 constexpr string_view NOUN_PLM			 		= "plm";
 constexpr string_view NOUN_GROUPS			 	= "groups";
 constexpr string_view NOUN_INSTEON_GROUPS		= "insteon.groups";
@@ -56,13 +58,12 @@ constexpr string_view NOUN_CONFIG		 		= "config";
 
 constexpr string_view NOUN_LINK	 				= "link";
  
-//constexpr string_view JSON_ARG_CMD			 	= "cmd";
-
 constexpr string_view SUBPATH_INFO			 	= "info";
 constexpr string_view SUBPATH_DATABASE		 	= "database";
 constexpr string_view SUBPATH_RUN_ACTION		= "run.actions";
 constexpr string_view SUBPATH_PORT			 	= "port";
-
+constexpr string_view SUBPATH_STATE		 		= "state";
+constexpr string_view SUBPATH_FILE	 			= "file";
 
 constexpr string_view JSON_ARG_DEVICEID 		= "deviceID";
 constexpr string_view JSON_ARG_GROUPID 		= "groupID";
@@ -78,8 +79,8 @@ constexpr string_view JSON_ARG_LEVEL 			= "level";
 constexpr string_view JSON_ARG_BACKLIGHT		= "backlight";
 constexpr string_view JSON_ARG_VALIDATE		= "validate";
 constexpr string_view JSON_ARG_DUMP		 		= "dump";			// for debug datat
-
-
+constexpr string_view JSON_ARG_MESSAGE		 	= "message";			// for logfile
+ 
 constexpr string_view JSON_ARG_LOAD 			= "load";
 constexpr string_view JSON_ARG_SAVE 			= "save";
 
@@ -102,6 +103,7 @@ constexpr string_view JSON_ARG_NAME				= "name";
 constexpr string_view JSON_ARG_GROUPIDS		= "groupIDs";
 constexpr string_view JSON_ARG_EVENTIDS		= "eventIDs";
 constexpr string_view JSON_ARG_FILEPATH		= "filepath";
+constexpr string_view JSON_ARG_LOGFLAGS		= "logflags";
 
 constexpr string_view JSON_ARG_TIMED_EVENTS	= "events.timed";
 constexpr string_view JSON_ARG_FUTURE_EVENTS		= "events.future";
@@ -113,6 +115,9 @@ constexpr string_view JSON_VAL_ALL				= "all";
 constexpr string_view JSON_VAL_VALID			= "valid";
 constexpr string_view JSON_VAL_DETAILS			= "details";
 constexpr string_view JSON_VAL_LEVELS			= "levels";
+ 
+constexpr string_view JSON_VAL_START			= "start";
+constexpr string_view JSON_VAL_STOP				= "stop";
 
 
 // MARK: -
@@ -130,7 +135,6 @@ static bool Events_NounHandler_GET(ServerCmdQueue* cmdQueue,
 	auto queries = url.queries();
 	auto headers = url.headers();
 	json reply;
-
 
 	auto db = insteon.getDB();
 	
@@ -504,13 +508,7 @@ static void Events_NounHandler(ServerCmdQueue* cmdQueue,
 	if(path.size() > 0) {
 		noun = path.at(0);
 	}
-	
-	// CHECK noun
-	if(noun != NOUN_EVENTS){
-		(completion) (reply, STATUS_NOT_FOUND);
-		return;
-	}
-	
+		
 //	// is server available?
 //	if(!insteon.serverAvailable()) {
 //		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
@@ -836,11 +834,6 @@ static void EventGroups_NounHandler(ServerCmdQueue* cmdQueue,
 		noun = path.at(0);
 	}
 	
-	// CHECK noun
-	if(noun != NOUN_EVENTS_GROUPS){
-		(completion) (reply, STATUS_NOT_FOUND);
-		return;
-	}
 	
 //	// is server available?
 //	if(!insteon.serverAvailable()) {
@@ -1198,11 +1191,6 @@ static void ActionGroups_NounHandler(ServerCmdQueue* cmdQueue,
 		noun = path.at(0);
 	}
 	
-	// CHECK noun
-	if(noun != NOUN_ACTION_GROUPS){
-		(completion) (reply, STATUS_NOT_FOUND);
-		return;
-	}
 	
 //	// is server available?
 //	if(!insteon.serverAvailable()) {
@@ -1556,12 +1544,7 @@ static void Groups_NounHandler(ServerCmdQueue* cmdQueue,
 		noun = path.at(0);
 	}
 	
-	// CHECK noun
-	if(noun != NOUN_GROUPS){
-		(completion) (reply, STATUS_NOT_FOUND);
-		return;
-	}
-	
+
 //	// is server available?
 //	if(!insteon.serverAvailable()) {
 //		makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is unavailable" );;
@@ -1617,12 +1600,6 @@ static void InsteonGroups_NounHandler(ServerCmdQueue* cmdQueue,
  
 	if(path.size() > 0) {
 		noun = path.at(0);
-	}
-	
-	// CHECK noun
-	if(noun != NOUN_INSTEON_GROUPS){
-		(completion) (reply, STATUS_NOT_FOUND);
-		return;
 	}
 	
 //	if(!insteon.serverAvailable()) {
@@ -2182,11 +2159,6 @@ static void Devices_NounHandler(ServerCmdQueue* cmdQueue,
 		noun = path.at(0);
 	}
 	
-	// CHECK noun
-	if(noun != NOUN_DEVICES){
-		(completion) (reply, STATUS_NOT_FOUND);
-		return;
-	}
 	
 //	// is server available?
 //	if(!insteon.serverAvailable()) {
@@ -2262,7 +2234,8 @@ static bool PLM_NounHandler_GET(ServerCmdQueue* cmdQueue,
 				return true;
 				
 			}
-		} else if(subpath == SUBPATH_PORT){
+		}
+		else if(subpath == SUBPATH_PORT){
 			
 			string path = db->getPLMPath();
 			reply[string(JSON_ARG_FILEPATH)] = path;
@@ -2270,6 +2243,7 @@ static bool PLM_NounHandler_GET(ServerCmdQueue* cmdQueue,
 			(completion) (reply, STATUS_OK);
 			return true;
 		}
+
 	}
 
 	return false;
@@ -2287,8 +2261,7 @@ static bool PLM_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 	
 	ServerCmdArgValidator v1;
 	auto db = insteon.getDB();
-	
-	
+ 
 	json reply;
 	
 	if(path.size() == 2) {
@@ -2332,7 +2305,8 @@ static bool PLM_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 				return true;
 
 			}
-		}	else if(subpath == SUBPATH_PORT){
+		}
+		else if(subpath == SUBPATH_PORT){
 			
 			string filepath;
 			
@@ -2343,6 +2317,82 @@ static bool PLM_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 				return true;
 			}
 		}
+		else if(subpath == SUBPATH_STATE){
+			
+			string str;
+			
+			auto currentState = insteon.currentState();
+			string stateStr = insteon.currentStateString();
+		
+			if(v1.getStringFromJSON(JSON_ARG_STATE, url.body(), str)){
+				
+				std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+				if(str == JSON_VAL_START){
+					
+					switch (currentState) {
+						case InsteonMgr::STATE_SETUP:
+						case InsteonMgr::STATE_NO_PLM:
+						case InsteonMgr::STATE_PLM_ERROR:
+ 							break;
+							
+						default:
+ 							makeStatusJSON(reply, STATUS_BAD_REQUEST, "PLM in wrong state",stateStr );
+							(completion) (reply, STATUS_BAD_REQUEST);
+							return true;
+							break;
+					}
+				  
+					try{
+						insteon.begin("",  [=](bool didSucceed) {
+							
+							if(didSucceed){
+								insteon.syncPLM( [=](bool didSucceed) {
+									
+									if(didSucceed){
+										
+										// start validation process in background
+										insteon.validatePLM( [](bool didSucceed) {
+											
+											// let this run in background
+										});
+	  
+										json reply;
+										makeStatusJSON(reply,STATUS_OK);
+										(completion) (reply, STATUS_OK);
+									}
+									else {
+										json reply;
+										
+										makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "syncPLM Failed");;
+										(completion) (reply, STATUS_INTERNAL_ERROR);
+									}
+								});
+							}
+							else {
+								json reply;
+								makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "start PLM Failed");;
+								(completion) (reply, STATUS_INTERNAL_ERROR);
+							}
+						});
+					}
+				 
+					  catch ( const InsteonException& e)  {
+						  
+						  json reply;
+						  makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "start PLM Failed", e.what());;
+						  (completion) (reply, STATUS_INTERNAL_ERROR);
+ 					  }
+			 		 return true;
+				}
+				else 	if(str == JSON_VAL_STOP){
+					
+					insteon.stop();
+					makeStatusJSON(reply,STATUS_OK);
+					(completion) (reply, STATUS_OK);
+					return true;
+				}
+ 			}
+ 		}
 	}
 	return false;
 }
@@ -2366,13 +2416,7 @@ static void PLM_NounHandler(ServerCmdQueue* cmdQueue,
 	if(path.size() > 0) {
 		noun = path.at(0);
 	}
-	
-	// CHECK noun
-	if(noun != NOUN_PLM){
-		(completion) (reply, STATUS_NOT_FOUND);
-		return;
-	}
- 
+	 
 	switch(url.method()){
 		case HTTP_GET:
 			isValidURL = PLM_NounHandler_GET(cmdQueue,url,cInfo, completion);
@@ -2454,19 +2498,14 @@ static void Config_NounHandler(ServerCmdQueue* cmdQueue,
 		noun = path.at(0);
 	}
 	
-	// CHECK noun
-	if(noun != NOUN_CONFIG){
-		(completion) (reply, STATUS_NOT_FOUND);
-		return;
-	}
  
 	switch(url.method()){
 		case HTTP_GET:
-	//		isValidURL = Events_NounHandler_GET(cmdQueue,url,cInfo, completion);
+	//		isValidURL = Config_NounHandler_GET(cmdQueue,url,cInfo, completion);
 			break;
 			
 		case HTTP_PUT:
-	//		isValidURL = Events_NounHandler_PUT(cmdQueue,url,cInfo, completion);
+	//		isValidURL = Config_NounHandler_PUT(cmdQueue,url,cInfo, completion);
 			break;
 			
 		case HTTP_PATCH:
@@ -2474,11 +2513,11 @@ static void Config_NounHandler(ServerCmdQueue* cmdQueue,
 			break;
 	 
 		case HTTP_POST:
-//			isValidURL = Events_NounHandler_POST(cmdQueue,url,cInfo, completion);
+//			isValidURL = Config_NounHandler_POST(cmdQueue,url,cInfo, completion);
 			break;
  
 		case HTTP_DELETE:
-//			isValidURL = Events_NounHandler_DELETE(cmdQueue,url,cInfo, completion);
+//			isValidURL = Config_NounHandler_DELETE(cmdQueue,url,cInfo, completion);
 			break;
   
 		default:
@@ -2493,7 +2532,37 @@ static void Config_NounHandler(ServerCmdQueue* cmdQueue,
 }
 
 
-// MARK:  OTHER REST NOUN HANDLERS
+
+// MARK: STATUS - NOUN HANDLER
+
+static bool Status_NounHandler_GET(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+											  ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	json reply;
+
+ 
+	// GET /status
+	if(path.size() == 1) {
+	 
+		auto state = insteon.currentState();
+		string stateStr = insteon.currentStateString();
+		
+		reply[string(JSON_ARG_STATE)] =   state;
+		reply[string(JSON_ARG_STATESTR)] =   stateStr;
+		
+		makeStatusJSON(reply,STATUS_OK);
+		(completion) (reply, STATUS_OK);
+		return true;
+ 	}
+ 
+	  return false;
+}
 
 static void Status_NounHandler(ServerCmdQueue* cmdQueue,
 										 REST_URL url,  // entire request
@@ -2502,34 +2571,225 @@ static void Status_NounHandler(ServerCmdQueue* cmdQueue,
 	using namespace rest;
 	json reply;
 	
-	// CHECK METHOD
-	if(url.method() != HTTP_GET ) {
-		(completion) (reply, STATUS_INVALID_METHOD);
-		return;
-	}
-	
 	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
 	string noun;
+	
+	bool isValidURL = false;
 	
 	if(path.size() > 0) {
 		noun = path.at(0);
 	}
 	
-	// CHECK sub paths
-	if(noun != NOUN_STATUS){
-		(completion) (reply, STATUS_NOT_FOUND);
-		return;
+	switch(url.method()){
+		case HTTP_GET:
+			isValidURL = Status_NounHandler_GET(cmdQueue,url,cInfo, completion);
+			break;
+//
+//		case HTTP_PUT:
+//			isValidURL = Status_NounHandler_PUT(cmdQueue,url,cInfo, completion);
+//			break;
+//
+//		case HTTP_PATCH:
+//			isValidURL = Status_NounHandler_PATCH(cmdQueue,url,cInfo, completion);
+//			break;
+//
+//		case HTTP_POST:
+//			isValidURL = Status_NounHandler_POST(cmdQueue,url,cInfo, completion);
+//			break;
+//
+//		case HTTP_DELETE:
+//			isValidURL = Status_NounHandler_DELETE(cmdQueue,url,cInfo, completion);
+//			break;
+  
+		default:
+			(completion) (reply, STATUS_INVALID_METHOD);
+			return;
 	}
 	
-	auto state = insteon.currentState();
-	string stateStr = insteon.currentStateString();
-	
-	reply[string(JSON_ARG_STATE)] =   state;
-	reply[string(JSON_ARG_STATESTR)] =   stateStr;
-	
-	makeStatusJSON(reply,STATUS_OK);
-	(completion) (reply, STATUS_OK);
+	if(!isValidURL) {
+		(completion) (reply, STATUS_NOT_FOUND);
+	}
 }
+
+// MARK: LOG - NOUN HANDLER
+
+static bool Log_NounHandler_GET(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+											  ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	json reply;
+	auto db = insteon.getDB();
+
+	string subpath;
+	
+	if(path.size() > 1){
+		subpath =   path.at(1);
+	}
+
+	// GET /log
+	if(subpath == SUBPATH_STATE) {
+  
+		reply[string(JSON_ARG_LOGFLAGS)] =  LogMgr::shared()->_logFlags;
+ 
+		makeStatusJSON(reply,STATUS_OK);
+		(completion) (reply, STATUS_OK);
+		return true;
+	}
+	else if(subpath == SUBPATH_FILE) {
+		
+		string path;
+		db->logFileGetPath(path);
+		reply[string(JSON_ARG_FILEPATH)] =  path;
+ 	
+		makeStatusJSON(reply,STATUS_OK);
+		(completion) (reply, STATUS_OK);
+		return true;
+	}
+		
+	  return false;
+}
+
+static bool Log_NounHandler_PUT(ServerCmdQueue* cmdQueue,
+												REST_URL url,
+												TCPClientInfo cInfo,
+										  ServerCmdQueue::cmdCallback_t completion) {
+	
+	using namespace rest;
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	
+	ServerCmdArgValidator v1;
+ 
+	json reply;
+	string subpath;
+
+	auto db = insteon.getDB();
+
+	if(path.size() > 1){
+		subpath =   path.at(1);
+	}
+
+ 	if(subpath == SUBPATH_STATE) {
+		uint8_t logFlags;
+	
+		if(v1.getByteFromJSON(JSON_ARG_LOGFLAGS, url.body(), logFlags)){
+			
+			LogMgr::shared()->_logFlags = logFlags;
+			db->logFileSetFlags(logFlags);
+
+			makeStatusJSON(reply,STATUS_OK);
+			(completion) (reply, STATUS_OK);
+			return true;
+
+		}
+	}
+	else if(subpath == SUBPATH_FILE) {
+		
+		string path;
+		
+		if(v1.getStringFromJSON(JSON_ARG_FILEPATH, url.body(), path)){
+			//VINNIE		// set the log file
+			
+			LogMgr::shared()->setLogFilePath(path);
+			db->logFileSetPath(path);
+			
+			makeStatusJSON(reply,STATUS_OK);
+			(completion) (reply, STATUS_OK);
+			return true;
+			
+		}
+	}
+ 
+	return false;
+}
+
+static bool Log_NounHandler_PATCH(ServerCmdQueue* cmdQueue,
+												REST_URL url,
+												TCPClientInfo cInfo,
+										  ServerCmdQueue::cmdCallback_t completion) {
+	
+	using namespace rest;
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	
+	ServerCmdArgValidator v1;
+ 
+	json reply;
+ 
+	string str;
+	
+	if(v1.getStringFromJSON(JSON_ARG_MESSAGE, url.body(), str)){
+		
+		LogMgr::shared()->logTimedStampString(str);
+		makeStatusJSON(reply,STATUS_OK);
+		(completion) (reply, STATUS_OK);
+		return true;
+	}
+
+	return false;
+}
+
+static void Log_NounHandler(ServerCmdQueue* cmdQueue,
+										 REST_URL url,  // entire request
+										 TCPClientInfo cInfo,
+										 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	json reply;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	string noun;
+	
+	bool isValidURL = false;
+	
+	if(path.size() > 0) {
+		noun = path.at(0);
+	}
+	
+	switch(url.method()){
+		case HTTP_GET:
+			isValidURL = Log_NounHandler_GET(cmdQueue,url,cInfo, completion);
+			break;
+
+		case HTTP_PUT:
+			isValidURL = Log_NounHandler_PUT(cmdQueue,url,cInfo, completion);
+			break;
+
+		case HTTP_PATCH:
+			isValidURL = Log_NounHandler_PATCH(cmdQueue,url,cInfo, completion);
+			break;
+
+//		case HTTP_POST:
+//			isValidURL = Log_NounHandler_POST(cmdQueue,url,cInfo, completion);
+//			break;
+//
+//		case HTTP_DELETE:
+//			isValidURL = Log_NounHandler_DELETE(cmdQueue,url,cInfo, completion);
+//			break;
+  
+		default:
+			(completion) (reply, STATUS_INVALID_METHOD);
+			return;
+	}
+	
+	if(!isValidURL) {
+		(completion) (reply, STATUS_NOT_FOUND);
+	}
+}
+
+
+// MARK:  OTHER REST NOUN HANDLERS
+
 
 static void Version_NounHandler(ServerCmdQueue* cmdQueue,
 										  REST_URL url,
@@ -4076,6 +4336,7 @@ void registerServerCommands() {
 	cmdQueue->registerNoun(NOUN_STATUS, 	Status_NounHandler);
 	cmdQueue->registerNoun(NOUN_VERSION, 	Version_NounHandler);
 	cmdQueue->registerNoun(NOUN_DATE, 		Date_NounHandler);
+	cmdQueue->registerNoun(NOUN_LOG, 		Log_NounHandler);
 	cmdQueue->registerNoun(NOUN_DEVICES, 	Devices_NounHandler);
 	cmdQueue->registerNoun(NOUN_PLM, 		PLM_NounHandler);
 	cmdQueue->registerNoun(NOUN_GROUPS,	Groups_NounHandler);

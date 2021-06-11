@@ -29,6 +29,8 @@ class InsteonMgr {
  
 public:
 	
+	static const char* 	InsteonMgr_Version;
+
 	typedef enum  {
 		STATE_UNKNOWN = 0,
 		STATE_INIT,
@@ -59,7 +61,7 @@ public:
 	void erasePLM(boolCallback_t callback);
 	void syncPLM(boolCallback_t callback);
 	void readPLM(boolCallback_t callback);
-	void validatePLM(boolCallback_t callback);
+	void validatePLM(boolCallback_t callback = NULL);
 	void savePLMCacheFile();
 	bool loadCacheFile(string filePath = "");
 

@@ -216,6 +216,14 @@ public:
 	bool apiSecretDelete(string APIkey);
 	bool apiSecretSetSecret(string APIkey, string APISecret);
 	bool apiSecretGetSecret(string APIkey, string &APISecret);
+	bool apiSecretMustAuthenticate();
+	
+	// MARK: -  LogFile prefs
+	bool logFileSetFlags(uint8_t logFlags);
+	bool logFileGetFlags(uint8_t &logFlags);
+	bool logFileSetPath(string path);
+	bool logFileGetPath(string &path);
+ 
 
 	// MARK: -   debugging
 	string dumpDB(bool printALDB = false);
@@ -232,9 +240,11 @@ private:
 	string  default_fileName();
 	
 	// config info
-	string _plmPath;
-	double	_longitude;
-	double _latitude;
+	string 	_plmPath;
+	double		_longitude;
+	double 	_latitude;
+	string 	_logFilePath;
+	uint8_t 	_logFileFlags;
 
 	void  initDBEntry(insteon_dbEntry_t *newEntry,DeviceID deviceID);
 	
