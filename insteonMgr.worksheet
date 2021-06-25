@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CurrentWorkingDirectory</key>
+	<string>/Users/vinnie</string>
+	<key>WorksheetContents</key>
+	<string> telnet 10.10.0.47 2020
+ 
+ 
+ssh pi@10.10.0.47
+
+
+ # export CC=/usr/local/clang_9.0.0/bin/clang
+# export CXX=/usr/local/clang_9.0.0/bin/clang++
+
+git submodule foreach --recursive git reset —hard
+git pull --recurse-submodules
+cmake .
+make
+cd bin/
+ ./InsteonMgr 
+
+ netstat -tlnp 
+tcp        0      0 0.0.0.0:8080            0.0.0.0:*               LISTEN      1526/./InsteonMgr   
+tcp        0      0 127.0.0.1:2020          0.0.0.0:*               LISTEN      1526/./InsteonMgr   
+
+netstat -tlnp</string>
+</dict>
+</plist>
