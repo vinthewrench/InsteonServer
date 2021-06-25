@@ -82,7 +82,9 @@ public:
 						 uint8_t groupID = 0xfE,
 						 boolCallback_t callback = NULL);
 
-	bool addResponderToDevice(DeviceID deviceID, uint8_t groupID = 0x01, boolCallback_t callback = NULL);
+	bool addToDeviceALDB(DeviceID deviceID,
+								bool isCNTL, uint8_t groupID = 0x01,
+								boolCallback_t callback = NULL);
  
 	bool unlinkDevice(DeviceID deviceID,
 						 boolCallback_t callback = NULL);
@@ -108,6 +110,9 @@ public:
 
 	bool setLEDBrightness(DeviceID deviceID, uint8_t level,
 									boolCallback_t callback = NULL);
+	
+	bool setKeypadLEDState(DeviceID deviceID, uint8_t mask,
+								  boolCallback_t callback = NULL);
 
 	// groups set
 	bool setOnLevel(GroupID groupID, uint8_t onLevel = 0,
@@ -178,6 +183,7 @@ private:
 	timeval			_startTime;			// used for timeouts (IR REQ/Linkink)
 	uint64_t     	_timeout_LINKING;	// how long to wait LINKING
 
+	bool				_shouldRunStartupEvents;	// we still need to run startup events.
 	time_t	     		_expired_delay;		// how long to wait before we need to ping or validate
 	time_t	     		_nextValidationCheck; // next scheuled time to do an validation check;
 

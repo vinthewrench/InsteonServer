@@ -67,10 +67,7 @@ friend class InsteonMgr;
 
 	// debug
 	void dumpBuf();
-
-// fix this!!
 	InsteonParser _parser;
-
 
 private:
 

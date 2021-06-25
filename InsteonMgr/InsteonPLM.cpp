@@ -30,6 +30,16 @@ bool InsteonPLM::begin(PLMStream *stream,
 							  uint64_t timeout){
  	_cmdTimeout = timeout;
 	_stream = stream;
+	
+	// clear any junk  input
+	while(true) {
+		plm_result_t result = recvResponse(timeout);
+		if(result == PLR_NOTHING){
+			break;
+		}
+		_parser.reset();
+	}
+
  	return true;
 }
 

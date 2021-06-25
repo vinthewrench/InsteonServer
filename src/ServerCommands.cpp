@@ -35,12 +35,11 @@
 #include "CommonIncludes.h"
 #include "InsteonDevice.hpp"
 #include "LogMgr.hpp"
+#include "sleep.h"
 
 #include "Utils.hpp"
 
 // MARK: - SERVER DEFINES
-
-constexpr string_view FOO_VERSION_STRING		= "1.0.0";
 
 constexpr string_view NOUN_VERSION		 		= "version";
 constexpr string_view NOUN_DATE		 			= "date";
@@ -69,14 +68,14 @@ constexpr string_view JSON_ARG_DEVICEID 		= "deviceID";
 constexpr string_view JSON_ARG_GROUPID 		= "groupID";
 constexpr string_view JSON_ARG_ACTIONID 		= "actionID";
 constexpr string_view JSON_ARG_EVENTID 		= "eventID";
-//constexpr string_view JSON_ARG_INSTEON_GROUP = "insteon.group";
 constexpr string_view JSON_ARG_ACTION			= "action";
 constexpr string_view JSON_ARG_TRIGGER			= "trigger";
-
 
 constexpr string_view JSON_ARG_BEEP 			= "beep";
 constexpr string_view JSON_ARG_LEVEL 			= "level";
 constexpr string_view JSON_ARG_BACKLIGHT		= "backlight";
+constexpr string_view JSON_ARG_KP_MASK 		= "keypad"; 	// Keypad LED mask
+
 constexpr string_view JSON_ARG_VALIDATE		= "validate";
 constexpr string_view JSON_ARG_DUMP		 		= "dump";			// for debug datat
 constexpr string_view JSON_ARG_MESSAGE		 	= "message";			// for logfile
@@ -88,6 +87,9 @@ constexpr string_view JSON_ARG_DATE				= "date";
 constexpr string_view JSON_ARG_VERSION			= "version";
 constexpr string_view JSON_ARG_TIMESTAMP		= "timestamp";
 constexpr string_view JSON_ARG_DEVICEIDS 		= "deviceIDs";
+
+constexpr string_view JSON_ARG_IS_KEYPAD		= "isKeyPad";
+constexpr string_view JSON_ARG_IS_DIMMER		= "isDimmer";
 
 constexpr string_view JSON_ARG_DEVICEINFO 	= "deviceInfo";
 constexpr string_view JSON_ARG_DETAILS 		= "details";
@@ -104,6 +106,8 @@ constexpr string_view JSON_ARG_GROUPIDS		= "groupIDs";
 constexpr string_view JSON_ARG_EVENTIDS		= "eventIDs";
 constexpr string_view JSON_ARG_FILEPATH		= "filepath";
 constexpr string_view JSON_ARG_LOGFLAGS		= "logflags";
+constexpr string_view JSON_ARG_COUNT			= "count";
+constexpr string_view JSON_ARG_ISCNTRL			= "cntrl";  // used for linking devices
 
 constexpr string_view JSON_ARG_TIMED_EVENTS	= "events.timed";
 constexpr string_view JSON_ARG_FUTURE_EVENTS		= "events.future";
@@ -118,6 +122,7 @@ constexpr string_view JSON_VAL_LEVELS			= "levels";
  
 constexpr string_view JSON_VAL_START			= "start";
 constexpr string_view JSON_VAL_STOP				= "stop";
+constexpr string_view JSON_VAL_RESET			= "reset";
 
 
 // MARK: -
@@ -1269,23 +1274,30 @@ static bool Groups_NounHandler_GET(ServerCmdQueue* cmdQueue,
 		return true;
 		
 	}
-	// GET /devices/XX.XX.XX
+	// GET /groups/XXXX
 	else if(path.size() == 2) {
 		
  		GroupID groupID =  GroupID(path.at(1));
 		if(!groupID.isValid() ||!db->groupIsValid(groupID))
 			return false;
 		
-		reply[string(JSON_ARG_GROUPID)] = groupID.string();
-		reply[string(JSON_ARG_NAME)] =  db->groupGetName(groupID);
+		json groupsList;
+		
+		json entry;
+		entry[string(JSON_ARG_NAME)] =  db->groupGetName(groupID);
 		vector<DeviceID> deviceIDs = db->groupGetDevices(groupID	);
 		vector<string> deviceList;
 		for(DeviceID deviceID :deviceIDs) {
 			deviceList.push_back(deviceID.string());
 		}
-		reply[string(JSON_ARG_DEVICEIDS)] = deviceList;
+		entry[string(JSON_ARG_DEVICEIDS)] = deviceList;
+		groupsList[groupID.string()] = entry;
+		
+		
+		reply[string(JSON_ARG_GROUPIDS)] = groupsList;
 		makeStatusJSON(reply,STATUS_OK);
 		(completion) (reply, STATUS_OK);
+
 		return true;
 	}
 	else {
@@ -1826,7 +1838,10 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 						reply[string(JSON_ARG_ETAG)] = info.eTag;
 						reply["lastUpdated"] =  TimeStamp(info.lastUpdated).RFC1123String();
 						reply[string(JSON_ARG_LEVEL)]  = level;
-						
+	
+						reply[string(JSON_ARG_IS_KEYPAD)]  =  info.deviceInfo.isKeyPad();
+						reply[string(JSON_ARG_IS_DIMMER)] =  info.deviceInfo.isDimmer();
+	 
 						if(info.properties.size()){
 							json props;
 							for(auto prop : info.properties){
@@ -1967,9 +1982,14 @@ static bool Devices_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 			int level;
 			bool shouldBeep = false;
 			bool shouldValidate = false;
+			uint8_t buttonMask	= 0;
+			bool isValidated = false;
 			
-			bool isValidated =  db->isDeviceValidated(deviceID);
-			
+			insteon_dbEntry_t info;
+			if( db->getDeviceInfo(deviceID, &info)){
+				isValidated =  info.isValidated;
+			}
+	  
 			// set level
 			if(isValidated && vLevel.getvalueFromJSON(JSON_ARG_LEVEL, url.body(), level)){
 				
@@ -2039,6 +2059,26 @@ static bool Devices_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 				});
 				return true;
 			}
+			
+			else if(isValidated && v1.getByteFromJSON(JSON_ARG_KP_MASK, url.body(), buttonMask)){
+				
+				if(!info.deviceInfo.isKeyPad()){
+					makeStatusJSON(reply, STATUS_BAD_REQUEST, "Device is not a keypad" );;
+					(completion) (reply, STATUS_BAD_REQUEST);
+					return false;
+	
+				}
+				
+				InsteonKeypadDevice(deviceID).setKeypadLEDState(buttonMask, [=](bool didSucceed){
+					json reply;
+					
+					reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+					makeStatusJSON(reply,STATUS_OK);
+					(completion) (reply, STATUS_OK);
+				});
+				return true;
+			}
+			
 			else if(v1.getBoolFromJSON(JSON_ARG_VALIDATE, url.body(), shouldValidate)){
 				
 				bool queued =  insteon.validateDevice(deviceID,[=](bool didSucceed){
@@ -2223,13 +2263,16 @@ static bool PLM_NounHandler_GET(ServerCmdQueue* cmdQueue,
 				
 				reply[string(JSON_ARG_DEVICEID)] = 	deviceID.string();
 				reply[string(JSON_ARG_DEVICEINFO)] =	deviceInfo.string();
-				
+				string path = db->getPLMPath();
+				reply[string(JSON_ARG_FILEPATH)] = path;
+				reply[string(JSON_ARG_COUNT)] = db->count();
+
 				makeStatusJSON(reply,STATUS_OK);
 				(completion) (reply, STATUS_OK);
 				return true;
 			}
 			else {
-				makeStatusJSON(reply, STATUS_UNAVAILABLE, "PLM is not setup" );;
+				makeStatusJSON(reply, STATUS_UNAVAILABLE, "PLM is not started" );;
 				(completion) (reply, STATUS_UNAVAILABLE);
 				return true;
 				
@@ -2346,6 +2389,7 @@ static bool PLM_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 						insteon.begin("",  [=](bool didSucceed) {
 							
 							if(didSucceed){
+								
 								insteon.syncPLM( [=](bool didSucceed) {
 									
 									if(didSucceed){
@@ -2355,8 +2399,20 @@ static bool PLM_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 											
 											// let this run in background
 										});
-	  
+										
+										DeviceID 	 deviceID;
+										DeviceInfo deviceInfo;
 										json reply;
+										
+										if( insteon.plmInfo(&deviceID, &deviceInfo) ){
+											reply[string(JSON_ARG_DEVICEID)] = 	deviceID.string();
+											reply[string(JSON_ARG_DEVICEINFO)] =	deviceInfo.string();
+										}
+										
+										string path = db->getPLMPath();
+										reply[string(JSON_ARG_FILEPATH)] = path;
+										reply[string(JSON_ARG_COUNT)] = db->count();
+										
 										makeStatusJSON(reply,STATUS_OK);
 										(completion) (reply, STATUS_OK);
 									}
@@ -2391,7 +2447,34 @@ static bool PLM_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 					(completion) (reply, STATUS_OK);
 					return true;
 				}
- 			}
+				else 	if(str == JSON_VAL_RESET){
+					
+//					insteon.stop();
+					try{
+						insteon.erasePLM( [=](bool didSucceed) {
+							json reply;
+							
+							if(didSucceed){
+								
+								makeStatusJSON(reply,STATUS_OK);
+								(completion) (reply, STATUS_OK);
+							}
+							else {
+								makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "syncPLM Failed");;
+								(completion) (reply, STATUS_INTERNAL_ERROR);
+							}
+						});
+					}
+					
+					catch ( const InsteonException& e)  {
+						
+						json reply;
+						makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "start PLM Failed", e.what());;
+						(completion) (reply, STATUS_INTERNAL_ERROR);
+					}
+					return true;
+				}
+  			}
  		}
 	}
 	return false;
@@ -2818,7 +2901,7 @@ static void Version_NounHandler(ServerCmdQueue* cmdQueue,
 		return;
 	}
 	
-	reply[string(JSON_ARG_VERSION)] =   FOO_VERSION_STRING;
+	reply[string(JSON_ARG_VERSION)] = InsteonMgr::InsteonMgr_Version;
 	reply[string(JSON_ARG_TIMESTAMP)]	=  string(__DATE__) + " " + string(__TIME__);
 	
 	makeStatusJSON(reply,STATUS_OK);
@@ -2883,7 +2966,9 @@ static void Link_NounHandler(ServerCmdQueue* cmdQueue,
 	using namespace timestamp;
 	json reply;
 	bool isValidURL = false;
-	
+
+	ServerCmdArgValidator v1;
+ 
 	// CHECK METHOD
 	if(url.method() != HTTP_PUT ) {
 		(completion) (reply, STATUS_INVALID_METHOD);
@@ -2922,7 +3007,7 @@ static void Link_NounHandler(ServerCmdQueue* cmdQueue,
 				
 				if(didSucceed){
 					
-					insteon.addResponderToDevice(deviceID, 0x01, [=](bool didSucceed) {
+					insteon.addToDeviceALDB(deviceID, false, 0x01, [=](bool didSucceed) {
 						
 						json reply;
 						reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
@@ -2933,7 +3018,7 @@ static void Link_NounHandler(ServerCmdQueue* cmdQueue,
 							(completion) (reply, STATUS_OK);
 						}
 						else {
-							makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "addResponderToDevice failed" );;
+							makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "addToDeviceALDB failed" );;
 							(completion) (reply, STATUS_INTERNAL_ERROR);
 						}
 					});
@@ -2948,13 +3033,112 @@ static void Link_NounHandler(ServerCmdQueue* cmdQueue,
 			
 			isValidURL = true;
 		}}
-	
+	else if(path.size() == 3) { //  add To DeviceALDB
+		
+		//   link/33.4F.F6/group
+		// isCNTRL = true?
+		DeviceIDArgValidator vDeviceID;
+
+		auto deviceStr = path.at(1);
+		auto groupStr = path.at(2);
+
+		if(vDeviceID.validateArg(deviceStr)){
+			DeviceID	deviceID = DeviceID(deviceStr);
+			
+			if( regex_match(string(groupStr), std::regex("^[A-Fa-f0-9]{2}$"))){
+				uint8_t groupID;
+				bool isCNTRL = false;
+				if( std::sscanf(groupStr.c_str(), "%hhx", &groupID) == 1){
+					
+					v1.getBoolFromJSON(JSON_ARG_ISCNTRL, url.body(), isCNTRL);
+					
+					insteon.addToDeviceALDB(deviceID, isCNTRL, groupID, [=](bool didSucceed) {
+						json reply;
+						
+						if(didSucceed){
+
+							makeStatusJSON(reply,STATUS_OK);
+							(completion) (reply, STATUS_OK);
+						}
+						else {
+							makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "addToDeviceALDB failed" );;
+							(completion) (reply, STATUS_INTERNAL_ERROR);
+						}
+ 					});
+					
+					isValidURL = true;
+				}
+			}
+		}
+	}
 	
 	if(!isValidURL) {
 		(completion) (reply, STATUS_NOT_FOUND);
 	}
 }
 
+
+// MARK: - COMMAND LINE FUNCTIONS Utilities
+
+
+// create a map for deviceIDs and Names
+
+static void getDeviceNames( CmdLineMgr* mgr,
+									std::function<void(map<DeviceID, string>)> callback = NULL) {
+	using namespace rest;
+	
+	TCPClientInfo cInfo = mgr->getClientInfo();
+	ServerCmdQueue::shared()->queueRESTCommand(REST_URL("GET /devices?details=1\n\n")
+															 
+															 , cInfo,[=] (json reply, httpStatusCodes_t code) {
+		
+		map<DeviceID, string> deviceMap;
+		deviceMap.clear();
+		
+		bool success = didSucceed(reply);
+		if(success){
+			
+			string key2 = string(JSON_ARG_DETAILS);
+			
+			if( reply.contains(key2)
+				&& reply.at(key2).is_object()){
+				auto entries = reply.at(key2);
+				
+				for (auto& [key, value] : entries.items()) {
+					
+					DeviceID deviceID = DeviceID(key);
+					
+					if( value.contains(string(JSON_ARG_NAME))
+						&& value.at(string(JSON_ARG_NAME)).is_string()){
+						string deviceName  = value.at(string(JSON_ARG_NAME));
+						
+						deviceMap[deviceID] = deviceName;
+					}
+					
+				}
+			};
+		}
+		
+		if(callback) (callback)(deviceMap);
+	});
+}
+
+
+static void breakDuration(unsigned long secondsIn, tm &tm){
+	
+	long  remainingSeconds = secondsIn;
+		
+	tm.tm_mday =  (int)(remainingSeconds/SECS_PER_DAY);
+	remainingSeconds = secondsIn - (tm.tm_mday * SECS_PER_DAY);
+	
+	tm.tm_hour =  (int)(remainingSeconds/SECS_PER_HOUR);
+	remainingSeconds = secondsIn -   ((tm.tm_mday * SECS_PER_DAY) + (tm.tm_hour * SECS_PER_HOUR));
+	
+	tm.tm_min = (int)remainingSeconds/SECS_PER_MIN;
+	remainingSeconds = remainingSeconds - (tm.tm_min * SECS_PER_MIN);
+	
+	tm.tm_sec = (int) remainingSeconds;
+}
 
 // MARK: - COMMAND LINE FUNCTIONS
 
@@ -2979,7 +3163,7 @@ static bool VersionCmdHandler( stringvector line,
 			
 			if(reply.count(JSON_ARG_VERSION) ) {
 				string ver = reply[string(JSON_ARG_VERSION)];
-				oss << ver << " ";
+				oss << ver << ", ";
 			}
 			
 			if(reply.count(JSON_ARG_TIMESTAMP) ) {
@@ -3003,21 +3187,21 @@ static bool VersionCmdHandler( stringvector line,
 	return true;
 };
 
-static void breakDuration(unsigned long secondsIn, tm &tm){
+
+static bool WelcomeCmdHandler( stringvector line,
+										CmdLineMgr* mgr,
+										boolCallback_t	cb){
 	
-	long  remainingSeconds = secondsIn;
-		
-	tm.tm_mday =  (int)(remainingSeconds/SECS_PER_DAY);
-	remainingSeconds = secondsIn - (tm.tm_mday * SECS_PER_DAY);
+	std::ostringstream oss;
 	
-	tm.tm_hour =  (int)(remainingSeconds/SECS_PER_HOUR);
-	remainingSeconds = secondsIn -   ((tm.tm_mday * SECS_PER_DAY) + (tm.tm_hour * SECS_PER_HOUR));
-	
-	tm.tm_min = (int)remainingSeconds/SECS_PER_MIN;
-	remainingSeconds = remainingSeconds - (tm.tm_min * SECS_PER_MIN);
-	
-	tm.tm_sec = (int) remainingSeconds;
+	// add friendly info here
+	oss << "Welcome to Insteon Manager: ";
+	mgr->sendReply(oss.str());
+
+	VersionCmdHandler( {"version"}, mgr, cb);
+	return true;
 }
+
 
 static bool DATECmdHandler( stringvector line,
 									CmdLineMgr* mgr,
@@ -3059,7 +3243,6 @@ static bool DATECmdHandler( stringvector line,
 	 	}
 
 		double latitude, longitude;
-	
  
 		if(v1.getDoubleFromJSON(JSON_ARG_LATITUDE, reply, latitude)
 			&& v1.getDoubleFromJSON(JSON_ARG_LONGITUDE, reply, longitude)){
@@ -3429,7 +3612,6 @@ static bool SHOWcmdHandler( stringvector line,
 			
 			bool success = didSucceed(reply);
 			
-			
 			if(success) {
 				std::ostringstream oss;
 				
@@ -3654,16 +3836,15 @@ static bool PLMCmdHandler( stringvector line,
 	}
 	else {
 		string subcommand = line[1];
-		
+		TCPClientInfo cInfo = mgr->getClientInfo();
 		
 		if(subcommand == "info"){
 			oss << "GET /plm/info" << " HTTP/1.1\n";
 			oss << "Connection: close\n";
 			oss << "\n";
 			url.setURL(oss.str());
-			
-			TCPClientInfo cInfo = mgr->getClientInfo();
-			ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
+		
+	 		ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
 				
 				std::ostringstream oss;
 				DeviceIDArgValidator vDeviceID;
@@ -3676,6 +3857,8 @@ static bool PLMCmdHandler( stringvector line,
 					
 					DeviceID 	 deviceID;
 					DeviceInfo deviceInfo;
+					string path;
+					int 	deviceCount = 0;
 					string str;
 					
 					if(vDeviceID.getvalueFromJSON(JSON_ARG_DEVICEID, reply, str))
@@ -3684,10 +3867,17 @@ static bool PLMCmdHandler( stringvector line,
 					if(v1.getStringFromJSON(JSON_ARG_DEVICEINFO, reply, str))
 						deviceInfo = DeviceInfo(str);
 					
-					oss << deviceID.string();
-					oss << "  " << deviceInfo.skuString();
-					oss << " " << deviceInfo.descriptionString();
+					if(v1.getStringFromJSON(JSON_ARG_FILEPATH, reply, str))
+						path = str;
+
+					oss << " PLM:  <" << deviceID.string() << "> " << deviceInfo.skuString()
+					<<  " " << deviceInfo.descriptionString();
+	
+					if(v1.getIntFromJSON(JSON_ARG_COUNT, reply, deviceCount))
+						oss << ", " << deviceCount  << " devices.";
 					oss << "\n\r";
+					
+					if(!path.empty())  oss << " port: " << path << "\n\r";
 					mgr->sendReply(oss.str());
 				}
 				else {
@@ -3696,6 +3886,110 @@ static bool PLMCmdHandler( stringvector line,
 				}
 				(cb) (success);
 			});
+	 
+			return true;
+		}
+		else if(subcommand == "start"){
+			
+			oss << "PUT /plm/state"  << " HTTP/1.1\n";
+			oss << "Content-Type: application/json; charset=utf-8\n";
+			oss << "Connection: close\n";
+			
+			json request;
+			request[string(JSON_ARG_STATE)] =  JSON_VAL_START;
+			
+			string jsonStr = request.dump(4);
+			oss << "Content-Length: " << jsonStr.size() << "\n\n";
+			oss << jsonStr << "\n";
+			url.setURL(oss.str());
+			
+			bool running = true;
+			
+			ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=,&running] (json reply, httpStatusCodes_t code) {
+				
+				std::ostringstream oss;
+				DeviceIDArgValidator vDeviceID;
+				ServerCmdArgValidator v1;
+
+				bool success = didSucceed(reply);
+				
+				running = false;
+				mgr->sendReply("\n\r");
+	
+				if(success){
+					
+					DeviceID 	 deviceID;
+					DeviceInfo deviceInfo;
+					string path;
+					int 	deviceCount = 0;
+					string str;
+					
+					if(vDeviceID.getvalueFromJSON(JSON_ARG_DEVICEID, reply, str))
+						deviceID = DeviceID(str);
+					
+					if(v1.getStringFromJSON(JSON_ARG_DEVICEINFO, reply, str))
+						deviceInfo = DeviceInfo(str);
+					
+					if(v1.getStringFromJSON(JSON_ARG_FILEPATH, reply, str))
+						path = str;
+			 
+					oss << "PLM started.\n\r";
+					oss << " PLM:  <" << deviceID.string() << "> " << deviceInfo.skuString()
+					<<  " " << deviceInfo.descriptionString();
+					
+					if(v1.getIntFromJSON(JSON_ARG_COUNT, reply, deviceCount))
+						oss << ", " << deviceCount  << " devices.";
+					oss << "\n\r";
+					
+					if(!path.empty())  oss << " port: " << path << "\n\r";
+			
+					mgr->sendReply(oss.str());
+				}
+				else {
+					string error = errorMessage(reply);
+					mgr->sendReply( error + "\n\r");
+				}
+				(cb) (success);
+			});
+			
+			while (running){
+				mgr->sendReply(".");
+				sleep_ms(500);
+			}
+
+			
+			return true;
+
+		}
+		else if(subcommand == "stop"){
+			
+			oss << "PUT /plm/state"  << " HTTP/1.1\n";
+			oss << "Content-Type: application/json; charset=utf-8\n";
+			oss << "Connection: close\n";
+			
+			json request;
+			request[string(JSON_ARG_STATE)] =  JSON_VAL_STOP;
+			
+			string jsonStr = request.dump(4);
+			oss << "Content-Length: " << jsonStr.size() << "\n\n";
+			oss << jsonStr << "\n";
+			url.setURL(oss.str());
+			
+			ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
+				
+				std::ostringstream oss;
+				bool success = didSucceed(reply);
+				
+				if(success){
+					mgr->sendReply("OK\n\r");
+				}
+				else {
+					string error = errorMessage(reply);
+					mgr->sendReply( error + "\n\r");
+				}
+				(cb) (success);
+			});
+			
 			return true;
 		}
 		else if(subcommand == "backup"){
@@ -3716,7 +4010,6 @@ static bool PLMCmdHandler( stringvector line,
 				oss << jsonStr << "\n";
 				url.setURL(oss.str());
 
-				TCPClientInfo cInfo = mgr->getClientInfo();
 				ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
 					
 					std::ostringstream oss;
@@ -3743,7 +4036,6 @@ static bool PLMCmdHandler( stringvector line,
 	return false;
 }
 
-
 static bool GroupCmdHandler( stringvector line,
 								  CmdLineMgr* mgr,
 									 boolCallback_t	cb){
@@ -3753,13 +4045,17 @@ static bool GroupCmdHandler( stringvector line,
 	string errorStr;
 	string command = line[0];
 	REST_URL url;
+	TCPClientInfo cInfo = mgr->getClientInfo();
 
+	bool isQuery = false;
+	
 	if(line.size() < 2){
 		errorStr =  "\x1B[36;1;4m"  + command + "\x1B[0m what?.";
 	}
 	else {
 		string subcommand = line[1];
-		
+		uint16_t groupID = 0;
+
 		if (subcommand == "list") {
 			
 			std::ostringstream oss;
@@ -3767,6 +4063,44 @@ static bool GroupCmdHandler( stringvector line,
 			oss << "Connection: close\n";
 			oss << "\n";
 			url.setURL(oss.str());
+			isQuery = true;
+		}
+		else  if( regex_match(string(subcommand), std::regex("^[A-Fa-f0-9]{1,4}$"))
+					&& (std::sscanf(subcommand.c_str(), "%hx", &groupID) == 1)){
+			
+			if(line.size() > 2){
+				string onlevel = line[2];
+				uint8_t dimLevel = 0;
+
+				if(!InsteonDevice::stringToLevel(string(onlevel), &dimLevel)){
+					errorStr =  "\x1B[36;1;4m"  + onlevel + "\x1B[0m is not a valid device level.";
+				}
+				else {
+					std::ostringstream oss;
+					oss << "PUT /groups/" << to_hex<unsigned short>(groupID) << " HTTP/1.1\n";
+					oss << "Content-Type: application/json; charset=utf-8\n";
+					oss << "Connection: close\n";
+					
+					json request;
+					request[string(JSON_ARG_LEVEL)] =  dimLevel;
+					
+					string jsonStr = request.dump(4);
+					oss << "Content-Length: " << jsonStr.size() << "\n\n";
+					oss << jsonStr << "\n";
+					url.setURL(oss.str());
+					isQuery = false;
+
+				}
+	
+			} else {
+				
+				std::ostringstream oss;
+				oss << "GET /groups/" << to_hex<unsigned short>(groupID) <<  " HTTP/1.1\n";
+				oss << "Connection: close\n";
+				oss << "\n";
+				url.setURL(oss.str());
+				isQuery = true;
+			}
 		}
 		else {
 			errorStr =  "Command: \x1B[36;1;4m"  + subcommand + "\x1B[0m is an invalid function for " + command;
@@ -3774,61 +4108,84 @@ static bool GroupCmdHandler( stringvector line,
 	}
  
 	if(url.isValid()) {
-		
-		TCPClientInfo cInfo = mgr->getClientInfo();
-		ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
+		if(!isQuery){
 			
-			bool success = didSucceed(reply);
-			if(success) {
+			// not a query - just do command
+			ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
 				
-				std::ostringstream oss;
-				
-				string key1 = string(JSON_ARG_GROUPIDS);
-				
-				if( reply.contains(key1)
-					&& reply.at(key1).is_object()){
-					auto entries = reply.at(key1);
-					
-					for (auto& [key, value] : entries.items()) {
-						
-						GroupID groupID =  GroupID(key);
-		 				auto deviceIDS = value[string(JSON_ARG_DEVICEIDS)];
-						
-						oss  << " " << groupID.string() << " ";
-						oss  << std::dec << std::setfill (' ')<<  std::setw(3) <<  deviceIDS.size() <<  " ";
-						
-						string groupName = value[string(JSON_ARG_NAME)];
-						oss << "\"" << groupName << "\""  << "\r\n";
-						
-						//							auto deviceIDS = value[string(JSON_ARG_DEVICEIDS)];
-						//							if(deviceIDS.size() > 0){
-						//								for(auto devString : deviceIDS){
-						//									DeviceID deviceID = DeviceID(devString);
-						//									oss << "   " << deviceID.string()  << "\r\n";
-						//								}
-						// 							}
-						//
-					}
-					
-					mgr->sendReply(oss.str());
+				bool success = didSucceed(reply);
+				if(success) {
+					mgr->sendReply( "OK\n\r" );
 				}
 				else {
-					
-					// huh?
-					auto dump = reply.dump(4);
-					dump = replaceAll(dump, "\n","\r\n" );
-					cout << dump << "\n";
-					mgr->sendReply( "OK\n\r" );
-					return;
+					string error = errorMessage(reply);
+					mgr->sendReply( error + "\n\r");
 				}
-			}
-			else {
-				string error = errorMessage(reply);
-				mgr->sendReply( error + "\n\r");
-			}
-			
-			(cb) (success);
-		});
+				
+			});
+		}
+		else {
+ 			// its a query so get a list of device names to make the display more useful
+			getDeviceNames(mgr, [=](map<DeviceID, string> deviceMap){
+					ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
+					
+					bool success = didSucceed(reply);
+					if(success) {
+
+						std::ostringstream oss;
+						string key1 = string(JSON_ARG_GROUPIDS);
+						
+						if( reply.contains(key1)
+							&& reply.at(key1).is_object()){
+							auto entries = reply.at(key1);
+							
+							for (auto& [key, value] : entries.items()) {
+								
+								GroupID groupID =  GroupID(key);
+								auto deviceIDS = value[string(JSON_ARG_DEVICEIDS)];
+								
+								oss  << " " << groupID.string() << " ";
+								oss  << std::dec << std::setfill (' ')<<  std::setw(3) <<  deviceIDS.size() <<  " ";
+								
+								string groupName = value[string(JSON_ARG_NAME)];
+								oss << "\"" << groupName << "\""  << "\r\n";
+								
+								if(deviceIDS.size() > 0){
+									for(auto devString : deviceIDS){
+										DeviceID deviceID = DeviceID(devString);
+										oss << "   " << deviceID.string();
+									
+										if(deviceMap.count(deviceID)) {
+											string name = deviceMap.at(deviceID);
+											oss << " " << name;
+										}
+										oss << "\r\n";
+									}
+								}
+							}
+							
+							mgr->sendReply(oss.str());
+						}
+						else {
+							// huh?
+							auto dump = reply.dump(4);
+							dump = replaceAll(dump, "\n","\r\n" );
+							cout << dump << "\n";
+							mgr->sendReply( "OK\n\r" );
+							return;
+						}
+					}
+					else {
+						string error = errorMessage(reply);
+						mgr->sendReply( error + "\n\r");
+					}
+					
+					(cb) (success);
+				});
+
+			});
+
+		}
 		return true;
 	}
   
@@ -4348,6 +4705,8 @@ void registerServerCommands() {
  
 	// register command line commands
 	auto cmlR = CmdLineRegistry::shared();
+	
+	cmlR->registerCommand(CmdLineRegistry::CMD_WELCOME ,	WelcomeCmdHandler);
 	
 	cmlR->registerCommand("version",	VersionCmdHandler);
 	cmlR->registerCommand("date",		DATECmdHandler);

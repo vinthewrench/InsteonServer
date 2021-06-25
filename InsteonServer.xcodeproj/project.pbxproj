@@ -26,14 +26,12 @@
 		2E592EBA2620C9380041AA34 /* InsteonCmdQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EA62620C9380041AA34 /* InsteonCmdQueue.cpp */; };
 		2E592EBB2620C9380041AA34 /* InsteonALDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EA72620C9380041AA34 /* InsteonALDB.cpp */; };
 		2E592EBC2620C9380041AA34 /* InsteonValidator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EA92620C9380041AA34 /* InsteonValidator.cpp */; };
-		2E592EBD2620C9380041AA34 /* LogMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EAC2620C9380041AA34 /* LogMgr.cpp */; };
 		2E592EBE2620C9380041AA34 /* DeviceInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EAD2620C9380041AA34 /* DeviceInfo.cpp */; };
 		2E592EBF2620C9380041AA34 /* NotificationCenter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592EAE2620C9380041AA34 /* NotificationCenter.cpp */; };
 		2E592EC32620C9660041AA34 /* catagories.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E592EC12620C9410041AA34 /* catagories.txt */; };
 		2E966416265B627C007A3D93 /* Event.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E966413265B141E007A3D93 /* Event.cpp */; };
 		2E96641A265EACC8007A3D93 /* sunset.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E966418265EACC8007A3D93 /* sunset.cpp */; };
 		2E96641F265EB075007A3D93 /* ScheduleMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E96641D265EB075007A3D93 /* ScheduleMgr.cpp */; };
-		2EC68B1A2644D35800541251 /* TimeStamp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EC68B162644D18200541251 /* TimeStamp.cpp */; };
 		2EC68B32264DA54600541251 /* helpfile.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2EC68B2D264DA3C600541251 /* helpfile.txt */; };
 		2EC68B38265303C200541251 /* Action.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EC68B36265303C200541251 /* Action.cpp */; };
 /* End PBXBuildFile section */
@@ -84,7 +82,6 @@
 		2E592E8C2620C9380041AA34 /* InsteonValidator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InsteonValidator.hpp; sourceTree = "<group>"; };
 		2E592E8D2620C9380041AA34 /* InsteonALDB.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InsteonALDB.hpp; sourceTree = "<group>"; };
 		2E592E8E2620C9380041AA34 /* DeviceID.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DeviceID.cpp; sourceTree = "<group>"; };
-		2E592E8F2620C9380041AA34 /* LogMgr.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LogMgr.hpp; sourceTree = "<group>"; };
 		2E592E912620C9380041AA34 /* xxhash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xxhash.h; sourceTree = "<group>"; };
 		2E592E922620C9380041AA34 /* InsteonDeviceEventMgr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InsteonDeviceEventMgr.cpp; sourceTree = "<group>"; };
 		2E592E932620C9380041AA34 /* InsteonDevice.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InsteonDevice.hpp; sourceTree = "<group>"; };
@@ -112,21 +109,17 @@
 		2E592EA92620C9380041AA34 /* InsteonValidator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InsteonValidator.cpp; sourceTree = "<group>"; };
 		2E592EAA2620C9380041AA34 /* InsteonDeviceEventMgr.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InsteonDeviceEventMgr.hpp; sourceTree = "<group>"; };
 		2E592EAB2620C9380041AA34 /* InsteonParser.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InsteonParser.hpp; sourceTree = "<group>"; };
-		2E592EAC2620C9380041AA34 /* LogMgr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LogMgr.cpp; sourceTree = "<group>"; };
 		2E592EAD2620C9380041AA34 /* DeviceInfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DeviceInfo.cpp; sourceTree = "<group>"; };
 		2E592EAE2620C9380041AA34 /* NotificationCenter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = NotificationCenter.cpp; sourceTree = "<group>"; };
 		2E592EC12620C9410041AA34 /* catagories.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = catagories.txt; sourceTree = "<group>"; };
-		2E592ED02620CEC10041AA34 /* deviceNames.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = deviceNames.txt; sourceTree = "<group>"; };
-		2E592ED12620CED70041AA34 /* PLMDB_52.18.42.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = PLMDB_52.18.42.txt; sourceTree = "<group>"; };
 		2E592EDC2630831F0041AA34 /* CommonIncludes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CommonIncludes.h; sourceTree = "<group>"; };
+		2E7F8C25268271FD0084DE87 /* PLMDB.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = PLMDB.txt; path = resources/PLMDB.txt; sourceTree = SOURCE_ROOT; };
 		2E966413265B141E007A3D93 /* Event.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Event.cpp; sourceTree = "<group>"; };
 		2E966414265B141E007A3D93 /* Event.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Event.hpp; sourceTree = "<group>"; };
 		2E966418265EACC8007A3D93 /* sunset.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = sunset.cpp; sourceTree = "<group>"; };
 		2E966419265EACC8007A3D93 /* sunset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sunset.h; sourceTree = "<group>"; };
 		2E96641D265EB075007A3D93 /* ScheduleMgr.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ScheduleMgr.cpp; sourceTree = "<group>"; };
 		2E96641E265EB075007A3D93 /* ScheduleMgr.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ScheduleMgr.hpp; sourceTree = "<group>"; };
-		2EC68B162644D18200541251 /* TimeStamp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TimeStamp.cpp; sourceTree = "<group>"; };
-		2EC68B172644D18200541251 /* TimeStamp.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = TimeStamp.hpp; sourceTree = "<group>"; };
 		2EC68B2D264DA3C600541251 /* helpfile.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = helpfile.txt; sourceTree = "<group>"; };
 		2EC68B36265303C200541251 /* Action.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Action.cpp; sourceTree = "<group>"; };
 		2EC68B37265303C200541251 /* Action.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Action.hpp; sourceTree = "<group>"; };
@@ -240,15 +233,11 @@
 				2E592EA02620C9380041AA34 /* InsteonLinking.hpp */,
 				2E592EA92620C9380041AA34 /* InsteonValidator.cpp */,
 				2E592E8C2620C9380041AA34 /* InsteonValidator.hpp */,
-				2E592E8F2620C9380041AA34 /* LogMgr.hpp */,
-				2E592EAC2620C9380041AA34 /* LogMgr.cpp */,
 				2E592EAE2620C9380041AA34 /* NotificationCenter.cpp */,
 				2E592E9C2620C9380041AA34 /* NotificationCenter.hpp */,
 				2E592E972620C9380041AA34 /* sleep.c */,
 				2E592E982620C9380041AA34 /* sleep.h */,
 				2E592EA22620C9380041AA34 /* xxhash.c */,
-				2EC68B172644D18200541251 /* TimeStamp.hpp */,
-				2EC68B162644D18200541251 /* TimeStamp.cpp */,
 				2E592E912620C9380041AA34 /* xxhash.h */,
 				2E966418265EACC8007A3D93 /* sunset.cpp */,
 				2E966419265EACC8007A3D93 /* sunset.h */,
@@ -259,9 +248,8 @@
 		2E592ECD2620CEA60041AA34 /* assets */ = {
 			isa = PBXGroup;
 			children = (
-				2E592ED02620CEC10041AA34 /* deviceNames.txt */,
 				2EC68B2D264DA3C600541251 /* helpfile.txt */,
-				2E592ED12620CED70041AA34 /* PLMDB_52.18.42.txt */,
+				2E7F8C25268271FD0084DE87 /* PLMDB.txt */,
 			);
 			path = assets;
 			sourceTree = "<group>";
@@ -349,7 +337,6 @@
 				2E592EB12620C9380041AA34 /* InsteonDeviceEventMgr.cpp in Sources */,
 				2E592EBA2620C9380041AA34 /* InsteonCmdQueue.cpp in Sources */,
 				2EC68B38265303C200541251 /* Action.cpp in Sources */,
-				2EC68B1A2644D35800541251 /* TimeStamp.cpp in Sources */,
 				2E592EB62620C9380041AA34 /* PLMStream.cpp in Sources */,
 				2E592EB22620C9380041AA34 /* InsteonParser.cpp in Sources */,
 				2E592EBC2620C9380041AA34 /* InsteonValidator.cpp in Sources */,
@@ -360,7 +347,6 @@
 				2E592EB52620C9380041AA34 /* InsteonLinking.cpp in Sources */,
 				2E966416265B627C007A3D93 /* Event.cpp in Sources */,
 				2E592EBF2620C9380041AA34 /* NotificationCenter.cpp in Sources */,
-				2E592EBD2620C9380041AA34 /* LogMgr.cpp in Sources */,
 				2E592EBE2620C9380041AA34 /* DeviceInfo.cpp in Sources */,
 				2E592E422620C1150041AA34 /* main.cpp in Sources */,
 				2E592EB42620C9380041AA34 /* InsteonDB.cpp in Sources */,

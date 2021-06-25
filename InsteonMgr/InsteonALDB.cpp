@@ -325,21 +325,6 @@ bool InsteonALDB::addToDeviceALDB(DeviceID targetDevice,
 				}
 			}
 
-//			{
-//			insteon_aldb_t aldb1 = {0};
-//			aldb1.address = 0x0FEF;
-//			auto buffer2 = _plm->_parser.makeALDBWriteRecord(aldb1, aldb1.address);
-//				START_VERBOSE;
-//
-//			_cmdQueue->queueMessage(targetDevice,
-//											InsteonParser::CMD_READ_ALDB, 0x00,
-//											buffer2.data(), buffer2.size(),
-//											[=]( auto arg, bool didSucceed) {
-//
-//
-//			});
-//			}
-
 			// create an aldb record
 			// create the new ALDB record to append
 			insteon_aldb_t newAldb = {0};

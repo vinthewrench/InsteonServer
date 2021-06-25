@@ -9,6 +9,10 @@
 #include "json.hpp"
 #include <regex>
 #include "TimeStamp.hpp"
+#include "InsteonMgrDefs.hpp"
+
+#include <stdbool.h>
+
 
 using namespace nlohmann;
 
@@ -25,7 +29,16 @@ constexpr string_view JSON_CMD			 		= "cmd";
 constexpr string_view JSON_TIME_BASE			= "timeBase";
 constexpr string_view JSON_TIME_OFFSET		 	= "mins";
 
+constexpr string_view JSON_ARG_EVENT			= "event";
+constexpr string_view JSON_EVENT_STARTUP		= "startup";
+
 // MARK: - EventTrigger()
+
+
+EventTrigger::EventTrigger(app_event_t appEvent){
+	_eventType  		= EVENT_TYPE_APP;
+	_appEvent		= appEvent;
+}
 
 EventTrigger::EventTrigger(){
 	_eventType  					= EVENT_TYPE_UNKNOWN;
@@ -50,13 +63,6 @@ EventTrigger::EventTrigger(DeviceID  deviceID){
 	_deviceEvent.hasGroupID 	= false;
 	_deviceEvent.hasCmd	 	= false;
 }
-
-//EventTrigger::EventTrigger(uint8_t 	cmd){
-//	_eventType  					= EVENT_TYPE_DEVICE;
-//	_deviceEvent.cmd			= cmd;
-//	_deviceEvent.deviceID		=  DeviceID();
-//	_deviceEvent.insteonGroup = 0
-//}
 
 EventTrigger::EventTrigger(DeviceID deviceID, uint8_t insteonGroup, uint8_t cmd ){
 	_eventType  						= EVENT_TYPE_DEVICE;
@@ -89,7 +95,11 @@ void EventTrigger::copy(const EventTrigger &evt1, EventTrigger *evt2){
 		case EVENT_TYPE_TIME:
 			evt2->_timeEvent = evt1._timeEvent;
 				break;
-	
+
+		case EVENT_TYPE_APP:
+			evt2->_appEvent = evt1._appEvent;
+				break;
+
 		default:
 			break;
 	}
@@ -111,21 +121,25 @@ EventTrigger::EventTrigger(std::string str){
 void EventTrigger::initWithJSON(nlohmann::json j){
 	
 	_eventType = EVENT_TYPE_UNKNOWN;
-
+	
 	if( j.contains(string(JSON_DEVICEID))
 		|| j.contains(string(JSON_INSTEON_GROUP))
 		|| j.contains(string(JSON_CMD))){
 		
 		_eventType = EVENT_TYPE_DEVICE;
 	}
-	else 	if( j.contains(string(JSON_TIME_OFFSET))
-				&& j.contains(string(JSON_TIME_BASE))) {
-
+	else if( j.contains(string(JSON_TIME_OFFSET))
+			  && j.contains(string(JSON_TIME_BASE))) {
+		
 		_eventType = EVENT_TYPE_TIME;
 	}
-
+	else if(j.contains(string(JSON_ARG_EVENT))){
+		_eventType = EVENT_TYPE_APP;
+		_appEvent = APP_EVENT_INVALID;
+	}
+	
+	
 	if(_eventType == EVENT_TYPE_DEVICE) {
-		
 		_deviceEvent.deviceID = DeviceID();
 		_deviceEvent.insteonGroup = 0;
 		_deviceEvent.cmd = 0;
@@ -182,15 +196,27 @@ void EventTrigger::initWithJSON(nlohmann::json j){
 		_timeEvent.timeBase = TOD_INVALID;
 		_timeEvent.timeOfDay = 0;
 		_timeEvent.lastRun = 0;
-
+		
 		if( j.contains(string(JSON_TIME_BASE))
 			&& j.at(string(JSON_TIME_BASE)).is_number()){
 			_timeEvent.timeBase = j.at(string(JSON_TIME_BASE));
 		}
-
+		
 		if( j.contains(string(JSON_TIME_OFFSET))
 			&& j.at(string(JSON_TIME_OFFSET)).is_number()){
 			_timeEvent.timeOfDay = j.at(string(JSON_TIME_OFFSET));
+		}
+	}
+	
+	else if(_eventType == EVENT_TYPE_APP) {
+		
+		if( j.contains(string(JSON_ARG_EVENT))
+			&& j.at(string(JSON_ARG_EVENT)).is_string()){
+			string str = j.at(string(JSON_ARG_EVENT));
+		
+			if(str == JSON_EVENT_STARTUP){
+				_appEvent = APP_EVENT_STARTUP;
+			}
 		}
 	}
 }
@@ -232,6 +258,23 @@ nlohmann::json EventTrigger::JSON(){
 			j = j1;
 		}
 			break;
+			
+		case EVENT_TYPE_APP:
+		{
+			json j1;
+			
+			switch (_appEvent) {
+				case APP_EVENT_STARTUP:
+					j1[string(JSON_ARG_EVENT)] =  JSON_EVENT_STARTUP;
+					break;
+					
+				default:
+					break;
+			}
+			j = j1;
+		}
+			break;
+
 		default:;
 	}
 	
@@ -337,6 +380,16 @@ bool EventTrigger::shouldTriggerFromDeviceEvent(EventTrigger a) {
 		return false;
 	
 	if(_eventType == EVENT_TYPE_DEVICE){
+	
+		if( XOR(_deviceEvent.hasDeviceID, a._deviceEvent.hasDeviceID))
+			return false;
+
+		if( XOR(_deviceEvent.hasGroupID, a._deviceEvent.hasGroupID))
+			return false;
+
+		if( XOR(_deviceEvent.hasCmd, a._deviceEvent.hasCmd))
+			return false;
+
 		if(_deviceEvent.hasDeviceID && a._deviceEvent.hasDeviceID)
 			if(!_deviceEvent.deviceID.isEqual(a._deviceEvent.deviceID))
 				return false;
@@ -383,6 +436,16 @@ bool EventTrigger::shouldTriggerInFuture(const solarTimes_t &solar, time_t local
 	
 	return result;
 	
+}
+
+bool EventTrigger::shouldTriggerFromAppEvent(app_event_t a){
+	bool result = false;
+
+	if(_eventType == EVENT_TYPE_APP){
+		return (_appEvent == a);
+	}
+	
+	return result;
 }
 
 bool EventTrigger::shouldTriggerFromTimeEvent(const solarTimes_t &solar, time_t localNow){

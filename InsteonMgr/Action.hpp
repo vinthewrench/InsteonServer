@@ -40,6 +40,7 @@ public:
 		ACTION_SET_LED_BRIGHTNESS  = 3,
 		ACTION_BEEP						= 4,
 		ACTION_EXECUTE					= 5,	// execute another action group--
+		ACTION_SET_KEYPAD				= 6,	// set Keypad mask
 
 	}actionCmd_t;
 	
@@ -59,15 +60,16 @@ public:
 	constexpr static string_view JSON_GROUPID 			= "groupID";
 	constexpr static string_view JSON_INSTEON_GROUPS		= "insteon.groups";
 	constexpr static string_view JSON_ACTION_GROUP		= "action.group";
-
 	constexpr static string_view JSON_ACTION_LEVEL 		= "level";
-	
+	constexpr static string_view JSON_ACTION_KP_MASK 	= "keypad";
+
 	constexpr static string_view JSON_ACTION_CMD			= "cmd";
 	constexpr static string_view JSON_CMD_SET				= "set";
 	constexpr static string_view JSON_CMD_BACKLIGHT		= "backlight";
 	constexpr static string_view JSON_CMD_BEEP			= "beep";
 	constexpr static string_view JSON_CMD_NONE			= "none";
 	constexpr static string_view JSON_CMD_EXECUTE			= "execute";
+	constexpr static string_view JSON_CMD_SET_KEYPAD 	= "set_keypad"; 	// Keypad LED mask
 
 	Action();
 	Action(DeviceID deviceID, actionCmd_t cmd, uint8_t level = 0);
@@ -79,7 +81,7 @@ public:
 
 	Action( const Action &actIn){
 		_cmd = actIn._cmd;
-		_level =  actIn._level;
+		_byteVal =  actIn._byteVal;
 		_actionID = actIn._actionID;
 		_actionType = actIn._actionType;
 
@@ -107,7 +109,7 @@ public:
 
 	inline void operator = (const Action &right ) {
 		_cmd = right._cmd;
-		_level =  right._level;
+		_byteVal =  right._byteVal;
 		_actionID = right._actionID;
 		_actionType = right._actionType;
 
@@ -142,7 +144,7 @@ public:
  
 	const actionID_t 	actionID(){return _actionID;};
 	const actionType_t actionType(){return _actionType;};
-	const uint8_t 		level(){return _level;};
+	const uint8_t 		level(){return _byteVal;};
 	const actionCmd_t 	cmd(){return _cmd;};
 
 	const DeviceID 	deviceID(){return 	_deviceID;};
@@ -156,7 +158,7 @@ private:
 protected:
  	actionType_t _actionType;
 	actionCmd_t 	_cmd;
-	uint8_t 		_level;
+	uint8_t 		_byteVal;
 	actionID_t	_actionID;
 	
 	union{

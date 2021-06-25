@@ -193,6 +193,7 @@ public:
 	optional<reference_wrapper<Event>> eventsGetEvent(eventID_t eventID);
 	vector<eventID_t> allEventsIDs();
 	vector<eventID_t> matchingEventIDs(EventTrigger trig);
+	vector<eventID_t> eventsMatchingAppEvent(EventTrigger::app_event_t appEvent);
 	vector<eventID_t> eventsThatNeedToRun(solarTimes_t &solar, time_t localNow);
 	vector<eventID_t> eventsInTheFuture(solarTimes_t &solar, time_t localNow);
 	bool eventSetLastRunTime(eventID_t eventID, time_t localNow);

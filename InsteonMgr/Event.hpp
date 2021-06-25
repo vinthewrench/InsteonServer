@@ -27,11 +27,12 @@ using namespace std;
 
 class EventTrigger {
 	
-	// these shouldnt change, 		they become persistant
+	// these shouldnt change, they become persistant
 	typedef enum  {
 		EVENT_TYPE_UNKNOWN 		= 0,
 		EVENT_TYPE_DEVICE			= 1,
 		EVENT_TYPE_TIME			= 2,
+		EVENT_TYPE_APP				= 3,
 	}eventType_t;
 
 	typedef enum {
@@ -59,11 +60,20 @@ class EventTrigger {
 	} timeEventInfo_t;
 
 public:
+	
+	typedef enum {
+		APP_EVENT_INVALID 	= 0,
+		APP_EVENT_STARTUP		= 1,
+	} app_event_t;
+
+
 	EventTrigger();
 
 	EventTrigger(const EventTrigger &etIn){
 	 		copy(etIn, this);
 	}
+	
+	EventTrigger(app_event_t appEvent);
 
 	EventTrigger(uint8_t insteonGroup);
 	EventTrigger(DeviceID deviceID);
@@ -81,7 +91,8 @@ public:
 	bool isDevice();
 
 	bool shouldTriggerFromDeviceEvent(EventTrigger a);
- 
+ 	bool shouldTriggerFromAppEvent(app_event_t a);
+
 	bool shouldTriggerFromTimeEvent(const solarTimes_t &solar, time_t time);
 	bool shouldTriggerInFuture(const solarTimes_t &solar, time_t time);
  
@@ -107,6 +118,7 @@ private:
 	union{
 		deviceEventInfo_t 	_deviceEvent;
 		timeEventInfo_t 		_timeEvent;
+		app_event_t			_appEvent;
 	};
 };
 

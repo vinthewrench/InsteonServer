@@ -46,7 +46,7 @@ var InsteonServerSig = function() {
 		const key = request.getHeaderByName('X-auth-key', false)
 		
 		var bodyHash;
-		if(request.body == "{}"){	
+		if(request.body == "{}" || request.body.length == 0){	
 			bodyHash =  CryptoJS.SHA256()
 		}
 		else {

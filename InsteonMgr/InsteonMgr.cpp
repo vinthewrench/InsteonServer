@@ -12,11 +12,12 @@
 #include "InsteonParser.hpp"
 
 #include "InsteonDevice.hpp"
+#include "sleep.h"
 
 #define CHK_STATUS if(!status) goto done;
 
 
-const char* 	InsteonMgr::InsteonMgr_Version = "1.0.0";
+const char* 	InsteonMgr::InsteonMgr_Version = "1.0.0 dev 1";
 
 /**
  * @brief Initialize the InsteonMgr
@@ -34,7 +35,8 @@ InsteonMgr::InsteonMgr(){
 	_cmdQueue = NULL;
 	_validator = NULL;
 	_running = false;
-
+	_shouldRunStartupEvents = true;
+	
 	_nextValidationCheck = 0;			// turn it off for now
 	_expired_delay	 =  0; // 8*60*60; //(60*60*24);		// pester devices each day
 	
@@ -320,6 +322,7 @@ void InsteonMgr::stop(){
 		_plmDeviceID 	=  DeviceID();
 		_plmDeviceInfo 	=  DeviceInfo();
 		_hasInfo			= false;
+		_shouldRunStartupEvents = true;
 
 		_state = STATE_NO_PLM;
 		_hasPLM = false;
@@ -452,14 +455,14 @@ void InsteonMgr::erasePLM(boolCallback_t callback){
 	if(!_hasPLM)
 		throw InsteonException("PLM is not setup");
 
+	_cmdQueue->abort();
+
 	_state = STATE_RESETING;
-	
-//	_cmdQueue->abort();
-	
+ 
 	_cmdQueue->queueCommand(InsteonParser::IM_RESET,
 									NULL, 0,
 								  [this, callback]( auto reply, bool didSucceed) {
-	 	_db.clear();
+	// 	_db.clear();
 		
 		// set the deviceID for the PLM database
 		_db.setPlmDeviceID(_plmDeviceID);
@@ -638,23 +641,53 @@ void InsteonMgr::validatePLM(boolCallback_t callback){
 			}
 		}
 		
-	_db.saveToCacheFile();
+		_db.saveToCacheFile();
+		
+		//		if(result.size() > 0){
+		//			_db.saveToCacheFile();
+		//		}
+		
+		//		// schedule next validation check in the future
+		//		_nextValidationCheck = time(NULL)
+		//				+ ((_db.devicesThatNeedUpdating().size() > 0) ? 60 : _expired_delay);
+		
+		_state = STATE_READY;
+		
+		bool deferCompletion = false;
+		
+		if(_shouldRunStartupEvents) {
+			
+			auto eventIDs =  _db.eventsMatchingAppEvent(EventTrigger::APP_EVENT_STARTUP);
+			
+			if(eventIDs.size() > 0){
+				size_t* taskCount  = (size_t*) malloc(sizeof(size_t));
+				*taskCount = eventIDs.size();
+				deferCompletion = true;
+				
+				// run startup events.
+				LOGT_INFO("RUN %d STARTUP EVENTS", eventIDs.size());
 
-//		if(result.size() > 0){
-//			_db.saveToCacheFile();
-//		}
+				for (auto eventID : eventIDs) {
+					executeEvent(eventID, [=]( bool didSucceed) {
+						
+						if(--(*taskCount) == 0) {
+							free(taskCount);
+							updateLevels();
+							if(callback)
+								callback(true);
+						}
+					});
+				}
+			}
+			
+			_shouldRunStartupEvents = false;
+		}
 		
-//		// schedule next validation check in the future
-//		_nextValidationCheck = time(NULL)
-//				+ ((_db.devicesThatNeedUpdating().size() > 0) ? 60 : _expired_delay);
-	 
- 		_state = STATE_READY;
-		
- 		updateLevels();
-		
-		if(callback)
-			callback(true);
- 
+		if(!deferCompletion){
+			updateLevels();
+			if(callback)
+				callback(true);
+		}
 	});
 }
 
@@ -854,6 +887,19 @@ bool InsteonMgr::setOnLevel(DeviceID deviceID, uint8_t onLevel,
 	return true;
 }
 
+bool InsteonMgr::setKeypadLEDState(DeviceID deviceID, uint8_t mask,
+											boolCallback_t cb  ){
+  if(_state != STATE_READY)
+	  return false;
+  
+	InsteonKeypadDevice(deviceID).setKeypadLEDState(mask, [=](bool didSucceed){
+		if(cb) (cb)(didSucceed);
+	});
+
+   return true;
+}
+
+
 // MARK: - Group set
 
 bool InsteonMgr::setOnLevel(GroupID groupID, uint8_t onLevel,
@@ -972,7 +1018,6 @@ bool InsteonMgr::runAction(Action action,
 			break;
 			
 		case Action::ACTION_TYPE_DEVICE: {
-			
 			DeviceID deviceID = action.deviceID();
 			switch (action.cmd()) {
 					
@@ -980,7 +1025,6 @@ bool InsteonMgr::runAction(Action action,
 					handled = setOnLevel(deviceID, level, [=](eTag_t eTag, bool didSucceed){
 						if(cb) (cb)( didSucceed);
 					});
-					
 					break;
 					
 				case Action::ACTION_BEEP:
@@ -992,11 +1036,16 @@ bool InsteonMgr::runAction(Action action,
 				case Action::ACTION_SET_LED_BRIGHTNESS:
 					handled = setLEDBrightness(deviceID, level, [=]( bool didSucceed){
 						if(cb) (cb)( didSucceed);
-						
 					});
 					break;
-					
-				default:
+	
+				case Action::ACTION_SET_KEYPAD:
+					handled = setKeypadLEDState(deviceID, level, [=]( bool didSucceed){
+						if(cb) (cb)( didSucceed);
+					});
+ 					break;
+
+ 				default:
 					break;
 			}
 			
@@ -1051,7 +1100,6 @@ bool InsteonMgr::executeEvent(eventID_t eventID,
 	if(!ref)
 		return false;
 	
-	
 	Event event = ref->get();
 	Action action = event.getAction();
 	
@@ -1064,7 +1112,9 @@ bool InsteonMgr::executeEvent(eventID_t eventID,
 
 // MARK: - Linking
 
-bool InsteonMgr::addResponderToDevice(DeviceID deviceID, uint8_t groupID, boolCallback_t callback){
+bool InsteonMgr::addToDeviceALDB(DeviceID deviceID,
+											bool isCNTL,
+											uint8_t groupID, boolCallback_t callback){
 	
 	bool status = false;
 	
@@ -1074,7 +1124,7 @@ bool InsteonMgr::addResponderToDevice(DeviceID deviceID, uint8_t groupID, boolCa
 	if(!_aldb)
 		throw InsteonException("aldb not setup");
 	
-	status = _aldb->addToDeviceALDB(deviceID, true, groupID, NULL,
+	status = _aldb->addToDeviceALDB(deviceID, isCNTL, groupID, NULL,
 											  [=]( const insteon_aldb_t* newAldb,  bool didSucceed) {
 		
 		if(didSucceed && newAldb != NULL){
@@ -1124,7 +1174,7 @@ bool InsteonMgr::linkKeyPadButtonsToGroups(DeviceID deviceID,
  *
  * 4. Read the device ALDB and store it in ours Database
  *
- * -  If we wish to add ourselves as a slave mode,  use the addResponderToDevice() API
+ * -  If we wish to add ourselves as a slave mode,  use the addToDeviceALDB() API
  *  once the linking is completed.
  *
  */
@@ -1446,19 +1496,27 @@ bool  InsteonMgr::processBroadcastEvents(plm_result_t response) {
 				
 				// fire off any events
 				auto evt = EventTrigger(deviceID, group, cmd);
+				LOG_INFO("\tTRIGGER: %s \n",evt.printString().c_str());
+
 				auto eventIDs =  _db.matchingEventIDs(evt);
 				if(eventIDs.size() > 0){
 					// run these events.
 					
+					// short delay to stablize isteon bus
+					sleep_ms(500);
+ 
 					for (auto eventID : eventIDs) {
 						executeEvent(eventID);
 					}
 				}
 			}
 			
-			copyDevID(msg.from, lastBroadcast.from);
-			lastBroadcast.group = group;
-			lastBroadcast.cmd = cmd;
+			// dont save Insteon 6 - ignore it
+			if(cmd != InsteonParser::CMD_INSTEON_06){
+				copyDevID(msg.from, lastBroadcast.from);
+				lastBroadcast.group = group;
+				lastBroadcast.cmd = cmd;
+				}
 		}
  		
 		if(didHandle){

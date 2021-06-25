@@ -44,6 +44,8 @@
 
 #endif
 
+using namespace std;
+
 void linkKP(){
 	DeviceID deviceID =  DeviceID("33.4F.F6");
 	auto keypad = InsteonKeypadDevice(deviceID );
@@ -57,13 +59,13 @@ void linkKP(){
 	
 	insteon.linkKeyPadButtonsToGroups(deviceID, pairs, [=](bool didSucceed) {
 		
-		insteon.addResponderToDevice(deviceID, 0x02,  [=](bool didSucceed) {
-			insteon.addResponderToDevice(deviceID, 0x03,  [=](bool didSucceed) {
-				insteon.addResponderToDevice(deviceID, 0x04,  [=](bool didSucceed) {
-					insteon.addResponderToDevice(deviceID, 0x05,  [=](bool didSucceed) {
-						insteon.addResponderToDevice(deviceID, 0x06,  [=](bool didSucceed) {
-							insteon.addResponderToDevice(deviceID, 0x07,  [=](bool didSucceed) {
-								insteon.addResponderToDevice(deviceID, 0x08,  [=](bool didSucceed) {
+		insteon.addToDeviceALDB(deviceID, false,  0x02,  [=](bool didSucceed) {
+			insteon.addToDeviceALDB(deviceID, false, 0x03,  [=](bool didSucceed) {
+				insteon.addToDeviceALDB(deviceID, false, 0x04,  [=](bool didSucceed) {
+					insteon.addToDeviceALDB(deviceID, false, 0x05,  [=](bool didSucceed) {
+						insteon.addToDeviceALDB(deviceID, false, 0x06,  [=](bool didSucceed) {
+							insteon.addToDeviceALDB(deviceID, false, 0x07,  [=](bool didSucceed) {
+								insteon.addToDeviceALDB(deviceID, false, 0x08,  [=](bool didSucceed) {
 									
 									printf("success");
 									

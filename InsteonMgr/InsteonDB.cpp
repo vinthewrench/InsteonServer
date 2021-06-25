@@ -18,8 +18,6 @@
 #include "NotificationCenter.hpp"
 #include "InsteonDevice.hpp"
 
-
-
 using namespace std;
 
 const char *  InsteonDB::DatabaseChangedNotification = "InsteonMgr::DatabaseChangedNotification";
@@ -803,7 +801,14 @@ bool InsteonDB::backupCacheFile(string filepath){
 			ofs <<  KEY_START_GROUP << ": " << to_hex <unsigned short>(groupID) << " " << info->name << "\n";
 			
 			for(const auto &deviceID : info->devices){
-				ofs << KEY_GROUP_DEVICEID << ": " <<  deviceID.string() << "\n";
+		
+				ofs << KEY_GROUP_DEVICEID << ": " <<  deviceID.string();
+				insteon_dbEntry_t* entry = findDBEntryWithDeviceID(deviceID);
+
+				if(entry){
+					ofs << " # " << entry->name;
+				}
+	 			ofs << "\n";
 	 		}
 		
 			ofs << KEY_END_GROUP <<  ":\n\n";
@@ -1744,6 +1749,18 @@ vector<eventID_t> InsteonDB::matchingEventIDs(EventTrigger trig){
 		
 	return events;
 }
+
+vector<eventID_t> InsteonDB::eventsMatchingAppEvent(EventTrigger::app_event_t appEvent){
+	vector<eventID_t> events;
+
+	for (auto& [key, evt] : _events) {
+		if(evt._trigger.shouldTriggerFromAppEvent(appEvent))
+			events.push_back( key);
+	};
+		
+	return events;
+}
+
 
 vector<eventID_t> InsteonDB::eventsThatNeedToRun(solarTimes_t &solar, time_t localNow){
 	vector<eventID_t> events;

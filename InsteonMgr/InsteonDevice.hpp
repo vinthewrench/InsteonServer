@@ -54,11 +54,12 @@ public:
 	// class functions
 	static std::string onLevelString(uint8_t level);
 	static bool stringToLevel(const std::string str, uint8_t* levelOut = NULL);
-
 	static bool jsonToLevel( nlohmann::json j, uint8_t* levelOut = NULL);
 	
 	
 	static bool stringToBackLightLevel(std::string str, uint8_t* levelOut = NULL);
+	static bool jsonToBackLightLevel( nlohmann::json j, uint8_t* levelOut = NULL);
+	static std::string backLightLevelString(uint8_t level);
 
 protected:
 	DeviceID _deviceID;

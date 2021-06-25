@@ -13,7 +13,6 @@
 #include <vector>
 #include <string>
 
-
 class DeviceInfoNames {
 
 	static DeviceInfoNames *shared() {
@@ -70,6 +69,9 @@ public:
 	
 	DeviceInfo( std::string str);
 
+	bool isKeyPad();
+	bool isDimmer();
+	 
 	inline bool isNULL() {
 		return ( _cat == 0  && _subcat == 0 );
 	}

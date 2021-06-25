@@ -19,6 +19,10 @@
 #define DISABLE_WARNING_POP           \
 	DO_PRAGMA(GCC diagnostic pop)
 
+static inline bool XOR (bool a, bool b)
+{
+	 return (!a && b) || (a && !b);
+}
 
 
 typedef std::function<void(bool didSucceed)> boolCallback_t;

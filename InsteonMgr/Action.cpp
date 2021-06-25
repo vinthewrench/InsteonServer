@@ -70,6 +70,9 @@ static std::string stringForCmd(Action::actionCmd_t cmd) {
 		case Action::ACTION_EXECUTE:
 			str = Action::JSON_CMD_EXECUTE;
 			break;
+		case Action::ACTION_SET_KEYPAD:
+			str = Action::JSON_CMD_SET_KEYPAD;
+			break;
 			
 		default:;
 	}
@@ -90,21 +93,21 @@ Action::Action(DeviceID deviceID, actionCmd_t cmd, uint8_t level){
 	_actionType = ACTION_TYPE_DEVICE;
 	_deviceID = deviceID;
 	_cmd = cmd;
-	_level = level;
+	_byteVal = level;
 }
 
 Action::Action(GroupID groupID, actionCmd_t cmd, uint8_t level){
 	_actionType = ACTION_TYPE_GROUP;
 	_groupID = groupID;
 	_cmd = cmd;
-	_level = level;
+	_byteVal = level;
 }
 
 Action::Action(uint8_t deviceGroupID, uint8_t level){
 	_actionType = ACTION_TYPE_DEVICEGROUP;
 	_deviceGroupID = deviceGroupID;
 	_cmd = ACTION_SET_LEVEL;
-	_level = level;
+	_byteVal = level;
 }
 
 Action::Action(actionGroupID_t actionGroup){
@@ -117,7 +120,7 @@ Action::Action(actionGroupID_t actionGroup){
 void Action::initWithJSON(nlohmann::json j){
 	_cmd = ACTION_NONE;
 	_actionType = ACTION_TYPE_UNKNOWN;
-	_level = 0;
+	_byteVal = 0;
 
 	if( j.contains(string(JSON_ACTION_CMD))
 		&& j.at(string(JSON_ACTION_CMD)).is_string()){
@@ -131,6 +134,8 @@ void Action::initWithJSON(nlohmann::json j){
 			_cmd = ACTION_BEEP;
 		}else 	if(str == JSON_CMD_EXECUTE){
 			_cmd = ACTION_EXECUTE;
+		}else 	if(str == JSON_CMD_SET_KEYPAD){
+			_cmd = ACTION_SET_KEYPAD;
 		}
 	}
 
@@ -138,11 +143,40 @@ void Action::initWithJSON(nlohmann::json j){
 		
 		string  k  = string(JSON_ACTION_LEVEL);
 		uint8_t levelVal = 0;
-		if(	InsteonDevice::jsonToLevel(j.at(k), &levelVal)){
-			_level = levelVal;
+		
+		switch (_cmd) {
+			case ACTION_SET_LEVEL:
+				if(	InsteonDevice::jsonToLevel(j.at(k), &levelVal)){
+					_byteVal = levelVal;
+				}
+				break;
+			case ACTION_SET_LED_BRIGHTNESS:
+				if(	InsteonDevice::jsonToBackLightLevel(j.at(k), &levelVal)){
+					_byteVal = levelVal;
+				}
+				break;
+ 
+			default:
+				break;
+		}
+ 	}
+
+	if( j.contains(string(JSON_ACTION_KP_MASK))
+		&& j.at(string(JSON_ACTION_KP_MASK)).is_string()){
+		
+		string str = j.at(string(JSON_ACTION_KP_MASK));
+		uint8_t mask = 0;
+
+ 		if( regex_match( str, std::regex("^[A-Fa-f0-9]{2}$"))
+			&& ( std::sscanf(str.c_str(), "%hhd", &mask) == 1)){
+			_byteVal = mask;
+		}
+		else if( regex_match(str, std::regex("^0?[xX][0-9a-fA-F]{2}$"))
+				  && ( std::sscanf(str.c_str(), "%hhx", &mask) == 1)){
+			_byteVal = mask;
 		}
 	}
-
+ 
 	if( j.contains(string(JSON_DEVICEID))
 		&& j.at(string(JSON_DEVICEID)).is_string()){
 		
@@ -214,6 +248,8 @@ void Action::initWithJSON(nlohmann::json j){
 			_actionType = ACTION_TYPE_UNKNOWN;
 	}
 	
+	
+	
 	if(_actionType == ACTION_TYPE_UNKNOWN)
 		_cmd = ACTION_INALID;
 }
@@ -227,7 +263,7 @@ Action::Action(std::string str){
 	
 	_cmd = ACTION_NONE;
 	_actionType = ACTION_TYPE_UNKNOWN;
-	_level = 0;
+	_byteVal = 0;
 
 	json j;
 	j  = json::parse(str);
@@ -245,23 +281,24 @@ std::string Action::printString() const {
 
 	switch (_actionType) {
 		case ACTION_TYPE_DEVICE:
+			
 			oss <<  stringForCmd(_cmd)
 				<< " <" << _deviceID.string()  << "> "
-				<< InsteonDevice::onLevelString(_level);
+				<< InsteonDevice::onLevelString(_byteVal);
 			
 			break;
 			
 		case ACTION_TYPE_GROUP:
 			oss <<  stringForCmd(_cmd)
 				<< " Group: " << _groupID.string()  << "  "
-				<< InsteonDevice::onLevelString(_level);
+				<< InsteonDevice::onLevelString(_byteVal);
 
 			break;
 			
 		case ACTION_TYPE_DEVICEGROUP:
 			oss <<  stringForCmd(_cmd)
 				<< " Insteon.Group: " <<  to_hex<uint8_t>(_deviceGroupID, true)  << "  "
-				<< InsteonDevice::onLevelString(_level);
+				<< InsteonDevice::onLevelString(_byteVal);
 
 			break;
 
@@ -285,20 +322,24 @@ const nlohmann::json Action::JSON(){
 			j[string(JSON_DEVICEID)] = _deviceID.string();
 			j[string(JSON_ACTION_CMD)] = stringForCmd(_cmd);
 			
-			if(_cmd == ACTION_SET_LEVEL || _cmd == ACTION_SET_LED_BRIGHTNESS)
-				j[string(JSON_ACTION_LEVEL)] = _level;
+			if(_cmd == ACTION_SET_LEVEL)
+				j[string(JSON_ACTION_LEVEL)] = InsteonDevice::onLevelString(_byteVal);
+			else if(_cmd == ACTION_SET_LED_BRIGHTNESS)
+				j[string(JSON_ACTION_LEVEL)] = InsteonDevice::backLightLevelString(_byteVal);
+			else if(_cmd == ACTION_SET_KEYPAD)
+				j[string(JSON_ACTION_KP_MASK)] = to_hex<uint8_t>(_byteVal, true);
 			break;
 			
 		case ACTION_TYPE_GROUP:
 			j[string(JSON_GROUPID)] = _groupID.string();
 			j[string(JSON_ACTION_CMD)] = stringForCmd(_cmd);
-			j[string(JSON_ACTION_LEVEL)] = _level;
+			j[string(JSON_ACTION_LEVEL)] = _byteVal;
 			break;
 
 		case ACTION_TYPE_DEVICEGROUP:
 			j[string(JSON_INSTEON_GROUPS)] = to_hex<uint8_t>(_deviceGroupID, true);
 			j[string(JSON_ACTION_CMD)] = JSON_CMD_SET;
-			j[string(JSON_ACTION_LEVEL)] = _level;
+			j[string(JSON_ACTION_LEVEL)] = _byteVal;
 			break;
 			
 		case ACTION_TYPE_ACTIONGROUP:

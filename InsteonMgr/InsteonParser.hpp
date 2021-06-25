@@ -176,11 +176,15 @@ class InsteonParser {
 
 	static const uint8_t 	CMD_SET_LED_BRIGHTNESS	= 0x2E;
 	static const uint8_t 	CMD_LIGHT_ON				= 0x11;
+	static const uint8_t 	CMD_FAST_ON				= 0x12;
 	static const uint8_t 	CMD_LIGHT_OFF			= 0x13;
+	static const uint8_t 	CMD_FAST_OFF				= 0x14;
 	static const uint8_t 	CMD_GET_INSTEON_VERSION = 0x0D;
 	static const uint8_t 	CMD_GET_ON_LEVEL 		= 0x19;
 	static const uint8_t 	CMD_BEEP			 		= 0x30;
 	static const uint8_t	CMD_ENTER_LINK_MODE		= 0x09;
+	
+	static const uint8_t	CMD_INSTEON_06				= 0x06;  // I dont know what this ism, but ignore
 	
 	static const uint8_t 	CMD_START_MANUAL_CHANGE	= 0x17;
 	static const uint8_t 	CMD_STOP_MANUAL_CHANGE		= 0x18;
