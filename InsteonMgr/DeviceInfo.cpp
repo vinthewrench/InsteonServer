@@ -155,7 +155,7 @@ bool DeviceInfo::isKeyPad(){
 		{0x02, 0x2C},	// KeypadLinc On/Off (Dual-Band, 50/60 Hz)[2487S]
 	};
 
-  	return find(devices.begin(), devices.end(), make_pair(_cat, _subcat)) != devices.end();
+	return (devices.find(make_pair(_cat, _subcat)) != devices.end());
 }
  
 bool DeviceInfo::isDimmer(){
@@ -209,5 +209,5 @@ bool DeviceInfo::isDimmer(){
 		{0x01,0x50}, // 2632-452	Insteon Dimmer Module, Chile (915 MHz)
 	};
 
-	return find(devices.begin(), devices.end(), make_pair(_cat, _subcat)) != devices.end();
+ 	return (devices.find(make_pair(_cat, _subcat)) != devices.end());
 }
