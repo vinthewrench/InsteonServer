@@ -25,11 +25,11 @@ set(SOURCES
 	InsteonMgr/InsteonPLM.cpp
 	InsteonMgr/InsteonParser.cpp
 	InsteonMgr/InsteonValidator.cpp
-	InsteonMgr/LogMgr.cpp
+	Submodule/FooServer/src/LogMgr.cpp
 	InsteonMgr/NotificationCenter.cpp
 	InsteonMgr/PLMStream.cpp
 	InsteonMgr/ScheduleMgr.cpp
-	InsteonMgr/TimeStamp.cpp
+	Submodule/FooServer/src/TimeStamp.cpp
 	InsteonMgr/sunset.cpp
 	InsteonMgr/xxhash.c
 	InsteonMgr/sleep.c
