@@ -1,4 +1,11 @@
 
+CMakeCache.txt
+CMakeFiles/
+bin/
+cmake_install.cmake
+Home Control/
+ 
+
 # Created by https://www.toptal.com/developers/gitignore/api/swift,macos,carthage,objective-c,swiftpackagemanager
 # Edit at https://www.toptal.com/developers/gitignore?templates=swift,macos,carthage,objective-c,swiftpackagemanager
 
