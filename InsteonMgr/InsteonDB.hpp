@@ -49,13 +49,24 @@ typedef struct  {
 	string			name;
 
 	map<string ,string> properties;  
- 
-	std::vector<insteon_aldb_t> deviceALDB;
+ 	std::vector<insteon_aldb_t> deviceALDB;
 
 	// dynamic
 	map<uint8_t, int> levelMap;  //  (group, level)  -1 == not set
- 
 }insteon_dbEntry_t;
+
+typedef struct  {
+	string			buttonName;
+	bool 			isOn;
+	map<uint8_t, Action> actions; // (cmd, actions)
+}keypad_Button_t;
+
+typedef struct  {
+	DeviceID		deviceID;
+	string			name;
+	
+	map<uint8_t, keypad_Button_t> buttons;
+}keypad_dbEntry_t;
 
 bool  entryHasCNTL(insteon_dbEntry_t entry);
 
@@ -98,6 +109,8 @@ public:
 	
 	size_t count() { return _db.size();};
 
+	eTag_t lastEtag() { return  _eTag;};
+	
 	bool linkDevice(DeviceID 		deviceID,
 						bool		 	isCTRL,		 
 						uint8_t 		group,
@@ -127,6 +140,8 @@ public:
 
 	vector<DeviceID> devicesThatNeedALDB();
 
+	vector<DeviceID> devicesRespondingToInsteonGroup(uint8_t group);
+	
 	bool saveToCacheFile(string fileName = "");
 
 	bool backupCacheFile(string filepath);
@@ -156,6 +171,14 @@ public:
 	// clear local entry for DeviceALDB (not on device)
 	bool clearDeviceALDB(DeviceID deviceID);
 	bool removeDevice(DeviceID deviceID);
+	
+	// MARK: -   keypads
+	vector<DeviceID>		allKeypads();
+	keypad_dbEntry_t*	findKeypadEntryWithDeviceID(DeviceID deviceID);
+	keypad_Button_t*		findKeypadButton(keypad_dbEntry_t* entry, uint8_t buttonID );
+	Action*				actionForKeypad(DeviceID deviceID, uint8_t buttonID, uint8_t cmd);
+	bool					setKeyPadButton(DeviceID deviceID, uint8_t buttonID, uint8_t cmd);
+	uint8_t 				LEDMaskForKeyPad(keypad_dbEntry_t* keypad);
 	
 	// MARK: -  groups
 	bool groupIsValid(GroupID groupID);
@@ -263,7 +286,11 @@ private:
 
 	void deviceWasUpdated(DeviceID deviceID);
 	void deviceStateWasUpdated(DeviceID deviceID);
- 
+ 	
+	void addActionToKeyPAd(keypad_dbEntry_t* entry,
+								  uint8_t key,
+								  Action action) ;
+
 	mutable std::mutex _mutex;
 
 	time_t							_expired_age;		// how long to wait before we need to ping or validate
@@ -272,6 +299,8 @@ private:
 	vector<insteon_dbEntry_t> _db;
 	eTag_t							_eTag;		// last change tag
 	
+	map<uint8_t , set<DeviceID>>  _insteonGroupMap;
+
 	typedef struct {
 		string name;
 		set<DeviceID> devices;
@@ -294,8 +323,9 @@ private:
 	} eventGroupInfo_t;
 
 	map<eventID_t, eventGroupInfo_t> 		_eventsGroups;
+	map <DeviceID,keypad_dbEntry_t>			_keyPads;
 	
-	map<string,  string> 					_APISecrets;
+	map<string,  string> 						_APISecrets;
 
 	string 						_directoryPath;
 	mt19937						_rng;

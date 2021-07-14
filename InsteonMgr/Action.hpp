@@ -40,7 +40,9 @@ public:
 		ACTION_SET_LED_BRIGHTNESS  = 3,
 		ACTION_BEEP						= 4,
 		ACTION_EXECUTE					= 5,	// execute another action group--
-		ACTION_SET_KEYPAD				= 6,	// set Keypad mask
+		ACTION_ON						= 6,	// button state
+		ACTION_OFF						= 7,	// button state
+		ACTION_SET_KEYPADMASK		= 8,	// keypad state
 
 	}actionCmd_t;
 	
@@ -51,26 +53,33 @@ public:
 		ACTION_TYPE_GROUP			= 2,
 		ACTION_TYPE_DEVICEGROUP	= 3,
 		ACTION_TYPE_ACTIONGROUP	= 4,
+		ACTION_TYPE_KEYPAD		= 5,
 	
 	}actionType_t;
 
-	constexpr static const string_view JSON_ACTIONID 	= "actionID";
+	constexpr static const string_view JSON_ACTIONID 		= "actionID";
 	
-	constexpr static string_view JSON_DEVICEID 			= "deviceID";
-	constexpr static string_view JSON_GROUPID 			= "groupID";
-	constexpr static string_view JSON_INSTEON_GROUPS		= "insteon.groups";
-	constexpr static string_view JSON_ACTION_GROUP		= "action.group";
-	constexpr static string_view JSON_ACTION_LEVEL 		= "level";
-	constexpr static string_view JSON_ACTION_KP_MASK 	= "keypad";
+	constexpr static string_view JSON_DEVICEID 				= "deviceID";
+	constexpr static string_view JSON_GROUPID 				= "groupID";
+	constexpr static string_view JSON_BUTTONID				= "buttonID";
+	constexpr static string_view JSON_KEYPADID				= "keypadID";
 
+	constexpr static string_view JSON_INSTEON_GROUPS		= "insteon.groups";
+	constexpr static string_view JSON_ACTION_GROUP			= "action.group";
+	constexpr static string_view JSON_ACTION_LEVEL 		= "level";
+	constexpr static string_view JSON_ACTION_VALUE	 		= "value";
+	
 	constexpr static string_view JSON_ACTION_CMD			= "cmd";
 	constexpr static string_view JSON_CMD_SET				= "set";
 	constexpr static string_view JSON_CMD_BACKLIGHT		= "backlight";
-	constexpr static string_view JSON_CMD_BEEP			= "beep";
-	constexpr static string_view JSON_CMD_NONE			= "none";
+	constexpr static string_view JSON_CMD_BEEP				= "beep";
+	constexpr static string_view JSON_CMD_NONE				= "none";
 	constexpr static string_view JSON_CMD_EXECUTE			= "execute";
-	constexpr static string_view JSON_CMD_SET_KEYPAD 	= "set_keypad"; 	// Keypad LED mask
+	constexpr static string_view JSON_CMD_ON 				= "on";
+	constexpr static string_view JSON_CMD_OFF 				= "off";
+	constexpr static string_view JSON_CMD_KEYPAD_MASK 	= "keypad.mask";
 
+	
 	Action();
 	Action(DeviceID deviceID, actionCmd_t cmd, uint8_t level = 0);
 	Action(GroupID groupID, actionCmd_t cmd, uint8_t level = 0);
@@ -87,6 +96,10 @@ public:
 
 		switch (actIn._actionType) {
 			case ACTION_TYPE_DEVICE:
+				_deviceID = actIn._deviceID;
+				break;
+				
+			case ACTION_TYPE_KEYPAD:
 				_deviceID = actIn._deviceID;
 				break;
 
@@ -118,6 +131,10 @@ public:
 				_deviceID = right._deviceID;
 				break;
 
+			case ACTION_TYPE_KEYPAD:
+				_deviceID = right._deviceID;
+				break;
+
 			case ACTION_TYPE_GROUP:
 				_groupID = right._groupID;
 				break;
@@ -137,7 +154,6 @@ public:
 	
 	std::string idString() const;
 	std::string printString() const;
-	
 	const nlohmann::json JSON();
 	
 	bool isValid() {return (_actionType != ACTION_TYPE_UNKNOWN);};
@@ -146,9 +162,12 @@ public:
 	const actionType_t actionType(){return _actionType;};
 	const uint8_t 		level(){return _byteVal;};
 	const actionCmd_t 	cmd(){return _cmd;};
+	const uint8_t 		mask(){return _byteVal;};
 
 	const DeviceID 	deviceID(){return 	_deviceID;};
 	const GroupID 	groupID(){return 	_groupID;};
+	const uint8_t 	buttonID(){return 	_byteVal;};
+
 	const uint8_t 	deviceGroupID(){return 	_deviceGroupID;};
 	const actionGroupID_t 	actionGroupID(){return 	_ActionGroupID;};
 

@@ -40,11 +40,15 @@ constexpr static string_view KEY_START_ACTIONGROUP 	= "action_group-start";
 constexpr static string_view KEY_END_ACTIONGROUP		= "action_group-end";
 constexpr static string_view KEY_START_EVENT 			= "event-start";
 constexpr static string_view KEY_END_EVENT			= "event-end";
+constexpr static string_view KEY_START_KEYPAD 			= "keypad-start";
+constexpr static string_view KEY_END_KEYPAD 			= "keypad-end";
 
 constexpr static string_view KEY_START_EVENTGROUP 	= "event_group-start";
 constexpr static string_view KEY_END_EVENTGROUP		= "event_group-end";
 
 constexpr static string_view KEY_DEVICE_NAME			= "name";
+constexpr static string_view KEY_DEVICE_INFO			= "deviceinfo";
+
 constexpr static string_view KEY_DEVICE_ALDB			= "aldb";
 constexpr static string_view KEY_DEVICE_UPDATED		= "updated";
 constexpr static string_view KEY_DEVICE_CNTL			= "cntl";
@@ -53,6 +57,8 @@ constexpr static string_view KEY_GROUP_DEVICEID		= "dev";
 constexpr static string_view KEY_ACTIONGROUP_ACTION	= "act";
 constexpr static string_view KEY_EVENT_TRIGGER		= "trigger";
 constexpr static string_view KEY_EVENT_EVENTID		= "event";
+constexpr static string_view KEY_BUTTON_ACTION		= "button-action";
+constexpr static string_view KEY_BUTTON_NAME		= "button";
 
 
 InsteonDB *InsteonDB::sharedInstance = 0;
@@ -68,6 +74,8 @@ InsteonDB::InsteonDB() {
 	_eventsGroups.clear();
 	_APISecrets.clear();
 	_events.clear();
+	_insteonGroupMap.clear();
+	_keyPads.clear();
 	_eTag = 0;
 	
 	// create RNG engine
@@ -87,6 +95,9 @@ InsteonDB::~InsteonDB() {
 	_eventsGroups.clear();
 	_APISecrets.clear();
 	_events.clear();
+	_insteonGroupMap.clear();
+	_keyPads.clear();
+
 	_eTag = 0;}
 
 // MARK: - public API
@@ -152,14 +163,14 @@ void InsteonDB::validateDeviceInfo(DeviceID deviceID,
 			existing->deviceInfo = *info;
 			existing->lastUpdated = time(NULL);
 			existing->isValidated = true;
-			existing->eTag = _eTag++;
+			existing->eTag = ++_eTag;
 		}
 	}
 	else
 	{
 		existing->lastUpdated = time(NULL);
 		existing->isValidated = false;
-		existing->eTag = _eTag++;
+		existing->eTag = ++_eTag;
 	}
 	
 	deviceWasUpdated(deviceID);
@@ -173,7 +184,7 @@ bool InsteonDB::refreshDevice(DeviceID deviceID){
 	if(	auto existing = findDBEntryWithDeviceID(deviceID); existing != NULL){
 		
 		existing->lastUpdated = time(NULL);
-		existing->eTag = _eTag++;
+		existing->eTag = ++_eTag;
 
 		didRefresh = true;
 		
@@ -314,9 +325,9 @@ vector<DeviceID> InsteonDB::devicesUpdateSinceEtag(eTag_t  eTag){
 	std::lock_guard<std::mutex> lock(_mutex);
 	for (auto e = _db.begin(); e != _db.end(); e++) {
 		
-		if(!e->isValidated) break;
+		if(!e->isValidated) continue;;
 		eTag_t val = e->eTag;
-		if(val > eTag){
+		if(val >= eTag){
 			dev_list.push_back(e->deviceID);
 		}
 		
@@ -366,7 +377,7 @@ void InsteonDB::addALDB(insteon_aldb_t aldb){
 				entry->deviceInfo = DeviceInfo(aldb.info);
 			}
 		}
-		entry->eTag = _eTag++;
+		entry->eTag = ++_eTag;
 	}
 	else  {
 		insteon_dbEntry_t newEntry;
@@ -378,7 +389,7 @@ void InsteonDB::addALDB(insteon_aldb_t aldb){
 		if(isController){
 			newEntry.deviceInfo = DeviceInfo(aldb.info);
 		}
-		newEntry.eTag = _eTag++;
+		newEntry.eTag = ++_eTag;
 
 		newEntry.levelMap.clear();
 		_db.push_back(newEntry);
@@ -421,7 +432,7 @@ bool InsteonDB::addDeviceALDB(DeviceID deviceID, const insteon_aldb_t deviceALDB
 	if(auto entry = findDBEntryWithDeviceID(deviceID); entry != NULL) {
 		std::lock_guard<std::mutex> lock(_mutex);
 		addDeviceALDBToDBEntry(entry, deviceALDB);
-		entry->eTag = _eTag++;
+		entry->eTag = ++_eTag;
  		didUpdate = true;
 	};
 	
@@ -442,7 +453,7 @@ bool InsteonDB::addDeviceALDB(DeviceID deviceID, std::vector<insteon_aldb_t> dev
 		for(auto aldb :deviceALDB){
 			addDeviceALDBToDBEntry(entry, aldb);
 		}
-		entry->eTag = _eTag++;
+		entry->eTag = ++_eTag;
 		didUpdate = true;
 	}
 
@@ -458,7 +469,7 @@ bool InsteonDB::clearDeviceALDB(DeviceID deviceID){
 	if(auto entry = findDBEntryWithDeviceID(deviceID); entry != NULL) {
 		std::lock_guard<std::mutex> lock(_mutex);
 		
-		entry->eTag = _eTag++;
+		entry->eTag = ++_eTag;
 		entry->deviceALDB.clear();
 		didUpdate = true;
 	}
@@ -499,6 +510,109 @@ bool InsteonDB::removeDevice(DeviceID deviceID){
 	return didUpdate;
 }
 
+vector<DeviceID> InsteonDB::devicesRespondingToInsteonGroup(uint8_t group){
+	
+	vector<DeviceID> devices;
+	
+	if( _insteonGroupMap.count(group)){
+		auto value = _insteonGroupMap[group];
+		devices.assign(value.begin(), value.end());
+	}
+ 	return devices;
+}
+
+// MARK: -   keypads
+vector<DeviceID> InsteonDB::allKeypads(){
+	vector<DeviceID> keypads;
+	
+	for (const auto& [deviceID, _] : _keyPads) {
+		keypads.push_back(deviceID);
+	}
+	
+	return keypads;
+}
+
+
+keypad_dbEntry_t*  InsteonDB::findKeypadEntryWithDeviceID(DeviceID deviceID){
+	
+	if(_keyPads.count(deviceID) ) {
+		return  &_keyPads[deviceID];
+	}
+	return NULL;
+}
+
+keypad_Button_t*  InsteonDB::findKeypadButton(keypad_dbEntry_t* entry, uint8_t buttonID ){
+	
+	if( entry != NULL && entry->buttons.count(buttonID)){
+		return  &entry->buttons[buttonID];
+	}
+	return NULL;
+}
+
+Action*  InsteonDB::actionForKeypad(DeviceID deviceID, uint8_t buttonID, uint8_t cmd){
+	if(auto keypad = findKeypadEntryWithDeviceID(deviceID); keypad != NULL)
+		if(auto button =  findKeypadButton(keypad, buttonID) ; button != NULL){
+			if(button->actions.count(cmd) ){
+				return &button->actions[cmd];
+			}
+		}
+	return NULL;
+}
+
+bool InsteonDB::setKeyPadButton(DeviceID deviceID, uint8_t buttonID, uint8_t cmd){
+	
+	bool didUpdate = false;
+	
+	if(auto keypad = findKeypadEntryWithDeviceID(deviceID); keypad != NULL)
+	{
+		if(auto button =  findKeypadButton(keypad, buttonID) ; button != NULL){
+			switch (cmd) {
+				case InsteonParser::CMD_LIGHT_ON:
+					button->isOn = true;
+					didUpdate = true;
+					break;
+					
+				case InsteonParser::CMD_LIGHT_OFF:
+					button->isOn = false;
+					didUpdate = true;
+					break;
+			}
+		}
+		else  if(buttonID == 0xff) {	// wildcard
+			
+			for ( auto it = keypad->buttons.begin(); it != keypad->buttons.end(); ++it  ){
+				switch (cmd) {
+					case InsteonParser::CMD_LIGHT_ON:
+						it->second.isOn = true;
+						break;
+						
+					case InsteonParser::CMD_LIGHT_OFF:
+						it->second.isOn = false;
+						break;
+				}
+			}
+			didUpdate = true;
+		}
+	}
+		
+	return didUpdate;
+}
+
+
+uint8_t InsteonDB::LEDMaskForKeyPad(keypad_dbEntry_t* keypad){
+	
+	uint8_t mask = 0;
+	if(keypad) {
+		for (const auto& [num, button] : keypad->buttons) {
+			if(button.isOn) {
+				mask |= (1 << (num-1));
+			}
+		}
+ 	}
+
+	return mask;
+}
+
 
 // MARK: - dynamic data
 
@@ -522,7 +636,7 @@ bool InsteonDB::setDBOnLevel(DeviceID deviceID, uint8_t group,
 			
 			if(needsUpdate){
 				entry->levelMap[group] = onLevel;
-				entry->eTag = _eTag++;
+				entry->eTag = ++_eTag;
 				entry->lastLevelUpdate = time(NULL);
 			}
 			
@@ -742,6 +856,11 @@ bool InsteonDB::backupCacheFile(string filepath){
 
 			ofs << KEY_START_DEVICE << ": " << entry.deviceID.string() << "\n";
 			ofs << KEY_DEVICE_NAME << ": " << entry.name << "\n";
+			
+			if(entry.groups.size() == 0){
+				ofs << KEY_DEVICE_INFO << ": " << entry.deviceInfo.string() << "\n";
+				}
+	
 			// do this twice.. first the controllers then the responders
 			
 			if(timeString.size()){
@@ -792,6 +911,34 @@ bool InsteonDB::backupCacheFile(string filepath){
 			ofs << "\n";
 			
 		}
+		
+		
+		// save Keypads
+		for (const auto& [deviceID, entry] : _keyPads) {
+			
+			ofs <<  KEY_START_KEYPAD << ": " <<  deviceID.string()  << "\n";
+			ofs << KEY_DEVICE_NAME << ": " << entry.name << "\n";
+		
+	// list keycap names
+			for(const auto& [keycap, actionEntry] : entry.buttons)  {
+				ofs << KEY_BUTTON_NAME << ": "
+				<< setw(1) << int(keycap) << setw(0)
+				<< " " << actionEntry.buttonName << "\n";
+			}
+			
+			for(const auto& [keycap, actionEntry] : entry.buttons)
+				for(const auto& [cmd, action] : actionEntry.actions)  {
+					
+					ofs << KEY_BUTTON_ACTION << ": "
+					<< setw(1) << int(keycap) << setw(0) << " "
+					<< to_hex <unsigned char>(cmd, true) << " "
+					<< Action(action).JSON().dump()
+					 <<	 "\n";
+			}
+			
+			ofs << KEY_END_KEYPAD <<  ":\n\n";
+		}
+		
 		
 		// save Group Info
 		for (const auto& [groupID, _] : _deviceGroups) {
@@ -897,6 +1044,7 @@ typedef enum  {
 	RESTORE_ACTION_GROUP,
 	RESTORE_EVENT,
 	RESTORE_EVENT_GROUP,
+	RESTORE_KEYPADS,
 
 }restoreState_t;
 
@@ -922,7 +1070,9 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 		
 		// start with a fresh database
 		_db.clear();
-		_eTag++;
+		_insteonGroupMap.clear();
+
+		++_eTag;
 		
 		groupID_t				groupID = 0;
 		actionGroupID_t		actionGroupID = 0;
@@ -1037,6 +1187,33 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 				continue;
 			}
 
+			else if(token == KEY_START_KEYPAD){
+				deviceID_t	devID;
+				
+				if( sscanf(p, "%hhx.%hhx.%hhx %n",
+							  &devID[2], &devID[1], &devID[0] ,&n) == 3){
+					
+					deviceID = DeviceID(devID);
+					// we need to already be in the  DB, but not already defined,
+					if( findDBEntryWithDeviceID(deviceID)
+								&& findKeypadEntryWithDeviceID(deviceID) == NULL){
+						
+						keypad_dbEntry_t keyPad;
+						keyPad.deviceID = deviceID;
+						
+						keyPad.buttons.clear();
+						_keyPads[deviceID] = keyPad;
+						
+						state = RESTORE_KEYPADS;
+					}
+					continue;
+				}
+			}
+	
+			else if(token == KEY_END_KEYPAD){
+				state = RESTORE_UNKNOWN;
+				continue;
+			}
 
 			else if(token == KEY_START_EVENT){
 				if( sscanf(p, "%hx %n", &eventID ,&n) == 1){
@@ -1056,7 +1233,6 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 				state = RESTORE_UNKNOWN;
 				continue;
 			}
-	
 			
 			// process line based on state.
 			
@@ -1112,6 +1288,14 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 					if(!entry) {
 						state = RESTORE_UNKNOWN;
 						break;
+					}
+					
+					if(token == KEY_DEVICE_INFO){
+						
+						auto devInfo = DeviceInfo( string(p));
+						if(!devInfo.isNULL())
+							entry->deviceInfo = devInfo;
+						break;;
 					}
 					
 					if(token == KEY_DEVICE_NAME){
@@ -1286,6 +1470,59 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 				}
 					break;
 					
+				case RESTORE_KEYPADS:
+				
+					if(auto entry = findKeypadEntryWithDeviceID(deviceID); entry != NULL) {
+						
+						if(token == KEY_DEVICE_NAME){
+							entry->name = string(p);
+							break;
+						}
+						
+						else if(token == KEY_BUTTON_NAME){
+							
+							uint8_t keyNumber = 0;
+							if( sscanf(p, "%hhd %n", &keyNumber ,&n) < 1) continue;
+							p += n;
+		
+							auto keyEntry = findKeypadButton(entry, keyNumber) ;
+							if(keyEntry) {
+								keyEntry->buttonName = string(p);
+							}
+							else {
+								keypad_Button_t keyAction;
+								keyAction.buttonName = string(p);
+								keyAction.isOn = false;
+								entry->buttons[keyNumber] = keyAction;
+							}
+							
+							break;
+						}
+					
+						else if(token == KEY_BUTTON_ACTION){
+							uint8_t keyNumber = 0;
+							uint8_t cmd = 0;
+							
+							if( sscanf(p, "%hhd  %hhx %n", &keyNumber, & cmd ,&n) < 2) continue;
+							p += n;
+		
+							Action action = Action(string(p));
+							if(!action.isValid()) continue;
+							action._actionID = 0;  // not used
+			
+							auto keyEntry = findKeypadButton(entry, keyNumber) ;
+							if(keyEntry != NULL){
+								entry->buttons[keyNumber].actions[cmd] = action;
+							}
+							
+							break;
+						}
+					
+					}
+					
+ 				break;
+					
+					
 				case RESTORE_UNKNOWN:
 					break;
 			}
@@ -1293,7 +1530,6 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 		
 		statusOk = true;
 		ifs.close();
-
 	}
 	catch(std::ifstream::failure &err) {
 		
@@ -2072,7 +2308,6 @@ insteon_dbEntry_t* InsteonDB::findDBEntryWithDeviceID(DeviceID deviceID){
 	return NULL;
 }
 
-
 void InsteonDB::addGroupToDBEntry(insteon_dbEntry_t* entry,
 											 tuple< bool, uint8_t> newItem) {
 	
@@ -2112,8 +2347,13 @@ void InsteonDB::addDeviceALDBToDBEntry(insteon_dbEntry_t* entry,
 	
 	if(!foundOne){
 		entry->deviceALDB.push_back(newItem);
-	}
 
+		///vinnie
+		bool isRESP = (newItem.flag & 0x40) == 0x00;
+		if(isRESP) {
+			_insteonGroupMap[newItem.group].insert(entry->deviceID);
+		}
+	}
 }
 
 bool InsteonDB::foundWithDeviceID(DeviceID deviceID, bool isCTRL, uint8_t GroupID) {

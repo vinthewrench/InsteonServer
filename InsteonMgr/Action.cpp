@@ -70,10 +70,17 @@ static std::string stringForCmd(Action::actionCmd_t cmd) {
 		case Action::ACTION_EXECUTE:
 			str = Action::JSON_CMD_EXECUTE;
 			break;
-		case Action::ACTION_SET_KEYPAD:
-			str = Action::JSON_CMD_SET_KEYPAD;
+		case Action::ACTION_ON:
+			str = Action::JSON_CMD_ON;
 			break;
-			
+		case Action::ACTION_OFF:
+			str = Action::JSON_CMD_OFF;
+			break;
+		case Action::ACTION_SET_KEYPADMASK:
+			str = Action::JSON_CMD_KEYPAD_MASK;
+			break;
+
+
 		default:;
 	}
 	return  str;
@@ -134,47 +141,50 @@ void Action::initWithJSON(nlohmann::json j){
 			_cmd = ACTION_BEEP;
 		}else 	if(str == JSON_CMD_EXECUTE){
 			_cmd = ACTION_EXECUTE;
-		}else 	if(str == JSON_CMD_SET_KEYPAD){
-			_cmd = ACTION_SET_KEYPAD;
+		}else 	if(str == JSON_CMD_ON){
+			_cmd = ACTION_ON;
+		}else 	if(str == JSON_CMD_OFF){
+			_cmd = ACTION_OFF;
+		}else 	if(str == JSON_CMD_KEYPAD_MASK){
+			_cmd = ACTION_SET_KEYPADMASK;
 		}
-	}
-
-	if( j.contains(string(JSON_ACTION_LEVEL))){
 		
-		string  k  = string(JSON_ACTION_LEVEL);
-		uint8_t levelVal = 0;
+		if( j.contains(string(JSON_ACTION_LEVEL))){
+			
+			string  k  = string(JSON_ACTION_LEVEL);
+			uint8_t levelVal = 0;
+			
+			switch (_cmd) {
+				case ACTION_SET_LEVEL:
+					if(	InsteonDevice::jsonToLevel(j.at(k), &levelVal)){
+						_byteVal = levelVal;
+					}
+					break;
+				case ACTION_SET_LED_BRIGHTNESS:
+					if(	InsteonDevice::jsonToBackLightLevel(j.at(k), &levelVal)){
+						_byteVal = levelVal;
+					}
+					break;
+					
+				default:
+					break;
+			}
+		}
 		
-		switch (_cmd) {
-			case ACTION_SET_LEVEL:
-				if(	InsteonDevice::jsonToLevel(j.at(k), &levelVal)){
-					_byteVal = levelVal;
-				}
-				break;
-			case ACTION_SET_LED_BRIGHTNESS:
-				if(	InsteonDevice::jsonToBackLightLevel(j.at(k), &levelVal)){
-					_byteVal = levelVal;
-				}
-				break;
- 
-			default:
-				break;
-		}
- 	}
-
-	if( j.contains(string(JSON_ACTION_KP_MASK))
-		&& j.at(string(JSON_ACTION_KP_MASK)).is_string()){
-		
-		string str = j.at(string(JSON_ACTION_KP_MASK));
-		uint8_t mask = 0;
-
- 		if( regex_match( str, std::regex("^[A-Fa-f0-9]{2}$"))
-			&& ( std::sscanf(str.c_str(), "%hhd", &mask) == 1)){
-			_byteVal = mask;
-		}
-		else if( regex_match(str, std::regex("^0?[xX][0-9a-fA-F]{2}$"))
-				  && ( std::sscanf(str.c_str(), "%hhx", &mask) == 1)){
-			_byteVal = mask;
-		}
+		//	if( j.contains(string(JSON_ACTION_KP_MASK))
+		//		&& j.at(string(JSON_ACTION_KP_MASK)).is_string()){
+		//
+		//		string str = j.at(string(JSON_ACTION_KP_MASK));
+		//		uint8_t mask = 0;
+		//
+		// 		if( regex_match( str, std::regex("^[A-Fa-f0-9]{2}$"))
+		//			&& ( std::sscanf(str.c_str(), "%hhd", &mask) == 1)){
+		//			_byteVal = mask;
+		//		}
+		//		else if( regex_match(str, std::regex("^0?[xX][0-9a-fA-F]{2}$"))
+		//				  && ( std::sscanf(str.c_str(), "%hhx", &mask) == 1)){
+		//			_byteVal = mask;
+		//		}
 	}
  
 	if( j.contains(string(JSON_DEVICEID))
@@ -228,6 +238,41 @@ void Action::initWithJSON(nlohmann::json j){
 			_ActionGroupID = actionGroupID;
 			_actionType = ACTION_TYPE_ACTIONGROUP;
 		}
+	}
+	else if( j.contains(string(JSON_KEYPADID))
+			&& j.at(string(JSON_KEYPADID)).is_string()){
+		string str = j.at(string(JSON_KEYPADID));
+		deviceID_t  rawDevID;
+		if(str_to_deviceID(str.c_str(), rawDevID)) {
+			_deviceID = DeviceID(rawDevID);
+			_actionType = ACTION_TYPE_KEYPAD;
+		}
+	}
+
+	if( j.contains(string(JSON_BUTTONID))
+			&& j.at(string(JSON_BUTTONID)).is_string()){
+			string str = j.at(string(JSON_BUTTONID));
+			
+			if( regex_match(string(str), std::regex("^[1-8]$"))){
+				uint8_t buttonID;
+				if( std::sscanf(str.c_str(), "%hhd", &buttonID) == 1){
+					_byteVal = buttonID;
+				}
+			}
+		}
+	
+	if( j.contains(string(JSON_ACTION_VALUE))
+		&& j.at(string(JSON_ACTION_VALUE)).is_string()){
+		string str = j.at(string(JSON_ACTION_VALUE));
+		
+		uint8_t value = 0;
+		
+		if( std::sscanf(str.c_str(), "%hhd", &value) == 1){
+			_byteVal = value;
+		}
+		else if( regex_match(string(str), std::regex("^0?[xX][0-9a-fA-F]{2}$"))
+				  && ( std::sscanf(str.c_str(), "%hhx", &value) == 1)){
+			_byteVal = value;	}
 	}
 
 	if( j.contains(string(JSON_ACTIONID))
@@ -306,7 +351,25 @@ std::string Action::printString() const {
 			oss <<  stringForCmd(_cmd)
 			<< " Action.Group: " <<  to_hex(_ActionGroupID, true);
 			break;
+	 
+		case ACTION_TYPE_KEYPAD:
 			
+			switch (_cmd) {
+				case ACTION_ON:
+				case ACTION_OFF:
+					oss <<  stringForCmd(_cmd)
+					<< " <" << _deviceID.string()  << "> "
+					<< "Button(" << to_string(_byteVal) << ")";
+			break;
+					
+				case ACTION_SET_KEYPADMASK:
+					oss <<  stringForCmd(_cmd)
+					<< " <" << _deviceID.string()  << "> "
+					<< "Mask(" <<  to_hex<uint8_t>(_byteVal, true) << ")";
+				default:
+					break;
+			}
+
 		default:
 			oss <<  "Invalid";
 	}
@@ -326,20 +389,18 @@ const nlohmann::json Action::JSON(){
 				j[string(JSON_ACTION_LEVEL)] = InsteonDevice::onLevelString(_byteVal);
 			else if(_cmd == ACTION_SET_LED_BRIGHTNESS)
 				j[string(JSON_ACTION_LEVEL)] = InsteonDevice::backLightLevelString(_byteVal);
-			else if(_cmd == ACTION_SET_KEYPAD)
-				j[string(JSON_ACTION_KP_MASK)] = to_hex<uint8_t>(_byteVal, true);
-			break;
+ 		break;
 			
 		case ACTION_TYPE_GROUP:
 			j[string(JSON_GROUPID)] = _groupID.string();
 			j[string(JSON_ACTION_CMD)] = stringForCmd(_cmd);
-			j[string(JSON_ACTION_LEVEL)] = _byteVal;
+			j[string(JSON_ACTION_LEVEL)] = InsteonDevice::onLevelString(_byteVal);
 			break;
 
 		case ACTION_TYPE_DEVICEGROUP:
 			j[string(JSON_INSTEON_GROUPS)] = to_hex<uint8_t>(_deviceGroupID, true);
 			j[string(JSON_ACTION_CMD)] = JSON_CMD_SET;
-			j[string(JSON_ACTION_LEVEL)] = _byteVal;
+			j[string(JSON_ACTION_LEVEL)] = InsteonDevice::onLevelString(_byteVal);
 			break;
 			
 		case ACTION_TYPE_ACTIONGROUP:
@@ -347,6 +408,23 @@ const nlohmann::json Action::JSON(){
 			j[string(JSON_ACTION_CMD)] = JSON_CMD_EXECUTE;
 			break;
 
+		case ACTION_TYPE_KEYPAD:
+			j[string(JSON_KEYPADID)] = _deviceID.string();
+			j[string(JSON_ACTION_CMD)] = stringForCmd(_cmd);
+
+			switch (_cmd) {
+				case ACTION_ON:
+				case ACTION_OFF:
+					j[string(JSON_BUTTONID)] = to_string(_byteVal);
+ 				break;
+					
+				case ACTION_SET_KEYPADMASK:
+					j[string(JSON_ACTION_VALUE)] = to_hex<uint8_t>(_byteVal, true);
+				default:
+					break;
+			}
+			break;
+	 
 		default:;
 	}
 	return j;

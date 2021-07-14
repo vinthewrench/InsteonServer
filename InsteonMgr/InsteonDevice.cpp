@@ -45,7 +45,7 @@ std::string InsteonDevice::backLightLevelString(uint8_t onLevel){
 	
 	if(onLevel == 0)
 		str = "off";
-	else if(onLevel == 127)
+	else if(onLevel >= 127)
 		str = "on";
 	else
 	{
@@ -175,7 +175,7 @@ bool InsteonDevice::stringToBackLightLevel(std::string str, uint8_t* levelOut){
 				valid = true;
 			}
 			else if(caseInSensStringCompare(str,"on")) {
-				dimLevel = 255;
+				dimLevel = 127;
 				valid = true;
 			}
 		}

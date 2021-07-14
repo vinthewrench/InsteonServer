@@ -52,6 +52,7 @@ constexpr string_view NOUN_INSTEON_GROUPS		= "insteon.groups";
 constexpr string_view NOUN_ACTION_GROUPS		= "action.groups";
 constexpr string_view NOUN_EVENTS				= "events";
 constexpr string_view NOUN_EVENTS_GROUPS		= "event.groups";
+constexpr string_view NOUN_KEYPADS				= "keypads";
 
 constexpr string_view NOUN_CONFIG		 		= "config";
 
@@ -74,7 +75,8 @@ constexpr string_view JSON_ARG_TRIGGER			= "trigger";
 constexpr string_view JSON_ARG_BEEP 			= "beep";
 constexpr string_view JSON_ARG_LEVEL 			= "level";
 constexpr string_view JSON_ARG_BACKLIGHT		= "backlight";
-constexpr string_view JSON_ARG_KP_MASK 		= "keypad"; 	// Keypad LED mask
+constexpr string_view JSON_ARG_KP_MASK 		= "keyMask"; 	// Keypad LED mask
+constexpr string_view JSON_ARG_BUTTONS		= "buttons";
 
 constexpr string_view JSON_ARG_VALIDATE		= "validate";
 constexpr string_view JSON_ARG_DUMP		 		= "dump";			// for debug datat
@@ -90,6 +92,7 @@ constexpr string_view JSON_ARG_DEVICEIDS 		= "deviceIDs";
 
 constexpr string_view JSON_ARG_IS_KEYPAD		= "isKeyPad";
 constexpr string_view JSON_ARG_IS_DIMMER		= "isDimmer";
+constexpr string_view JSON_ARG_IS_PLM			= "isPLM";
 
 constexpr string_view JSON_ARG_DEVICEINFO 	= "deviceInfo";
 constexpr string_view JSON_ARG_DETAILS 		= "details";
@@ -162,18 +165,18 @@ static bool Events_NounHandler_GET(ServerCmdQueue* cmdQueue,
 				if(act.isValid()){
 					entry[string(JSON_ARG_ACTION)]= act.JSON();
 				}
-				
+
 				EventTrigger trig = event.getEventTrigger();
 				if(trig.isValid()){
 					entry[string(JSON_ARG_TRIGGER)]= trig.JSON();
 				}
-			}
+ 			}
 			
 			eventList[ to_hex<unsigned short>(eventID)] = entry;
 		}
 		
 		reply[string(JSON_ARG_EVENTIDS)] = eventList;
-		
+
 		// create a sorted vector of timed events
 		vector<std::pair<string, int16_t>> timedEvents;
  		solarTimes_t solar;
@@ -192,14 +195,14 @@ static bool Events_NounHandler_GET(ServerCmdQueue* cmdQueue,
 		if(futureEvents.size()){
 			reply[string(JSON_ARG_FUTURE_EVENTS	)] = futureEvents;
 		}
-		
+
 		for(auto eventID : eventIDs){
 			auto ref = db->eventsGetEvent(eventID);
 			if(ref) {
 				Event event = ref->get();
 				EventTrigger trig = event.getEventTrigger();
 				if(trig.isTimed()){
- 
+
 					int16_t minsFromMidnight = 0;
 					if(trig.calculateTriggerTime(solar,minsFromMidnight)) {
 						timedEvents.push_back(make_pair( event.idString(), minsFromMidnight));
@@ -211,10 +214,10 @@ static bool Events_NounHandler_GET(ServerCmdQueue* cmdQueue,
 			sort(timedEvents.begin(), timedEvents.end(),
 				  [] (const pair<string, int16_t>& a,
 						const pair<string, int16_t>& b) { return a.second < b.second; });
-			
+
 	 		reply[string(JSON_ARG_TIMED_EVENTS)] = timedEvents;
  		}
-  
+
  		makeStatusJSON(reply,STATUS_OK);
 		(completion) (reply, STATUS_OK);
 		return true;
@@ -1667,8 +1670,117 @@ static void InsteonGroups_NounHandler(ServerCmdQueue* cmdQueue,
 }
 
 
+
  
 // MARK:  DEVICES NOUN HANDLERS
+
+static bool DeviceDetailJSONForDeviceID( DeviceID deviceID, json &entry) {
+	using namespace rest;
+	using namespace timestamp;
+
+	auto db = insteon.getDB();
+
+	insteon_dbEntry_t info;
+	 
+	if( db->getDeviceInfo(deviceID,  &info)) {
+		entry[string(JSON_ARG_DEVICEID)] = deviceID.string();
+		entry[string(JSON_ARG_NAME)] = 	info.name;
+		entry[string(JSON_VAL_VALID)] = info.isValidated;
+		entry[string(JSON_ARG_DEVICEINFO)] = info.deviceInfo.string();
+		entry["lastUpdated"] =  TimeStamp(info.lastUpdated).RFC1123String();
+		entry[string(JSON_ARG_IS_KEYPAD)]  =  info.deviceInfo.isKeyPad();
+		entry[string(JSON_ARG_IS_DIMMER)] =  info.deviceInfo.isDimmer();
+		entry[string(JSON_ARG_IS_PLM)] =  info.deviceInfo.isPLM();
+
+		if(info.properties.size()){
+			json props;
+			for(auto prop : info.properties){
+				props[prop.first] = prop.second;
+			}
+			entry[string(JSON_ARG_PROPERTIES)]  = props;
+		}
+		
+		auto groups = db->groupsContainingDevice(deviceID);
+		if(groups.size() > 0){
+			vector<string> groupList;
+			for(GroupID groupID : groups) {
+				groupList.push_back(groupID.string());
+			}
+			entry[string(JSON_ARG_GROUPIDS)] = groupList;
+		}
+
+		uint8_t group = 0x01;		// only on group 1
+		uint8_t level = 0;
+		eTag_t lastTag = 0;
+ 
+/*
+ // optional KEYPADS
+		if(auto keypad = db->findKeypadEntryWithDeviceID(deviceID); keypad != NULL) {
+			json kp;
+			kp[string(JSON_ARG_NAME)] = 	keypad->name;
+			json keyCaps;
+			
+			json keyActions;
+			
+			for(const auto& [kc, actionEntry] : keypad->keys)  {
+				
+				json cap;
+				json capAction;
+				
+				cap[string(JSON_ARG_NAME)] = 	actionEntry.keyName;
+				
+				for(const auto& [cmd, action] : actionEntry.actions)  {
+					
+					string cmdStr = to_hex <unsigned char> (cmd,true);
+					switch (cmd) {
+						case InsteonParser::CMD_LIGHT_ON:
+							cmdStr = "on";
+							break;
+					
+						case InsteonParser::CMD_LIGHT_OFF:
+							cmdStr = "off";
+							break;
+	
+						default:
+							break;
+					}
+					
+					capAction[ cmdStr] = Action(action).JSON();
+		 		}
+				
+				cap[string(JSON_ARG_ACTIONS)] = capAction;
+				keyCaps[to_string( kc)] = cap;
+			}
+			
+			kp[string(JSON_ARG_BUTTONS)] = keyCaps;
+			entry[string(JSON_ARG_KEYPAD)] = kp;
+		}
+
+*/
+		
+//		/////  VINNIE
+//		{
+//			if(info.deviceInfo.isKeyPad()){
+//
+//				InsteonKeypadDevice(deviceID).getKeypadLEDState([=](uint8_t mask, bool didSucceed){
+//					printf("mask %02X\n", mask);
+//				});
+//
+//			}
+//		}
+//		/////
+
+		if( db->getDBOnLevel(deviceID, group, &level, &lastTag) ){
+			entry[string(JSON_ARG_LEVEL)]  = level;
+			entry[string(JSON_ARG_ETAG)] = info.eTag;
+		}
+		
+		return true;
+	}
+	
+	return false;
+}
+
 static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 												REST_URL url,
 												TCPClientInfo cInfo,
@@ -1729,6 +1841,8 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 			else {
 				deviceIDs = db->devicesUpdateSinceEtag(0);
 			}
+			
+			reply[string(JSON_ARG_ETAG)] = db->lastEtag();
 			onlyShowChanged = true;
 		}
 		else if(v1.getStringFromMap("If-Modified-Since", url.headers(), str)){
@@ -1746,14 +1860,35 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 			// simple List all devices.
 			deviceIDs = db->allDevices();
 		}
-		if(onlyShowChanged && deviceIDs.size() == 0){
-			makeStatusJSON(reply,STATUS_NOT_MODIFIED);
-			(completion) (reply, STATUS_NOT_MODIFIED);
-			return true;
-		}
-		else if(showDetails){
+//		if(onlyShowChanged && deviceIDs.size() == 0){
+//
+//			reply[string(JSON_ARG_ETAG)] = db->lastEtag();
+//
+//						makeStatusJSON(reply,STATUS_OK);
+//						(completion) (reply, STATUS_OK);
+//
+////			makeStatusJSON(reply,STATUS_NOT_MODIFIED);
+////			(completion) (reply, STATUS_NOT_MODIFIED);
+// 		return true;
+//		}
+//		else
+		if(showDetails){
 			json devicesEntries;
 			for(DeviceID deviceID :deviceIDs) {
+				
+				json entry;
+				if(DeviceDetailJSONForDeviceID(deviceID	, entry) ){
+					string strDeviceID = deviceID.string();
+					devicesEntries[strDeviceID] = entry;
+				}
+			}
+			reply[string(JSON_ARG_DETAILS)] = devicesEntries;
+			reply[string(JSON_ARG_ETAG)] = db->lastEtag();
+ 		}
+	
+ 
+	/*
+				
 				insteon_dbEntry_t info;
 				if( db->getDeviceInfo(deviceID,  &info)) {
 					
@@ -1764,12 +1899,19 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 					entry[string(JSON_ARG_DEVICEINFO)] = info.deviceInfo.string();
 					entry[string(JSON_ARG_NAME)] = 	info.name;
 					entry["lastUpdated"] =  TimeStamp(info.lastUpdated).RFC1123String();
+					
+					entry[string(JSON_ARG_IS_KEYPAD)]  =  info.deviceInfo.isKeyPad();
+					entry[string(JSON_ARG_IS_DIMMER)] =  info.deviceInfo.isDimmer();
+					entry[string(JSON_ARG_IS_PLM)] =  info.deviceInfo.isPLM();
+	
  					devicesEntries[strDeviceID] = entry;
 				}
 				
 				reply[string(JSON_ARG_DETAILS)] = devicesEntries;
-			}
-		}
+				
+		*/
+				
+		 
 		else if(showLevels) {
 			json devicesEntries;
 			for(DeviceID deviceID :deviceIDs) {
@@ -1778,17 +1920,20 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
  				uint8_t  onLevel = 0;
 				
 				if( db->getDBOnLevel(deviceID, 0x01, &onLevel)) {
-					entry[string(JSON_ARG_LEVEL)] = InsteonDevice::onLevelString(onLevel);
+					entry[string(JSON_ARG_LEVEL)] = onLevel; // InsteonDevice::onLevelString(onLevel);
 					devicesEntries[deviceID.string()] = entry;
-					reply[string(JSON_ARG_LEVELS)] = devicesEntries;
 				}
+				
 			}
+			reply[string(JSON_ARG_LEVELS)] = devicesEntries;
+			reply[string(JSON_ARG_ETAG)] = db->lastEtag();
+ 
 			
-			if(onlyShowChanged && devicesEntries.size() == 0){
-				makeStatusJSON(reply,STATUS_NOT_MODIFIED);
-				(completion) (reply, STATUS_NOT_MODIFIED);
-				return true;
-			}
+//			if(onlyShowChanged && devicesEntries.size() == 0){
+//				makeStatusJSON(reply,STATUS_NOT_MODIFIED);
+//				(completion) (reply, STATUS_NOT_MODIFIED);
+//				return true;
+//			}
 		}
 		else {
 			vector<string> deviceList;
@@ -1824,59 +1969,40 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 			if(vDeviceID.validateArg(deviceStr)){
 				DeviceID	deviceID = DeviceID(deviceStr);
 				
-				bool queued = insteon.getOnLevel(deviceID, forceLookup,
-															[=](uint8_t level, eTag_t eTag, bool didSucceed){
-					insteon_dbEntry_t info;
-					json reply;
-					
-					if( db->getDeviceInfo(deviceID,  &info)) {
-						
-						reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
-						reply[string(JSON_ARG_NAME)] = 	info.name;
-						reply[string(JSON_VAL_VALID)] = info.isValidated;
-						reply[string(JSON_ARG_DEVICEINFO)] = info.deviceInfo.string();
-						reply[string(JSON_ARG_ETAG)] = info.eTag;
-						reply["lastUpdated"] =  TimeStamp(info.lastUpdated).RFC1123String();
-						reply[string(JSON_ARG_LEVEL)]  = level;
+				json reply;
+				if(DeviceDetailJSONForDeviceID(deviceID	, reply) ){
 	
-						reply[string(JSON_ARG_IS_KEYPAD)]  =  info.deviceInfo.isKeyPad();
-						reply[string(JSON_ARG_IS_DIMMER)] =  info.deviceInfo.isDimmer();
+					if(forceLookup) {
+		 
+						insteon.getOnLevel(deviceID, true,
+																	[=](uint8_t level, eTag_t eTag, bool didSucceed){
+							json reply1 = reply;
+							
+							if(didSucceed){
+								reply1[string(JSON_ARG_LEVEL)] = level;
+								reply1[string(JSON_ARG_ETAG)]= eTag;
+ 							}
+							
+							makeStatusJSON(reply1,STATUS_OK);
+							(completion) (reply1, STATUS_OK);
 	 
-						if(info.properties.size()){
-							json props;
-							for(auto prop : info.properties){
-								props[prop.first] = prop.second;
-							}
-							reply[string(JSON_ARG_PROPERTIES)]  = props;
-						}
-						
-						auto groups = db->groupsContainingDevice(deviceID);
-						if(groups.size() > 0){
-							vector<string> groupList;
-							for(GroupID groupID : groups) {
-								groupList.push_back(groupID.string());
-							}
-							reply[string(JSON_ARG_GROUPIDS)] = groupList;
-						}
+						});
+					}
+					else {
 						
 						makeStatusJSON(reply,STATUS_OK);
 						(completion) (reply, STATUS_OK);
 						return true;
+		
 					}
-					else {
-						makeStatusJSON(reply,STATUS_INTERNAL_ERROR);
-						(completion) (reply, STATUS_INTERNAL_ERROR);
-						return true;
-					}
-					
-				});
 				
-				if(!queued) {
-					makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is not running" );;
-					(completion) (reply, STATUS_UNAVAILABLE);
+				} else {
+					makeStatusJSON(reply,STATUS_INTERNAL_ERROR);
+					(completion) (reply, STATUS_INTERNAL_ERROR);
 					return true;
+	
 				}
-				return true;
+ 				return true;
 			}
 		}
 	}
@@ -1993,7 +2119,6 @@ static bool Devices_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 			// set level
 			if(isValidated && vLevel.getvalueFromJSON(JSON_ARG_LEVEL, url.body(), level)){
 				
-				if(!isValidated) return false;
 				
 				bool queued = insteon.setOnLevel(deviceID, level,
 															[=](eTag_t eTag, bool didSucceed){
@@ -2235,6 +2360,275 @@ static void Devices_NounHandler(ServerCmdQueue* cmdQueue,
 	}
 };
 
+// MARK: KEYPADS NOUN HANDLERS
+
+static bool KeypadDetailJSONForDeviceID( DeviceID deviceID, json &reply) {
+	using namespace rest;
+	using namespace timestamp;
+	
+	auto db = insteon.getDB();
+	
+	if(auto keypad = db->findKeypadEntryWithDeviceID(deviceID); keypad != NULL) {
+		
+		reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+		reply[string(JSON_ARG_NAME)] = 	keypad->name;
+		
+		json keyActions;
+		json buttons;
+		
+		for(const auto& [kc, buttonEntry] : keypad->buttons)  {
+			
+			json button;
+			json buttonAction;
+			
+			button[string(JSON_ARG_NAME)] = 	buttonEntry.buttonName;
+			button[string(JSON_ARG_LEVEL)] = 	buttonEntry.isOn?"on":"off";
+	 
+			for(const auto& [cmd, action] : buttonEntry.actions)  {
+				
+				string cmdStr = to_hex <unsigned char> (cmd,true);
+				switch (cmd) {
+					case InsteonParser::CMD_LIGHT_ON:
+						cmdStr = "on";
+						break;
+						
+					case InsteonParser::CMD_LIGHT_OFF:
+						cmdStr = "off";
+						break;
+						
+					default:
+						break;
+				}
+				
+				buttonAction[ cmdStr] = Action(action).JSON();
+			}
+			
+			button[string(JSON_ARG_ACTIONS)] = buttonAction;
+			buttons[to_string( kc)] = button;
+		}
+		
+		reply[string(JSON_ARG_BUTTONS)] = buttons;
+
+		return true;
+	}
+	
+	return false;
+}
+static bool Keypads_NounHandler_GET(ServerCmdQueue* cmdQueue,
+												REST_URL url,
+												TCPClientInfo cInfo,
+												ServerCmdQueue::cmdCallback_t completion) {
+	
+	using namespace rest;
+	using namespace timestamp;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	
+	bool showDetails = false;
+
+	json reply;
+	
+	auto db = insteon.getDB();
+	vector<DeviceID> deviceIDs;
+	
+	if(queries.count(string(JSON_VAL_DETAILS))) {
+		string str = queries[string(JSON_VAL_DETAILS)];
+		if( str == "true" ||  str =="1")
+			showDetails = true;
+	}
+
+	// GET /keypads
+	if(path.size() == 1) {
+		
+		deviceIDs = db->allKeypads();
+
+		if(showDetails){
+			json devicesEntries;
+			for(DeviceID deviceID :deviceIDs) {
+				
+				json entry;
+				if(KeypadDetailJSONForDeviceID(deviceID	, entry) ){
+					string strDeviceID = deviceID.string();
+					devicesEntries[strDeviceID] = entry;
+				}
+			}
+			reply[string(JSON_ARG_DETAILS)] = devicesEntries;
+			
+			makeStatusJSON(reply,STATUS_OK);
+			(completion) (reply, STATUS_OK);
+			return true;
+
+		}
+		
+		else {
+			vector<string> deviceList;
+			
+			for(DeviceID deviceID :deviceIDs) {
+				deviceList.push_back(deviceID.string());
+			}
+			reply[string(JSON_ARG_DEVICEIDS)] = deviceList;
+			makeStatusJSON(reply,STATUS_OK);
+			(completion) (reply, STATUS_OK);
+			return true;
+			
+		}
+	}
+	// GET /keypads/XX.XX.XX
+	else if(path.size() == 2) {
+		
+		DeviceIDArgValidator vDeviceID;
+		
+		auto deviceStr = path.at(1);
+		if(vDeviceID.validateArg(deviceStr)){
+			DeviceID	deviceID = DeviceID(deviceStr);
+			
+			json reply;
+			if( KeypadDetailJSONForDeviceID(deviceID, reply )) {
+
+				makeStatusJSON(reply,STATUS_OK);
+				(completion) (reply, STATUS_OK);
+				return true;
+				
+			}
+	
+		}
+		
+	}
+	return false;
+}
+
+static bool Keypads_NounHandler_PUT(ServerCmdQueue* cmdQueue,
+												REST_URL url,
+												TCPClientInfo cInfo,
+												ServerCmdQueue::cmdCallback_t completion) {
+	
+	using namespace rest;
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	json reply;
+	
+	auto db = insteon.getDB();
+	vector<DeviceID> deviceIDs;
+	
+	bool isValidated = false;
+
+	if(path.size() == 3) {
+		
+		// keypad/<deviceID>/buttonID/
+		
+		DeviceIDArgValidator vDeviceID;
+		DeviceLevelArgValidator vLevel;
+	
+		auto deviceStr = path.at(1);
+		auto buttonStr = path.at(2);
+		
+		if(vDeviceID.validateArg(deviceStr)){
+			DeviceID	deviceID = DeviceID(deviceStr);
+			
+			insteon_dbEntry_t info;
+			if( db->getDeviceInfo(deviceID, &info)){
+	//			isValidated =  info.isValidated;
+				isValidated = true;
+			}
+			
+			if( regex_match(string(buttonStr), std::regex("^[1-8]$"))){
+				uint8_t buttonID;
+				if( std::sscanf(buttonStr.c_str(), "%hhd", &buttonID) == 1){
+				
+					if(auto keypad = db->findKeypadEntryWithDeviceID(deviceID); keypad != NULL)
+						if(auto button =  db->findKeypadButton(keypad, buttonID) ; button != NULL){
+							
+							// set button level
+							int level;
+							if(isValidated && vLevel.getvalueFromJSON(JSON_ARG_LEVEL, url.body(), level)){
+								
+								uint8_t cmd = level > 0? InsteonParser::CMD_LIGHT_ON: InsteonParser::CMD_LIGHT_OFF;
+								
+								bool queued = insteon.runActionForKeypad(deviceID, buttonID, cmd,
+																					  [=]( bool didSucceed){
+									json reply;
+									
+									if(didSucceed){
+										makeStatusJSON(reply,STATUS_OK);
+										(completion) (reply, STATUS_OK);
+									}
+									else {
+										makeStatusJSON(reply, STATUS_BAD_REQUEST, "Run Keypad Failed" );;
+										(completion) (reply, STATUS_BAD_REQUEST);
+									}
+								});
+		 
+								if(!queued) {
+									makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is not running" );;
+									(completion) (reply, STATUS_UNAVAILABLE);
+									return true;
+								}
+								return true;
+ 							}
+						}
+				}
+			}
+		}
+	}
+ 	 
+	return false;
+}
+
+static void Keypads_NounHandler(ServerCmdQueue* cmdQueue,
+										 REST_URL url,  // entire request
+										 TCPClientInfo cInfo,
+										 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	json reply;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	string noun;
+	
+	bool isValidURL = false;
+	
+	if(path.size() > 0) {
+		noun = path.at(0);
+	}
+	
+	switch(url.method()){
+		case HTTP_GET:
+ 			isValidURL = Keypads_NounHandler_GET(cmdQueue,url,cInfo, completion);
+			break;
+
+		case HTTP_PUT:
+			isValidURL = Keypads_NounHandler_PUT(cmdQueue,url,cInfo, completion);
+			break;
+
+		case HTTP_PATCH:
+//			isValidURL = Log_NounHandler_PATCH(cmdQueue,url,cInfo, completion);
+			break;
+
+//		case HTTP_POST:
+//			isValidURL = Log_NounHandler_POST(cmdQueue,url,cInfo, completion);
+//			break;
+//
+//		case HTTP_DELETE:
+//			isValidURL = Log_NounHandler_DELETE(cmdQueue,url,cInfo, completion);
+//			break;
+  
+		default:
+			(completion) (reply, STATUS_INVALID_METHOD);
+			return;
+	}
+	
+	if(!isValidURL) {
+		(completion) (reply, STATUS_NOT_FOUND);
+	}
+}
+
+
+// MARK:  OTHER REST NOUN HANDLERS
+
 // MARK: PLM NOUN HANDLERS
 
 static bool PLM_NounHandler_GET(ServerCmdQueue* cmdQueue,
@@ -2261,11 +2655,16 @@ static bool PLM_NounHandler_GET(ServerCmdQueue* cmdQueue,
 			if( insteon.plmInfo(&deviceID, &deviceInfo) ){
 				json reply;
 				
+				auto state = insteon.currentState();
+				string stateStr = insteon.currentStateString();
+		
 				reply[string(JSON_ARG_DEVICEID)] = 	deviceID.string();
 				reply[string(JSON_ARG_DEVICEINFO)] =	deviceInfo.string();
 				string path = db->getPLMPath();
 				reply[string(JSON_ARG_FILEPATH)] = path;
 				reply[string(JSON_ARG_COUNT)] = db->count();
+				reply[string(JSON_ARG_STATE)] 		=   state;
+				reply[string(JSON_ARG_STATESTR)] 	=   stateStr;
 
 				makeStatusJSON(reply,STATUS_OK);
 				(completion) (reply, STATUS_OK);
@@ -2376,6 +2775,7 @@ static bool PLM_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 						case InsteonMgr::STATE_SETUP:
 						case InsteonMgr::STATE_NO_PLM:
 						case InsteonMgr::STATE_PLM_ERROR:
+						case InsteonMgr::STATE_PLM_STOPPED:
  							break;
 							
 						default:
@@ -4702,7 +5102,8 @@ void registerServerCommands() {
 	cmdQueue->registerNoun(NOUN_ACTION_GROUPS, ActionGroups_NounHandler);
 	cmdQueue->registerNoun(NOUN_EVENTS,		 Events_NounHandler);
 	cmdQueue->registerNoun(NOUN_EVENTS_GROUPS,  EventGroups_NounHandler);
- 
+ 	cmdQueue->registerNoun(NOUN_KEYPADS,  Keypads_NounHandler);
+	
 	// register command line commands
 	auto cmlR = CmdLineRegistry::shared();
 	

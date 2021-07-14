@@ -142,6 +142,13 @@ DeviceInfo::DeviceInfo( std::string str){
 }
 
 
+
+bool DeviceInfo::isPLM(){
+	
+	return (_cat == 0x03);
+}
+
+
 bool DeviceInfo::isKeyPad(){
 	 
 	set< pair<uint8_t,uint8_t>> devices =

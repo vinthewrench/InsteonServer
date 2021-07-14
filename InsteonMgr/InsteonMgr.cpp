@@ -324,7 +324,7 @@ void InsteonMgr::stop(){
 		_hasInfo			= false;
 		_shouldRunStartupEvents = true;
 
-		_state = STATE_NO_PLM;
+		_state = STATE_PLM_STOPPED;
 		_hasPLM = false;
 		_running = false;
 	}
@@ -388,6 +388,9 @@ string InsteonMgr::currentStateString(){
 			break;
 		case STATE_NO_PLM:
 			result = "No PLM Found";
+			break;
+		case STATE_PLM_STOPPED:
+			result = "PLM Stopped";
 			break;
 		case STATE_PLM_INIT:
 			result = "PLM Initialized";
@@ -826,11 +829,13 @@ bool InsteonMgr::getOnLevel(DeviceID deviceID, bool forceLookup,
 		case STATE_VALIDATING:
 		case STATE_UPDATING:
 			if(_db.isDeviceValidated(deviceID )) break;
- // yes it's a fsall through
+ // yes it's a fall through
 		default:
+			
+			if(cb) (cb)(0,0, false);
 			return false;
 	}
- 
+ 		 
 	uint8_t group = 0x01;		// only on group 1
 	uint8_t level = 0;
 	eTag_t lastTag = 0;
@@ -897,6 +902,33 @@ bool InsteonMgr::setKeypadLEDState(DeviceID deviceID, uint8_t mask,
 	});
 
    return true;
+}
+
+bool InsteonMgr::runActionForKeypad(DeviceID deviceID, uint8_t buttonID, uint8_t cmd,
+												boolCallback_t cb){
+	if(_state == STATE_READY)
+		if( _db.setKeyPadButton(deviceID,buttonID, cmd)) {
+			
+			uint8_t newMask = _db.LEDMaskForKeyPad( _db.findKeypadEntryWithDeviceID(deviceID));
+			
+			// Set the LED state
+			InsteonKeypadDevice(deviceID).setKeypadLEDState(newMask, [=](bool didSucceed){
+				
+				if(auto action =  _db.actionForKeypad(deviceID, buttonID, cmd) ; action != NULL){
+					
+					LOG_INFO("\tKEYPAD: %s, button: %d, cmd %02x \n",
+								deviceID.string().c_str(),
+								buttonID,cmd);
+					
+					runAction(*action , [=](bool didSucceed){
+						if(cb) (cb)( didSucceed);
+					});
+				};
+			});
+			
+			return true;
+		}
+	return false;
 }
 
 
@@ -1017,6 +1049,42 @@ bool InsteonMgr::runAction(Action action,
 		}
 			break;
 			
+		case Action::ACTION_TYPE_KEYPAD: {
+			DeviceID keypadID = action.deviceID();
+			switch (action.cmd()) {
+				
+				case Action::ACTION_ON:
+						handled = runActionForKeypad(keypadID,
+															  action.buttonID(),
+															  InsteonParser::CMD_LIGHT_ON,
+															  [=]( bool didSucceed){
+							if(cb) (cb)( didSucceed);
+						});
+						break;
+			
+				case Action::ACTION_OFF:
+						handled = runActionForKeypad(keypadID,
+															  action.buttonID(),
+															  InsteonParser::CMD_LIGHT_OFF,
+															  [=]( bool didSucceed){
+							if(cb) (cb)( didSucceed);
+						});
+						break;
+			 
+				case Action::ACTION_SET_KEYPADMASK:
+					handled = setKeypadLEDState(keypadID, action.mask(), [=]( bool didSucceed){
+						if(cb) (cb)( didSucceed);
+					});
+ 
+					break;
+
+				default:
+					break;
+			}
+		
+		}
+			break;
+			
 		case Action::ACTION_TYPE_DEVICE: {
 			DeviceID deviceID = action.deviceID();
 			switch (action.cmd()) {
@@ -1038,18 +1106,13 @@ bool InsteonMgr::runAction(Action action,
 						if(cb) (cb)( didSucceed);
 					});
 					break;
-	
-				case Action::ACTION_SET_KEYPAD:
-					handled = setKeypadLEDState(deviceID, level, [=]( bool didSucceed){
-						if(cb) (cb)( didSucceed);
-					});
- 					break;
 
  				default:
 					break;
 			}
 			
 		}
+		
 			break;
 			
 			
@@ -1058,6 +1121,22 @@ bool InsteonMgr::runAction(Action action,
 				uint8_t devGroupID = action.deviceGroupID();
 				
 				handled = InsteonDeviceGroup(devGroupID).setOnLevel(level, [=](bool didSucceed){
+					
+					if(didSucceed) {
+						
+						auto devices = _db.devicesRespondingToInsteonGroup(devGroupID);
+						for (auto devID : devices) {
+							_db.setDBOnLevel(devID, 0x01, level);
+						}
+						
+						if(devGroupID == 0xff && level == 0) { // wild  card shutoff
+							
+							for (auto keypadID : _db.allKeypads()) {
+								_db.setKeyPadButton(keypadID, 0xff, InsteonParser::CMD_LIGHT_OFF);
+							}
+						}
+						
+					}
 					if(cb) (cb)( didSucceed);
 				});
 			}
@@ -1431,23 +1510,17 @@ bool  InsteonMgr::processBroadcastEvents(plm_result_t response) {
 		
 		if(msg.msgType == MSG_TYP_GROUP_BROADCAST){
 			
-			static struct{
-				deviceID_t 	from;
-				uint8_t 		group;
-				uint8_t 		cmd;
-			}lastBroadcast = {0,0,0, 0,0};
-			
 			uint8_t group 	= msg.to[0];
 			uint8_t cmd 		= msg.cmd[0];
 			
 			// Insteon often sends duplicate ON/OFF broadcast messages.
-			// ignore them if they are the same
 			
-			didHandle = (deviceID.isEqual(lastBroadcast.from)
-							 && group == lastBroadcast.group
-							 && cmd == lastBroadcast.cmd
-							 && ( cmd == InsteonParser::CMD_LIGHT_OFF
-								|| cmd == InsteonParser::CMD_LIGHT_ON) );
+			// ignore 06
+			didHandle = (cmd == InsteonParser::CMD_INSTEON_06)
+			
+			// for broadcast - we expect the cmd 2 to be zero- else ignore it
+			|| (msg.cmd[1] != 0);
+			
 			
 			if(	!didHandle){
 				
@@ -1494,28 +1567,42 @@ bool  InsteonMgr::processBroadcastEvents(plm_result_t response) {
 					}
 				}
 				
+				
 				// fire off any events
 				auto evt = EventTrigger(deviceID, group, cmd);
-				LOG_INFO("\tTRIGGER: %s \n",evt.printString().c_str());
-
 				auto eventIDs =  _db.matchingEventIDs(evt);
 				if(eventIDs.size() > 0){
 					// run these events.
 					
-					// short delay to stablize isteon bus
-					sleep_ms(500);
- 
+					LOG_INFO("\tTRIGGER: %s \n",evt.printString().c_str());
+					
+					
 					for (auto eventID : eventIDs) {
+						// short delay to stablize Insteon bus
+						sleep_ms(500);
 						executeEvent(eventID);
 					}
 				}
-			}
-			
-			// dont save Insteon 6 - ignore it
-			if(cmd != InsteonParser::CMD_INSTEON_06){
-				copyDevID(msg.from, lastBroadcast.from);
-				lastBroadcast.group = group;
-				lastBroadcast.cmd = cmd;
+				
+				//				printf("-- (%02X) [%02x %02x] %s\n",
+				//						 msg.to[0], // group
+				//						 msg.cmd[0],
+				//						 msg.cmd[1],
+				//						 deviceID.string().c_str()) ;
+				//
+				// are there any keypads that match this?
+				
+				
+				// is this a keypad button?
+				if(auto keypad = _db.findKeypadEntryWithDeviceID(deviceID); keypad != NULL)
+					if(auto button =  _db.findKeypadButton(keypad, group) ; button != NULL){
+						
+						// short delay to stablize isteon bus
+						sleep_ms(500);
+						
+						// run button action
+						runActionForKeypad(deviceID, group, cmd);
+					}
 				}
 		}
  		

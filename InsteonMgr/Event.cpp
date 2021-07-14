@@ -239,7 +239,7 @@ nlohmann::json EventTrigger::JSON(){
 			}
 			
 			if(_deviceEvent.hasCmd){
-				j1[string(JSON_CMD)] =  to_hex<uint8_t>(_deviceEvent.cmd,true);
+				j1[string(JSON_CMD)] =  string(to_hex<uint8_t>(_deviceEvent.cmd,true));
 			}
 			
 			// maybe this should be a subset

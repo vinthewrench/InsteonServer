@@ -71,7 +71,8 @@ public:
 
 	bool isKeyPad();
 	bool isDimmer();
-	 
+	bool isPLM();
+	
 	inline bool isNULL() {
 		return ( _cat == 0  && _subcat == 0 );
 	}

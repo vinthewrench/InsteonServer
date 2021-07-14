@@ -38,6 +38,7 @@ public:
 		STATE_NO_PLM,
 		STATE_PLM_INIT,
 		STATE_PLM_ERROR,
+		STATE_PLM_STOPPED,
 		STATE_RESETING,
 		STATE_SETUP_PLM,
 		
@@ -114,6 +115,9 @@ public:
 	bool setKeypadLEDState(DeviceID deviceID, uint8_t mask,
 								  boolCallback_t callback = NULL);
 
+	bool runActionForKeypad(DeviceID deviceID, uint8_t buttonID, uint8_t cmd,
+								  boolCallback_t callback = NULL);
+ 
 	// groups set
 	bool setOnLevel(GroupID groupID, uint8_t onLevel = 0,
 						 std::function<void(bool didSucceed)> callback = NULL);
