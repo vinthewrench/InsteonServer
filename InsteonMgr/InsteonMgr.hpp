@@ -84,6 +84,10 @@ public:
 						 boolCallback_t callback = NULL);
 
 	bool addToDeviceALDB(DeviceID deviceID,
+								vector<pair<bool,uint8_t>> aldbGroups, // <bool isCNTL, uint8_t groupID>
+								boolCallback_t callback = NULL);
+ 
+	bool addToDeviceALDB(DeviceID deviceID,
 								bool isCNTL, uint8_t groupID = 0x01,
 								boolCallback_t callback = NULL);
  

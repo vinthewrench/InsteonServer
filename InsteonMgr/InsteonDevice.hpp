@@ -61,6 +61,8 @@ public:
 	static bool jsonToBackLightLevel( nlohmann::json j, uint8_t* levelOut = NULL);
 	static std::string backLightLevelString(uint8_t level);
 
+	bool getEXTInfo(std::function<void(uint8_t data[14], bool didSucceed)>  callback = NULL);
+
 protected:
 	DeviceID _deviceID;
 };
@@ -74,7 +76,8 @@ class InsteonKeypadDevice : InsteonDevice{
 	
 	InsteonKeypadDevice(DeviceID deviceID):InsteonDevice(deviceID){};
 	
-	bool setKeyButtonMode(bool eightKey, boolCallback_t callback = NULL);
+	bool setButtonConfiguration(bool eightKey, boolCallback_t callback = NULL);
+	bool getButtonConfiguration(std::function<void(bool eightKey, bool didSucceed)> callback = NULL);
   
  	bool setNonToggleMask(uint8_t mask, boolCallback_t callback = NULL);
 	

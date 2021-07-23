@@ -32,6 +32,8 @@ constexpr static string_view KEY_CONFIG_APIKEY		= "apikey";
 constexpr static string_view KEY_CONFIG_LOGFILE_PATH	= "log-path";
 constexpr static string_view KEY_CONFIG_LOGFILE_FLAGS	= "log-flags";
 
+constexpr static string_view KEY_CONFIG_AUTOSTART_PLM	= "plm-autostart";
+
 constexpr static string_view KEY_START_DEVICE 		= "device-start";
 constexpr static string_view KEY_END_DEVICE 			= "device-end";
 constexpr static string_view KEY_START_GROUP 			= "group-start";
@@ -59,6 +61,7 @@ constexpr static string_view KEY_EVENT_TRIGGER		= "trigger";
 constexpr static string_view KEY_EVENT_EVENTID		= "event";
 constexpr static string_view KEY_BUTTON_ACTION		= "button-action";
 constexpr static string_view KEY_BUTTON_NAME		= "button";
+constexpr static string_view KEY_BUTTONS_COUNT		= "buttons";
 
 
 InsteonDB *InsteonDB::sharedInstance = 0;
@@ -73,6 +76,7 @@ InsteonDB::InsteonDB() {
 	_actionGroups.clear();
 	_eventsGroups.clear();
 	_APISecrets.clear();
+	_autoStartPLM = false;
 	_events.clear();
 	_insteonGroupMap.clear();
 	_keyPads.clear();
@@ -85,7 +89,6 @@ InsteonDB::InsteonDB() {
   std::generate(random_data.begin(), random_data.end(), std::ref(random_source));
   std::seed_seq seed_seq(random_data.begin(), random_data.end());
 	_rng =  std::mt19937{ seed_seq };
- 
 }
 
 InsteonDB::~InsteonDB() {
@@ -270,13 +273,13 @@ vector<DeviceID> InsteonDB::validDevices(){
 }
 
 
-vector<DeviceID> InsteonDB::devicesThatNeedUpdating(){
+vector<DeviceID> InsteonDB::devicesThatNeedValidation(){
 	
 	std::lock_guard<std::mutex> lock(_mutex);
 	vector< DeviceID> val_list;
 	
-	time_t expiredTime = time(NULL) - _expired_age;
-	
+	time_t now = time(NULL);
+ 
 	for (auto e = _db.begin(); e != _db.end(); e++) {
 		
 		bool hasCTRL = false;
@@ -292,7 +295,7 @@ vector<DeviceID> InsteonDB::devicesThatNeedUpdating(){
 			&&(
 				!e->isValidated
 				|| e->lastUpdated == 0
-				|| e->lastUpdated < expiredTime
+				|| (now - e->lastUpdated) > _expired_age
 				|| e->deviceInfo.GetVersion()	== 0
 				))
 		{
@@ -490,6 +493,11 @@ bool InsteonDB::removeDevice(DeviceID deviceID){
 		groupRemoveDevice(groupID, deviceID);
 	}
 
+	if(auto keypad = findKeypadEntryWithDeviceID(deviceID); keypad != NULL){
+		std::lock_guard<std::mutex> lock(_mutex);
+		_keyPads.erase(deviceID);
+	}
+	
 	{ // lock durring erase.
 		std::lock_guard<std::mutex> lock(_mutex);
  
@@ -559,7 +567,89 @@ Action*  InsteonDB::actionForKeypad(DeviceID deviceID, uint8_t buttonID, uint8_t
 	return NULL;
 }
 
-bool InsteonDB::setKeyPadButton(DeviceID deviceID, uint8_t buttonID, uint8_t cmd){
+bool InsteonDB::createKeypad(DeviceID deviceID){
+	bool didUpdate = false;
+
+	
+	if( findDBEntryWithDeviceID(deviceID)
+		&& findKeypadEntryWithDeviceID(deviceID) == NULL) {
+ 
+		keypad_dbEntry_t keyPad;
+		keyPad.deviceID = deviceID;
+ 		keyPad.buttons.clear();
+		_keyPads[deviceID] = keyPad;
+	
+		didUpdate = true;
+		saveToCacheFile();
+	}
+ 
+	return didUpdate;
+}
+
+bool InsteonDB::createKeypadButton(DeviceID deviceID, uint8_t buttonID){
+	bool didUpdate = false;
+	
+	if(auto keypad = findKeypadEntryWithDeviceID(deviceID); keypad != NULL)
+	{
+		if (findKeypadButton(keypad, buttonID) == NULL) {
+			
+			keypad_Button_t keyAction;
+			keyAction.isOn = false;
+			keypad->buttons[buttonID] = keyAction;
+			didUpdate = true;
+			saveToCacheFile();
+		}
+		
+	}
+	return didUpdate;
+}
+
+bool InsteonDB::removeKeypadButton(DeviceID deviceID, uint8_t buttonID){
+	bool didUpdate = false;
+	
+	
+	if(auto keypad = findKeypadEntryWithDeviceID(deviceID); keypad != NULL)
+	{
+		if( keypad->buttons.erase(buttonID)) {
+			didUpdate = true;
+			saveToCacheFile();
+		}
+	}
+	
+	return didUpdate;
+	
+}
+
+bool  InsteonDB::setActionForKeyPadButton(DeviceID deviceID, uint8_t buttonID, uint8_t cmd,  Action action) {
+	
+	bool didUpdate = false;
+
+	if(action.isValid())
+		if(auto keypad = findKeypadEntryWithDeviceID(deviceID); keypad != NULL)
+			if(auto button =  findKeypadButton(keypad, buttonID) ; button != NULL){
+				button->actions[cmd] = action;
+				didUpdate = true;
+				saveToCacheFile();
+	}
+	
+	return didUpdate;
+}
+
+bool InsteonDB::setNameForKeyPadButton(DeviceID deviceID, uint8_t buttonID, string name){
+	
+	bool didUpdate = false;
+
+	if(auto keypad = findKeypadEntryWithDeviceID(deviceID); keypad != NULL)
+			if(auto button =  findKeypadButton(keypad, buttonID) ; button != NULL){
+				button->buttonName = name;
+				didUpdate = true;
+				saveToCacheFile();
+	}
+	
+	return didUpdate;
+}
+
+bool InsteonDB::invokeKeyPadButton(DeviceID deviceID, uint8_t buttonID, uint8_t cmd){
 	
 	bool didUpdate = false;
 	
@@ -611,6 +701,18 @@ uint8_t InsteonDB::LEDMaskForKeyPad(keypad_dbEntry_t* keypad){
  	}
 
 	return mask;
+}
+
+bool InsteonDB::setKeypadButtonCount(DeviceID deviceID, uint8_t buttonCount ){
+	bool didUpdate = false;
+	
+	if(auto keypad = findKeypadEntryWithDeviceID(deviceID); keypad != NULL) {
+		
+		keypad->buttonCount = buttonCount;
+		didUpdate = true;
+		saveToCacheFile();
+	}
+		return didUpdate;
 }
 
 
@@ -701,6 +803,18 @@ bool InsteonDB::getLatLong(double &latitude, double &longitude){
 	longitude = _longitude;
 	return true;
 }
+
+
+void  InsteonDB::setPLMAutoStart(bool autoStartPLM) {
+	_autoStartPLM = autoStartPLM;
+	saveToCacheFile();
+};
+
+bool  InsteonDB::getPLMAutoStart() {
+	return _autoStartPLM;
+	
+};
+
 
 // MARK: - PLM tools
 
@@ -832,10 +946,13 @@ bool InsteonDB::backupCacheFile(string filepath){
 				ofs << KEY_CONFIG_LOGFILE_PATH << ": " << _logFilePath << "\n";
 	
 			ofs << KEY_CONFIG_LOGFILE_FLAGS << ": " << to_hex(_logFileFlags, true) << "\n";
-			
+	 
+			ofs << KEY_CONFIG_AUTOSTART_PLM << ": " << (_autoStartPLM?"yes":"no")  << "\n";
+	 
 	 		ofs << KEY_END_CONFIG << ":\n";
 			ofs << "\n";
-
+			
+		
 	//		ofs << "## PLM " << _plmDeviceID.string() << "  "<<  string(str) << "\n\n";
 		}
 		 
@@ -915,11 +1032,11 @@ bool InsteonDB::backupCacheFile(string filepath){
 		
 		// save Keypads
 		for (const auto& [deviceID, entry] : _keyPads) {
+
+			ofs << KEY_START_KEYPAD << ": " <<  deviceID.string()  << "\n";
+			ofs << KEY_BUTTONS_COUNT << ": " 	<< setw(1) << int(entry.buttonCount) << setw(0) << "\n";
 			
-			ofs <<  KEY_START_KEYPAD << ": " <<  deviceID.string()  << "\n";
-			ofs << KEY_DEVICE_NAME << ": " << entry.name << "\n";
-		
-	// list keycap names
+	// list button names
 			for(const auto& [keycap, actionEntry] : entry.buttons)  {
 				ofs << KEY_BUTTON_NAME << ": "
 				<< setw(1) << int(keycap) << setw(0)
@@ -1241,7 +1358,6 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 				{
 					if(token == KEY_CONFIG_PORT){
 						_plmPath  = string(p);
-						break;
 					}
 					else if(token == KEY_CONFIG_LATLONG){
 						
@@ -1268,7 +1384,6 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 						if(!_logFilePath.empty()) {
 							LogMgr::shared()->setLogFilePath(_logFilePath);
 						}
-						break;
 					}
 					else if(token == KEY_CONFIG_LOGFILE_FLAGS){
 						
@@ -1277,10 +1392,20 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 							_logFileFlags = flag;
 							LogMgr::shared()->_logFlags = _logFileFlags;
 						}
-						break;
+					}
+					else if(token == KEY_CONFIG_AUTOSTART_PLM){
+						
+						vector<string> v = split<string>(string(p), " ");
+						if(v.size() > 0) {
+							string option = v.at(0);
+							std::transform(option.begin(), option.end(), option.begin(), ::tolower);
+							
+							if(option == "yes")
+								_autoStartPLM = true;
+						}
 					}
 				}
-					break;
+				break;
 					
 				case RESTORE_DEVICE:
 				{
@@ -1295,14 +1420,11 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 						auto devInfo = DeviceInfo( string(p));
 						if(!devInfo.isNULL())
 							entry->deviceInfo = devInfo;
-						break;;
 					}
-					
-					if(token == KEY_DEVICE_NAME){
+					else if(token == KEY_DEVICE_NAME){
 						entry->name = string(p);
 						break;
 					}
-					
 					else if(token == KEY_DEVICE_UPDATED){
 						time_t		lastUpdated = 0;
 						struct tm tm;
@@ -1316,7 +1438,6 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 						entry->lastUpdated = lastUpdated;
 						entry->lastLevelUpdate = time(NULL);
 						entry->eTag = _eTag;
-						break;
 					}
 					
 					else if(token	== KEY_DEVICE_CNTL || token	== KEY_DEVICE_RESP){
@@ -1379,7 +1500,7 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 						entry->properties[token] = rest;
 					}
 				}
-					break;
+				break;
 					
 				case RESTORE_GROUP:
 				{
@@ -1474,12 +1595,15 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 				
 					if(auto entry = findKeypadEntryWithDeviceID(deviceID); entry != NULL) {
 						
-						if(token == KEY_DEVICE_NAME){
-							entry->name = string(p);
-							break;
+						if(token == KEY_BUTTONS_COUNT){
+					
+							uint8_t buttonCount = 0;
+							if( sscanf(p, "%hhd %n", &buttonCount ,&n) < 1) continue;
+							p += n;
+							entry->buttonCount = buttonCount;
 						}
 						
-						else if(token == KEY_BUTTON_NAME){
+						if(token == KEY_BUTTON_NAME){
 							
 							uint8_t keyNumber = 0;
 							if( sscanf(p, "%hhd %n", &keyNumber ,&n) < 1) continue;

@@ -44,46 +44,6 @@ InsteonMgr::InsteonMgr(){
 	
 	// clear database
 	_db.clear();
-
-//  VINNIE -- read this from DB
-//	_scdMgr.setLatLong(42.235389 ,-122.865947);
-//	_db.setLatLong(42.235389 , -122.865947);
-	
-
-/*	{
-	solarTimes_t solar;
-	_scdMgr.getSolarEvents(solar);
-		
-		char timeStr[80] = {0};
-		static const char *kDateFormat = "%a %h-%d-%Y %r";
-		struct tm timeinfo = {0};
-		
-		// convert this to local time
-	 	 time_t lastMidnight = solar.previousMidnight;
-	 
-		time_t time = 0;
-		time = lastMidnight + (solar.civilSunRiseMins * 60);
-		gmtime_r(&time, &timeinfo);
-		::strftime(timeStr, sizeof(timeStr), kDateFormat, &timeinfo );
-		printf("%12s: %s\n", "civilSunRise", timeStr);
-		
-		time = lastMidnight + (solar.sunriseMins * 60);
-		gmtime_r(&time, &timeinfo);
-		::strftime(timeStr, sizeof(timeStr), kDateFormat, &timeinfo );
-		printf("%12s: %s\n", "sunRise", timeStr);
-		
-		time = lastMidnight + (solar.sunSetMins * 60);
-		gmtime_r(&time, &timeinfo);
-		::strftime(timeStr, sizeof(timeStr), kDateFormat, &timeinfo );
-		printf("%12s: %s\n", "sunSet", timeStr);
-		
-		time = lastMidnight + (solar.civilSunSetMins * 60);
-		gmtime_r(&time, &timeinfo);
-		::strftime(timeStr, sizeof(timeStr), kDateFormat, &timeinfo );
-		printf("%12s: %s\n", "civilSunSet", timeStr);
- 	}
-*/
-	
 }
 
 
@@ -188,6 +148,20 @@ bool InsteonMgr::loadCacheFile(string filePath){
 		_isSetup = true;
 	}
 	
+	if(_db.getPLMAutoStart()){
+ 		begin("",  [=](bool didSucceed) {
+			if(didSucceed){
+				syncPLM( [=](bool didSucceed) {
+					if(didSucceed){
+				// start validation process in background
+							validatePLM( [](bool didSucceed) {
+					// let this run in background
+						});
+					}
+				});
+			}
+		});
+	}	
  	return success;
 }
 
@@ -625,7 +599,7 @@ void InsteonMgr::validatePLM(boolCallback_t callback){
 	}
 
 	// create a list of devices to validate
-	vector<DeviceID>  val_list = _db.devicesThatNeedUpdating();
+	vector<DeviceID>  val_list = _db.devicesThatNeedValidation();
 
 	 LOG_INFO("\tVALIDATION NEEDED for %d devices\n",  val_list.size() );
 
@@ -652,7 +626,7 @@ void InsteonMgr::validatePLM(boolCallback_t callback){
 		
 		//		// schedule next validation check in the future
 		//		_nextValidationCheck = time(NULL)
-		//				+ ((_db.devicesThatNeedUpdating().size() > 0) ? 60 : _expired_delay);
+		//				+ ((_db.devicesThatNeedValidation().size() > 0) ? 60 : _expired_delay);
 		
 		_state = STATE_READY;
 		
@@ -713,7 +687,7 @@ void InsteonMgr::startDeviceValidation(){
 	}
 	
 	// create a list of devices to validate
-	vector<DeviceID>  val_list = _db.devicesThatNeedUpdating();
+	vector<DeviceID>  val_list = _db.devicesThatNeedValidation();
 
 	 LOG_INFO("\tVALIDATION NEEDED for %d devices\n",  val_list.size() );
  
@@ -744,7 +718,7 @@ void InsteonMgr::startDeviceValidation(){
 			
 			// schedule next validation check in the future
 			_nextValidationCheck = time(NULL)
-					+ ((_db.devicesThatNeedUpdating().size() > 0) ? 60 : _expired_delay);
+					+ ((_db.devicesThatNeedValidation().size() > 0) ? 60 : _expired_delay);
 		 
 			_state = STATE_READY;
 			
@@ -907,23 +881,26 @@ bool InsteonMgr::setKeypadLEDState(DeviceID deviceID, uint8_t mask,
 bool InsteonMgr::runActionForKeypad(DeviceID deviceID, uint8_t buttonID, uint8_t cmd,
 												boolCallback_t cb){
 	if(_state == STATE_READY)
-		if( _db.setKeyPadButton(deviceID,buttonID, cmd)) {
+		if( _db.invokeKeyPadButton(deviceID,buttonID, cmd)) {
 			
 			uint8_t newMask = _db.LEDMaskForKeyPad( _db.findKeypadEntryWithDeviceID(deviceID));
 			
 			// Set the LED state
 			InsteonKeypadDevice(deviceID).setKeypadLEDState(newMask, [=](bool didSucceed){
-				
+		
+				LOG_INFO("\tKEYPAD: %s, button: %d, cmd %02x \n",
+							deviceID.string().c_str(),
+							buttonID,cmd);
+
 				if(auto action =  _db.actionForKeypad(deviceID, buttonID, cmd) ; action != NULL){
-					
-					LOG_INFO("\tKEYPAD: %s, button: %d, cmd %02x \n",
-								deviceID.string().c_str(),
-								buttonID,cmd);
-					
-					runAction(*action , [=](bool didSucceed){
+						runAction(*action , [=](bool didSucceed){
 						if(cb) (cb)( didSucceed);
 					});
-				};
+				}
+			// No Actions for button - just return
+				else {
+					if(cb) (cb)( didSucceed);
+				}
 			});
 			
 			return true;
@@ -1132,7 +1109,7 @@ bool InsteonMgr::runAction(Action action,
 						if(devGroupID == 0xff && level == 0) { // wild  card shutoff
 							
 							for (auto keypadID : _db.allKeypads()) {
-								_db.setKeyPadButton(keypadID, 0xff, InsteonParser::CMD_LIGHT_OFF);
+								_db.invokeKeyPadButton(keypadID, 0xff, InsteonParser::CMD_LIGHT_OFF);
 							}
 						}
 						
@@ -1194,7 +1171,6 @@ bool InsteonMgr::executeEvent(eventID_t eventID,
 bool InsteonMgr::addToDeviceALDB(DeviceID deviceID,
 											bool isCNTL,
 											uint8_t groupID, boolCallback_t callback){
-	
 	bool status = false;
 	
 	if(_state != STATE_READY)
@@ -1203,7 +1179,12 @@ bool InsteonMgr::addToDeviceALDB(DeviceID deviceID,
 	if(!_aldb)
 		throw InsteonException("aldb not setup");
 	
-	status = _aldb->addToDeviceALDB(deviceID, isCNTL, groupID, NULL,
+	uint8_t linkData[3] = {
+		_plmDeviceInfo.GetCat(),
+		_plmDeviceInfo.GetSubcat(),
+		_plmDeviceInfo.GetVersion()};
+	
+	status = _aldb->addToDeviceALDB(deviceID, isCNTL, groupID, linkData,
 											  [=]( const insteon_aldb_t* newAldb,  bool didSucceed) {
 		
 		if(didSucceed && newAldb != NULL){
@@ -1212,11 +1193,45 @@ bool InsteonMgr::addToDeviceALDB(DeviceID deviceID,
 		};
 		
 		callback(didSucceed);
-		
 	});
 	
 	return  status;
 }
+
+
+bool InsteonMgr::addToDeviceALDB(DeviceID deviceID,
+							vector<pair<bool,uint8_t>> aldbGroups, // <bool isCNTL, uint8_t groupID>
+							boolCallback_t cb) {
+	bool status = false;
+ 
+	if(aldbGroups.size() == 0)
+		return false;
+
+	auto gInfo = aldbGroups.back();
+	aldbGroups.pop_back();
+ 
+	status = addToDeviceALDB(deviceID,  gInfo.first , gInfo.second,
+									  [=](bool didSucceed){
+		if(!didSucceed) {
+			if(cb) (cb)(false);
+			return;
+		}
+
+		// are there more to process
+		if(aldbGroups.size() > 0) {
+			if(!addToDeviceALDB(deviceID,aldbGroups, cb)){
+				if(cb) (cb)(false);
+			}
+		}
+		// we are done
+		else {
+			if(cb) (cb)(true);
+		}
+	});
+	
+	return  status;
+}
+
 
 bool InsteonMgr::linkKeyPadButtonsToGroups(DeviceID deviceID,
 										 vector<pair<uint8_t,uint8_t>> buttonGroups,
@@ -1435,17 +1450,15 @@ bool InsteonMgr::unlinkDevice(DeviceID deviceID,
 	 
 	if(!_aldb)
 		throw InsteonException("aldb not setup");
-
 	
  	// update the device's ALDB removing us from it.
 	statusOK = _aldb->readDeviceALDB(deviceID, [=]
 												( std::vector<insteon_aldb_t> aldb,  bool didSucceed) {
 		
-		
 		bool needsALDBupdate = false;
 		
 		if(didSucceed){
-			// walk the device ALDB looing for our _plmDeviceID
+			// walk the device ALDB looking for our _plmDeviceID
 			
 			for (auto e = aldb.begin(); e != aldb.end(); e++) {
 				if(_plmDeviceID.isEqual(e->devID)){
@@ -1461,8 +1474,7 @@ bool InsteonMgr::unlinkDevice(DeviceID deviceID,
 					needsALDBupdate = true;
 				}
 			}
-			
-	 
+	
 			if(needsALDBupdate){
 	 			_aldb->syncDeviceALDB(deviceID, aldb, [=](bool didSucceed){
 					

@@ -63,8 +63,7 @@ typedef struct  {
 
 typedef struct  {
 	DeviceID		deviceID;
-	string			name;
-	
+	uint8_t		buttonCount;
 	map<uint8_t, keypad_Button_t> buttons;
 }keypad_dbEntry_t;
 
@@ -95,6 +94,9 @@ public:
 		_plmDeviceID = deviceID;
 	}
 	
+	void  setPLMAutoStart(bool autoStartPLM);
+	bool  getPLMAutoStart();
+
 	DeviceID getPlmDeviceID() { return _plmDeviceID;};
 
 	bool setLatLong(double latitude, double longitude);
@@ -133,7 +135,7 @@ public:
 							uint8_t *onLevel = NULL, eTag_t *eTag =NULL );
 
 	vector<DeviceID> allDevices();
-	vector<DeviceID> devicesThatNeedUpdating();
+	vector<DeviceID> devicesThatNeedValidation();
 	vector<DeviceID> validDevices();
 	vector<DeviceID> devicesUpdateSinceEtag(eTag_t  eTag);
 	vector<DeviceID> devicesUpdateSince(time_t time, time_t*  latestUpdate = NULL);
@@ -177,8 +179,15 @@ public:
 	keypad_dbEntry_t*	findKeypadEntryWithDeviceID(DeviceID deviceID);
 	keypad_Button_t*		findKeypadButton(keypad_dbEntry_t* entry, uint8_t buttonID );
 	Action*				actionForKeypad(DeviceID deviceID, uint8_t buttonID, uint8_t cmd);
-	bool					setKeyPadButton(DeviceID deviceID, uint8_t buttonID, uint8_t cmd);
+	bool					createKeypad(DeviceID deviceID);
+	bool					createKeypadButton(DeviceID deviceID, uint8_t buttonID);
+	bool					removeKeypadButton(DeviceID deviceID, uint8_t buttonID);
+	bool  					setActionForKeyPadButton(DeviceID deviceID, uint8_t buttonID, uint8_t cmd, Action action);
+	bool  					setNameForKeyPadButton(DeviceID deviceID, uint8_t buttonID, string name);
+	bool  					setKeypadButtonCount(DeviceID deviceID, uint8_t buttonCount );
+	bool					invokeKeyPadButton(DeviceID deviceID, uint8_t buttonID, uint8_t cmd);
 	uint8_t 				LEDMaskForKeyPad(keypad_dbEntry_t* keypad);
+
 	
 	// MARK: -  groups
 	bool groupIsValid(GroupID groupID);
@@ -269,7 +278,8 @@ private:
 	double 	_latitude;
 	string 	_logFilePath;
 	uint8_t 	_logFileFlags;
-
+	bool		_autoStartPLM;
+	
 	void  initDBEntry(insteon_dbEntry_t *newEntry,DeviceID deviceID);
 	
 	insteon_dbEntry_t*  findDBEntryWithDeviceID(DeviceID deviceID);
@@ -287,10 +297,7 @@ private:
 	void deviceWasUpdated(DeviceID deviceID);
 	void deviceStateWasUpdated(DeviceID deviceID);
  	
-	void addActionToKeyPAd(keypad_dbEntry_t* entry,
-								  uint8_t key,
-								  Action action) ;
-
+	
 	mutable std::mutex _mutex;
 
 	time_t							_expired_age;		// how long to wait before we need to ping or validate

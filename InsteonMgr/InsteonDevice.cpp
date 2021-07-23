@@ -320,7 +320,7 @@ bool InsteonDevice::setLEDBrightness(uint8_t level, boolCallback_t cb){
 			0x00, 0x07, level};
 		
 		cmdQueue->queueMessage(_deviceID,
-									  InsteonParser::CMD_SET_LED_BRIGHTNESS, 0x00,
+									  InsteonParser::CMD_EXT_SET_GET, 0x00,
 									  buffer, sizeof(buffer),
 									  [=]( auto arg, bool didSucceed) {
 			
@@ -362,6 +362,36 @@ bool InsteonDevice::getEngineVersion(std::function<void(uint8_t version, bool di
 	
 }
 
+
+bool InsteonDevice::getEXTInfo(std::function<void(uint8_t data[14], bool didSucceed)> cb){
+	
+	try{
+		SETUP_CMDQUEUE;
+	 
+			uint8_t buffer[] = {
+				0xFE, 0x00};
+			
+			cmdQueue->queueMessage(_deviceID,
+										  InsteonParser::CMD_EXT_SET_GET, 0x00,
+										  buffer, sizeof(buffer),
+										  [=]( auto arg, bool didSucceed) {
+				
+			 
+				uint8_t* data  = &arg.reply.data[0];
+				
+				if(cb) cb(data, didSucceed);
+				
+			});
+		
+		return true;
+		
+	}
+	catch ( const InsteonException& e)  {
+		return false;
+	}
+	
+};
+
 // MARK: - InsteonKeypadDevice
 
 bool InsteonKeypadDevice::setNonToggleMask(uint8_t mask, boolCallback_t callback){
@@ -373,7 +403,7 @@ bool InsteonKeypadDevice::setNonToggleMask(uint8_t mask, boolCallback_t callback
 			0x01, 0x08, mask, 0, 0,0, };
 		
 		cmdQueue->queueMessage(_deviceID,
-									  0x2E, 0x00,
+									  InsteonParser::CMD_EXT_SET_GET, 0x00,
 									  buffer, sizeof(buffer),
 									  [=]( auto arg, bool didSucceed) {
 			
@@ -425,7 +455,7 @@ bool InsteonKeypadDevice::setKeypadLEDState(uint8_t mask, boolCallback_t cb){
 			0x01, 0x09, mask, 0, 0,0, };
 		
 		cmdQueue->queueMessage(_deviceID,
-									  0x2E, 0x00,
+									  InsteonParser::CMD_EXT_SET_GET, 0x00,
 									  buffer, sizeof(buffer),
 									  [=]( auto arg, bool didSucceed) {
 			
@@ -470,7 +500,7 @@ bool InsteonKeypadDevice::setKeypadLED(uint8_t button, bool turnOn, boolCallback
 				0x2, 0x00};
 			
 			cmdQueue->queueMessage(_deviceID,
-										  0x2E, 0x00,
+										  InsteonParser::CMD_EXT_SET_GET, 0x00,
 										  buffer, sizeof(buffer),
 										  [=]( auto arg, bool didSucceed) {
 				
@@ -488,8 +518,8 @@ bool InsteonKeypadDevice::setKeypadLED(uint8_t button, bool turnOn, boolCallback
 	}
 
 }
-
-bool InsteonKeypadDevice::setKeyButtonMode(bool eightKey, boolCallback_t callback){
+ 
+bool InsteonKeypadDevice::setButtonConfiguration(bool eightKey, boolCallback_t callback){
 	
 	try{
 		SETUP_CMDQUEUE;
@@ -498,7 +528,7 @@ bool InsteonKeypadDevice::setKeyButtonMode(bool eightKey, boolCallback_t callbac
 			0x00, 0x00};
 		
 		cmdQueue->queueMessage(_deviceID,
-									  0x20, eightKey?0x06:0x07,
+									  InsteonParser::CMD_SET_OPERATING_FLAGS, eightKey?0x06:0x07,
 									  buffer, sizeof(buffer),
 									  [=]( auto arg, bool didSucceed) {
 			
@@ -514,6 +544,30 @@ bool InsteonKeypadDevice::setKeyButtonMode(bool eightKey, boolCallback_t callbac
 	}
 	
 }
+
+
+bool InsteonKeypadDevice::getButtonConfiguration(std::function<void(bool eightKey, bool didSucceed)> cb ){
+	
+	try{
+		SETUP_CMDQUEUE;
+		
+		cmdQueue->queueMessage(_deviceID,
+									  InsteonParser::CMD_GET_OPERATING_FLAGS, 0x00,
+									  NULL, 0,
+									  [=]( auto arg, bool didSucceed) {
+			
+			
+			bool eightKey =  (arg.reply.cmd[1] & 0x08) == 0x08;
+			if(cb) cb(eightKey, didSucceed);
+		});
+		
+		return true;
+	}
+	catch ( const InsteonException& e)  {
+		return false;
+	}
+}
+
 
 bool InsteonKeypadDevice::test(){
 	
@@ -532,7 +586,7 @@ bool InsteonKeypadDevice::test(){
 		//		01, 00};
 		//
 		//	cmdQueue->queueMessage(_deviceID,
-		//								  0x2E, 0x00,
+		//								  InsteonParser::CMD_EXT_SET_GET, 0x00,
 		//								  buffer, sizeof(buffer),
 		//								  [=]( InsteonCmdQueue::msgReply_t arg, bool didSucceed) {
 		//
@@ -689,7 +743,7 @@ void InsteonKeypadDevice::linkKeyPadButtonsToGroupsInternal(linkKeyPadTaskData_t
 						0x01, 0x09, mask};
 	
 					_cmdQueue->queueMessage(keyPad,
-													0x2E, 0x00,
+													InsteonParser::CMD_EXT_SET_GET, 0x00,
 													buffer, sizeof(buffer),
 													[this]( auto arg, bool didSucceed) {
 	
