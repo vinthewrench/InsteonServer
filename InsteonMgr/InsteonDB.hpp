@@ -97,6 +97,14 @@ public:
 	void  setPLMAutoStart(bool autoStartPLM);
 	bool  getPLMAutoStart();
 
+	void  setAllowRemoteTelnet(bool remoteTelnet);
+	bool  getAllowRemoteTelnet();
+
+	void  setTelnetPort(int port);
+	int  	getTelnetPort();
+	void  setRESTPort(int port);
+	int  	getRESTPort();
+	
 	DeviceID getPlmDeviceID() { return _plmDeviceID;};
 
 	bool setLatLong(double latitude, double longitude);
@@ -167,8 +175,11 @@ public:
 	bool removeDeviceProperty(DeviceID deviceID, string key);
 
 	// Add information about device ALDB
-	bool addDeviceALDB(DeviceID deviceID, vector<insteon_aldb_t> deviceALDB);
-	bool addDeviceALDB(DeviceID deviceID, const insteon_aldb_t deviceALDB);
+	bool updateDeviceALDB(DeviceID deviceID, vector<insteon_aldb_t> deviceALDB);
+	bool updateDeviceALDB(DeviceID deviceID, const insteon_aldb_t deviceALDB);
+	bool setDeviceALDB(DeviceID deviceID, vector<insteon_aldb_t> deviceALDB);
+
+//	bool removeEntryFromDeviceALDB(DeviceID targetDevice, uint16_t address);
 
 	// clear local entry for DeviceALDB (not on device)
 	bool clearDeviceALDB(DeviceID deviceID);
@@ -279,7 +290,10 @@ private:
 	string 	_logFilePath;
 	uint8_t 	_logFileFlags;
 	bool		_autoStartPLM;
-	
+	bool		_allowRemoteTelnet;
+	int 		_telnetPort;
+	int 		_restPort;
+
 	void  initDBEntry(insteon_dbEntry_t *newEntry,DeviceID deviceID);
 	
 	insteon_dbEntry_t*  findDBEntryWithDeviceID(DeviceID deviceID);
@@ -291,7 +305,7 @@ private:
 	void addGroupToDBEntry(insteon_dbEntry_t* entry,
 								  std::tuple< bool, uint8_t> newItem);
 
-	void addDeviceALDBToDBEntry(insteon_dbEntry_t* entry,
+	void updateDeviceALDBToDBEntry(insteon_dbEntry_t* entry,
 										 insteon_aldb_t newItem);
 
 	void deviceWasUpdated(DeviceID deviceID);

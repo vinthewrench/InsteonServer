@@ -683,13 +683,11 @@ void InsteonKeypadDevice::linkKeyPadButtonsToGroupsInternal(linkKeyPadTaskData_t
 	uint8_t data[] = {0XFF, 0, button};  // 0xFF = no clean-ups,  byte 2 N?C
  
 	bool status = taskData->aldb->addToDeviceALDB(taskData->deviceID, false, group, data,
-											  [=]( const insteon_aldb_t* newAldb,  bool didSucceed) {
+			[=]( std::vector<insteon_aldb_t> newAldb,  bool didSucceed) {
 
 		if(didSucceed){
-			if(newAldb	!= NULL){
-				taskData->db->addDeviceALDB(taskData->deviceID, *newAldb);
- 				taskData->db->saveToCacheFile();
-			}
+			taskData->db->setDeviceALDB(taskData->deviceID, newAldb);
+			taskData->db->saveToCacheFile();
 		}
 		else
 		{

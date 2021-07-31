@@ -56,10 +56,11 @@ public:
 								 bool  		isCNTL,
 								 uint8_t 		groupID,
 								 u_int8_t* 	data = NULL,
-								 std::function<void(const insteon_aldb_t* newAldb, bool didSucceed)> callback = NULL);
+								 readALDBCallback_t callback = NULL);
 	 
-  bool removeFromDeviceALDB(DeviceID deviceID, uint8_t groupID, boolCallback_t callback);
-
+	bool removeEntryFromDeviceALDB(DeviceID deviceID,
+											 uint16_t address,
+											 readALDBCallback_t callback = NULL);
 
 private:
 	 mutable std::mutex _mutex;
@@ -113,7 +114,7 @@ private:
 	 uint8_t				_entryCnt;		 // auto increment
  
 	 uint64_t  			_timeout_ALDB_RESPONSE;		// how long to wait for ALDB_RESPONSE
-	 uint64_t				_timeout_CMD_READ_ALDB;		// how long to wait for _CMD_READ_ALDB;
+	 uint64_t				_timeout_CMD_RW_ALDB;		// how long to wait for _CMD_RW_ALDB;
   };
 
 #endif /* InsteonALDB_hpp */

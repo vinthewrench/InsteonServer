@@ -298,8 +298,8 @@ std::array<uint8_t,14> InsteonParser::makeALDBWriteRecord(insteon_aldb_t aldb, u
 	
 	*p++ = 8;		// length
 	
-	if(aldb.flag == 0) {
-		*p++ = 0;			// high water mark
+ 	if((aldb.flag & 0x80) ==  0) {
+		*p++ = aldb.flag;			// are we erasing it
 	}
 	else {
 		bool isCNTL = (aldb.flag & 0x40) == 0x40;
@@ -442,7 +442,7 @@ bool InsteonParser::parse_aldb(insteon_aldb_t *data){
 	 return true;
 }
 
-// used for parsing respose from extended message  CMD_READ_ALDB
+// used for parsing respose from extended message  CMD_RW_ALDB
 
 bool InsteonParser::parse_aldb_remote(insteon_aldb_t *aldb){
 	
@@ -453,7 +453,7 @@ bool InsteonParser::parse_aldb_remote(insteon_aldb_t *aldb){
 	uint8_t *p = dbuf.data;
 	p+=8;  // skip to command.
 
-	if(*p++ != CMD_READ_ALDB)
+	if(*p++ != CMD_RW_ALDB)
 		return false;
 
 	p++; // skip cmd2

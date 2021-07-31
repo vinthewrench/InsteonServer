@@ -190,16 +190,19 @@ bool InsteonCmdQueue::processEntry( cmd_entry_t* entry) {
 		case CMD_ENTRY_MSG: {
 			DeviceID deviceID = DeviceID(entry->send.to);
 			
+			LOG_DEBUG("\tSEND-MSG (%d) %s [%02x, %02x]\n",
+						 entry->sendCount,
+						 deviceID.string().c_str(),
+						 entry->send.cmd[0], entry->send.cmd[1] );
+			
 			status = _plm->sendMsg(entry->send.to,
 										  entry->send.flag,
 										  entry->send.cmd,
 										  entry->send.data);
 			
-			LOG_DEBUG("\tSEND-MSG (%d) %s%s [%02x, %02x]\n",
-						 entry->sendCount,
-						 status?"":"FAIL ",
-						 deviceID.string().c_str(),
-						 entry->send.cmd[0], entry->send.cmd[1] );
+			if(!status){
+				LOG_DEBUG("\t  FAILED \n");
+			}
 			
 			if(status) {
 				entry->sendCount++;

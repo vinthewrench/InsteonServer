@@ -78,6 +78,32 @@ public:
 		}
 		return  false;
 	}
+
+	virtual bool getHexByteFromJSON(string_view key, const json &j, uint8_t &result) {
+		if( j.contains(key)) {
+			string k = string(key);
+			
+			if( j.at(k).is_string()){
+				string str = j.at(k);
+				
+				uint8_t val = 0;
+		
+				if( regex_match(string(str), std::regex("^[A-Fa-f0-9]{2}$"))
+					&& ( std::sscanf(str.c_str(), "%hhx", &val) == 1)){
+					result = val;
+					return  true;
+				}
+				else if( regex_match(string(str), std::regex("^0?[xX][0-9a-fA-F]{2}$"))
+						  && ( std::sscanf(str.c_str(), "%hhx", &val) == 1)){
+					result = val;
+					return  true;
+				}
+			}
+		}
+		return  false;
+	}
+
+	
 	virtual bool getIntFromJSON(string_view key, const json &j, int &result) {
 		if( j.contains(key)) {
 			string k = string(key);

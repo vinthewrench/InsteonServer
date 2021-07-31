@@ -90,6 +90,9 @@ public:
 	bool addToDeviceALDB(DeviceID deviceID,
 								bool isCNTL, uint8_t groupID = 0x01,
 								boolCallback_t callback = NULL);
+	
+	bool removeEntryFromDeviceALDB(DeviceID deviceID, uint16_t address,
+											 boolCallback_t callback = NULL);
  
 	bool unlinkDevice(DeviceID deviceID,
 						 boolCallback_t callback = NULL);

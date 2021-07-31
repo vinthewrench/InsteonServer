@@ -31,8 +31,11 @@ constexpr static string_view KEY_CONFIG_APIKEY		= "apikey";
 
 constexpr static string_view KEY_CONFIG_LOGFILE_PATH	= "log-path";
 constexpr static string_view KEY_CONFIG_LOGFILE_FLAGS	= "log-flags";
+constexpr static string_view KEY_CONFIG_AUTOSTART_PLM			= "plm-autostart";
+constexpr static string_view KEY_CONFIG_ALLOW_REMOTE_TELNET	= "allow_remote_telnet";
+constexpr static string_view KEY_CONFIG_TELNET_PORT			= "telnet_port";
+constexpr static string_view KEY_CONFIG_REST_PORT				= "rest_port";
 
-constexpr static string_view KEY_CONFIG_AUTOSTART_PLM	= "plm-autostart";
 
 constexpr static string_view KEY_START_DEVICE 		= "device-start";
 constexpr static string_view KEY_END_DEVICE 			= "device-end";
@@ -77,10 +80,13 @@ InsteonDB::InsteonDB() {
 	_eventsGroups.clear();
 	_APISecrets.clear();
 	_autoStartPLM = false;
+	_allowRemoteTelnet = false;
 	_events.clear();
 	_insteonGroupMap.clear();
 	_keyPads.clear();
 	_eTag = 0;
+	_telnetPort = 2020;
+	_restPort = 8080;
 	
 	// create RNG engine
 	constexpr std::size_t SEED_LENGTH = 8;
@@ -429,12 +435,12 @@ bool InsteonDB::isDeviceValidated(DeviceID deviceID){
 }
 
 // Add information about device ALDB
-bool InsteonDB::addDeviceALDB(DeviceID deviceID, const insteon_aldb_t deviceALDB){
+bool InsteonDB::updateDeviceALDB(DeviceID deviceID, const insteon_aldb_t deviceALDB){
 	bool didUpdate = false;
 	
 	if(auto entry = findDBEntryWithDeviceID(deviceID); entry != NULL) {
 		std::lock_guard<std::mutex> lock(_mutex);
-		addDeviceALDBToDBEntry(entry, deviceALDB);
+		updateDeviceALDBToDBEntry(entry, deviceALDB);
 		entry->eTag = ++_eTag;
  		didUpdate = true;
 	};
@@ -446,15 +452,16 @@ bool InsteonDB::addDeviceALDB(DeviceID deviceID, const insteon_aldb_t deviceALDB
 
 }
 
+
 // insert a vector of insteon_aldb_t
-bool InsteonDB::addDeviceALDB(DeviceID deviceID, std::vector<insteon_aldb_t> deviceALDB){
+bool InsteonDB::updateDeviceALDB(DeviceID deviceID, std::vector<insteon_aldb_t> deviceALDB){
 	bool didUpdate = false;
 
 	if(auto entry = findDBEntryWithDeviceID(deviceID); entry != NULL) {
 		std::lock_guard<std::mutex> lock(_mutex);
 		
 		for(auto aldb :deviceALDB){
-			addDeviceALDBToDBEntry(entry, aldb);
+			updateDeviceALDBToDBEntry(entry, aldb);
 		}
 		entry->eTag = ++_eTag;
 		didUpdate = true;
@@ -462,6 +469,22 @@ bool InsteonDB::addDeviceALDB(DeviceID deviceID, std::vector<insteon_aldb_t> dev
 
 	if(didUpdate)
 		deviceWasUpdated(deviceID);
+
+	return didUpdate;
+}
+
+
+bool InsteonDB::setDeviceALDB(DeviceID deviceID, vector<insteon_aldb_t> newALDB){
+	
+	bool didUpdate = false;
+
+	if(auto entry = findDBEntryWithDeviceID(deviceID); entry != NULL) {
+		std::lock_guard<std::mutex> lock(_mutex);
+
+		entry->eTag = ++_eTag;
+		entry->deviceALDB = newALDB;
+		didUpdate = true;
+	}
 
 	return didUpdate;
 }
@@ -815,7 +838,35 @@ bool  InsteonDB::getPLMAutoStart() {
 	
 };
 
+void  InsteonDB::setAllowRemoteTelnet(bool remoteTelnet) {
+	_allowRemoteTelnet = remoteTelnet;
+	saveToCacheFile();
+};
 
+bool  InsteonDB::getAllowRemoteTelnet() {
+	return _allowRemoteTelnet;
+	
+};
+
+void  InsteonDB::setTelnetPort(int port){
+	_telnetPort = port;
+	saveToCacheFile();
+}
+
+int  	InsteonDB::getTelnetPort(){
+	return _telnetPort;
+}
+
+void  InsteonDB::setRESTPort(int port){
+	_restPort = port;
+	saveToCacheFile();
+}
+
+int InsteonDB::getRESTPort(){
+	return _restPort;
+}
+
+ 
 // MARK: - PLM tools
 
 bool InsteonDB::addPLMEntries(vector<insteon_aldb_t> aldbEntries){
@@ -948,6 +999,9 @@ bool InsteonDB::backupCacheFile(string filepath){
 			ofs << KEY_CONFIG_LOGFILE_FLAGS << ": " << to_hex(_logFileFlags, true) << "\n";
 	 
 			ofs << KEY_CONFIG_AUTOSTART_PLM << ": " << (_autoStartPLM?"yes":"no")  << "\n";
+			ofs << KEY_CONFIG_ALLOW_REMOTE_TELNET << ": " << (_allowRemoteTelnet?"yes":"no")  << "\n";
+	 		ofs << KEY_CONFIG_TELNET_PORT << ": " << _telnetPort  << "\n";
+			ofs << KEY_CONFIG_REST_PORT << ": " << _restPort  << "\n";
 	 
 	 		ofs << KEY_END_CONFIG << ":\n";
 			ofs << "\n";
@@ -1404,6 +1458,29 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 								_autoStartPLM = true;
 						}
 					}
+	
+					else if(token == KEY_CONFIG_ALLOW_REMOTE_TELNET){
+						vector<string> v = split<string>(string(p), " ");
+						if(v.size() > 0) {
+							string option = v.at(0);
+							std::transform(option.begin(), option.end(), option.begin(), ::tolower);
+							
+							if(option == "yes")
+								_allowRemoteTelnet = true;
+						}
+					}
+					else if(token == KEY_CONFIG_TELNET_PORT){
+						int portNum = 0;
+						if( sscanf(p, "%d %n", &portNum ,&n) == 1){
+							_telnetPort = portNum;
+ 						}
+					}
+					else if(token == KEY_CONFIG_REST_PORT){
+						int portNum = 0;
+						if( sscanf(p, "%d %n", &portNum ,&n) == 1){
+							_restPort = portNum;
+						}
+					}
 				}
 				break;
 					
@@ -1491,7 +1568,7 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 							aldb.info[0] = cat;
 							aldb.info[1] = subcat;
 							aldb.info[2] = 0;
-							addDeviceALDBToDBEntry(entry, aldb);
+							updateDeviceALDBToDBEntry(entry, aldb);
 						}
 						
 					}
@@ -2454,20 +2531,43 @@ void InsteonDB::addGroupToDBEntry(insteon_dbEntry_t* entry,
 }
 
 
-void InsteonDB::addDeviceALDBToDBEntry(insteon_dbEntry_t* entry,
+void InsteonDB::updateDeviceALDBToDBEntry(insteon_dbEntry_t* entry,
 													insteon_aldb_t newItem) {
 	
 	if (!entry)
 		throw std::invalid_argument("no insteon_dbEntry_t");
 
 	bool foundOne = false;
+	bool  removeOne = ((newItem.flag & 0x80) == 0);
+	DeviceID deviceID = entry->deviceID;
 	
+ 
 	for (auto e = entry->deviceALDB.begin(); e != entry->deviceALDB.end(); e++) {
 		if( e->address == newItem.address){
+			// update it
+			
+			e->devID[0] = newItem.devID[0];
+			e->devID[1] = newItem.devID[1];
+			e->devID[2] = newItem.devID[2];
+			e->group = newItem.group;
+			e->flag = newItem.flag;
+			e->info[0] = newItem.info[0];
+			e->info[1] = newItem.info[1];
+			e->info[2] = newItem.info[2];
 			foundOne = true;
 			break;
 		}
 	}
+	
+ 
+	 if(removeOne)
+	 {
+		 uint8_t groupID =  newItem.group;
+		 
+		 if(_insteonGroupMap.count(groupID) > 0)
+			 if(_insteonGroupMap[groupID].count(deviceID))
+				 _insteonGroupMap[groupID].erase(deviceID);
+		 }
 	
 	if(!foundOne){
 		entry->deviceALDB.push_back(newItem);
@@ -2478,6 +2578,8 @@ void InsteonDB::addDeviceALDBToDBEntry(insteon_dbEntry_t* entry,
 			_insteonGroupMap[newItem.group].insert(entry->deviceID);
 		}
 	}
+
+	deviceWasUpdated(deviceID);
 }
 
 bool InsteonDB::foundWithDeviceID(DeviceID deviceID, bool isCTRL, uint8_t GroupID) {
@@ -2576,13 +2678,7 @@ void InsteonDB::dumpDBInfo(std::ostringstream &oss, DeviceID deviceID, bool prin
 			}
 			else {
 				respGrp.push_back(gid);
-				
 			}
-			//				if(isCNTRL) groupStr += "[";
-			//				groupStr += lut[gid >> 4];
-			//				groupStr += lut[gid & 0xf];
-			//				if(isCNTRL) groupStr += "]";
-			//				groupStr += " ";
 		}
 		
 		// sort them
@@ -2656,8 +2752,9 @@ void InsteonDB::dumpDBInfo(std::ostringstream &oss, DeviceID deviceID, bool prin
 			DeviceID aldbDev = DeviceID(e.devID);
 			DeviceInfo info = DeviceInfo(e.info);
 		
-			oss << setfill('0') << setw(4) << hex << (int) e.address << " ";
-			oss << (isRESP?" ":"[") << setfill('0') << setw(2) << hex << (int) e.group  << ( isRESP?" ":"]") << " ";
+			oss << setfill('0') << setw(4) << to_hex<unsigned short>(e.address)  << " ";
+			oss << (isRESP?" ":"[") << setfill('0') << setw(2)
+			<< to_hex<unsigned char>(e.group)  << ( isRESP?" ":"]") << " ";
 			oss <<  aldbDev.string() << " " << info.string();
 			auto aldbEntry = findDBEntryWithDeviceID(aldbDev);
 			if(aldbEntry && aldbEntry->name.size())

@@ -91,7 +91,7 @@ constexpr string_view JSON_ARG_SAVE 			= "save";
 constexpr string_view JSON_ARG_DATE			= "date";
 constexpr string_view JSON_ARG_VERSION		= "version";
 constexpr string_view JSON_ARG_TIMESTAMP		= "timestamp";
-constexpr string_view JSON_ARG_DEVICEIDS	= "deviceIDs";
+constexpr string_view JSON_ARG_DEVICEIDS	= 	"deviceIDs";
 
 constexpr string_view JSON_ARG_IS_KEYPAD		= "isKeyPad";
 constexpr string_view JSON_ARG_IS_DIMMER		= "isDimmer";
@@ -101,6 +101,7 @@ constexpr string_view JSON_ARG_DEVICEINFO 	= "deviceInfo";
 constexpr string_view JSON_ARG_DETAILS 		= "details";
 constexpr string_view JSON_ARG_LEVELS 		= "levels";
 constexpr string_view JSON_ARG_ACTIONS		= "actions";
+constexpr string_view JSON_ARG_ALDB 			= "aldb";
 
 constexpr string_view JSON_ARG_STATE			= "state";
 constexpr string_view JSON_ARG_STATESTR		= "stateString";
@@ -115,7 +116,7 @@ constexpr string_view JSON_ARG_LOGFLAGS		= "logflags";
 constexpr string_view JSON_ARG_COUNT			= "count";
 constexpr string_view JSON_ARG_ISCNTRL		= "cntrl";  // used for linking devices
 constexpr string_view JSON_ARG_AUTOSTART		= "auto.start";
-
+constexpr string_view JSON_ARG_REMOTETELNET	= "allow.remote.telnet";
 
 constexpr string_view JSON_ARG_TIMED_EVENTS	= "events.timed";
 constexpr string_view JSON_ARG_FUTURE_EVENTS	= "events.future";
@@ -127,7 +128,12 @@ constexpr string_view JSON_VAL_ALL				= "all";
 constexpr string_view JSON_VAL_VALID			= "valid";
 constexpr string_view JSON_VAL_DETAILS		= "details";
 constexpr string_view JSON_VAL_LEVELS			= "levels";
- 
+constexpr string_view JSON_VAL_ALDB			= "aldb";
+
+constexpr string_view JSON_VAL_ALDB_FLAG		= "aldb.flag";
+constexpr string_view JSON_VAL_ALDB_ADDR		= "aldb.address";
+constexpr string_view JSON_VAL_ALDB_GROUP	= "aldb.group";
+
 constexpr string_view JSON_VAL_START			= "start";
 constexpr string_view JSON_VAL_STOP			= "stop";
 constexpr string_view JSON_VAL_RESET			= "reset";
@@ -1679,7 +1685,7 @@ static void InsteonGroups_NounHandler(ServerCmdQueue* cmdQueue,
  
 // MARK:  DEVICES NOUN HANDLERS
 
-static bool DeviceDetailJSONForDeviceID( DeviceID deviceID, json &entry) {
+static bool DeviceDetailJSONForDeviceID( DeviceID deviceID, json &entry, bool showALDB) {
 	using namespace rest;
 	using namespace timestamp;
 
@@ -1714,66 +1720,28 @@ static bool DeviceDetailJSONForDeviceID( DeviceID deviceID, json &entry) {
 			entry[string(JSON_ARG_GROUPIDS)] = groupList;
 		}
 
+		if(showALDB){
+			
+			json aldbJSON;
+			
+ 	 		for(auto aldb :info.deviceALDB){
+				json aldbEntry;
+				DeviceID aldbDev = DeviceID(aldb.devID);
+				aldbEntry[string(JSON_ARG_DEVICEID)] = aldbDev.string();
+				aldbEntry[string(JSON_VAL_ALDB_FLAG)] =  to_hex <unsigned char>(aldb.flag);
+				aldbEntry[string(JSON_VAL_ALDB_ADDR)] =  to_hex <unsigned short>(aldb.address);
+				aldbEntry[string(JSON_VAL_ALDB_GROUP)] =  to_hex <unsigned char>(aldb.group);
+				
+				aldbJSON[to_hex <unsigned short>(aldb.address)] = aldbEntry;
+ 			}
+	 		
+			entry[string(JSON_VAL_ALDB)] = aldbJSON;
+		}
+		
+		
 		uint8_t group = 0x01;		// only on group 1
 		uint8_t level = 0;
 		eTag_t lastTag = 0;
- 
-/*
- // optional KEYPADS
-		if(auto keypad = db->findKeypadEntryWithDeviceID(deviceID); keypad != NULL) {
-			json kp;
-			kp[string(JSON_ARG_NAME)] = 	keypad->name;
-			json keyCaps;
-			
-			json keyActions;
-			
-			for(const auto& [kc, actionEntry] : keypad->keys)  {
-				
-				json cap;
-				json capAction;
-				
-				cap[string(JSON_ARG_NAME)] = 	actionEntry.keyName;
-				
-				for(const auto& [cmd, action] : actionEntry.actions)  {
-					
-					string cmdStr = to_hex <unsigned char> (cmd,true);
-					switch (cmd) {
-						case InsteonParser::CMD_LIGHT_ON:
-							cmdStr = "on";
-							break;
-					
-						case InsteonParser::CMD_LIGHT_OFF:
-							cmdStr = "off";
-							break;
-	
-						default:
-							break;
-					}
-					
-					capAction[ cmdStr] = Action(action).JSON();
-		 		}
-				
-				cap[string(JSON_ARG_ACTIONS)] = capAction;
-				keyCaps[to_string( kc)] = cap;
-			}
-			
-			kp[string(JSON_ARG_BUTTONS)] = keyCaps;
-			entry[string(JSON_ARG_KEYPAD)] = kp;
-		}
-
-*/
-		
-//		/////  VINNIE
-//		{
-//			if(info.deviceInfo.isKeyPad()){
-//
-//				InsteonKeypadDevice(deviceID).getKeypadLEDState([=](uint8_t mask, bool didSucceed){
-//					printf("mask %02X\n", mask);
-//				});
-//
-//			}
-//		}
-//		/////
 
 		if( db->getDBOnLevel(deviceID, group, &level, &lastTag) ){
 			entry[string(JSON_ARG_LEVEL)]  = level;
@@ -1798,6 +1766,7 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 	auto queries = url.queries();
 	auto headers = url.headers();
 	bool showDetails = false;
+	bool showALDB = false;
 	bool showLevels = false;
 	bool forceLookup = false;
 	bool onlyShowChanged = false;
@@ -1812,6 +1781,12 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 		if( str == "true" ||  str =="1")
 			showDetails = true;
 	}
+	if(queries.count(string(JSON_ARG_ALDB))) {
+		string str = queries[string(JSON_ARG_ALDB)];
+		if( str == "true" ||  str =="1")
+			showALDB = true;
+	}
+	
 	
 	if(queries.count(string(JSON_ARG_FORCE))) {
 		string str = queries[string(JSON_ARG_FORCE)];
@@ -1882,7 +1857,7 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 			for(DeviceID deviceID :deviceIDs) {
 				
 				json entry;
-				if(DeviceDetailJSONForDeviceID(deviceID	, entry) ){
+				if(DeviceDetailJSONForDeviceID(deviceID	, entry, showALDB) ){
 					string strDeviceID = deviceID.string();
 					devicesEntries[strDeviceID] = entry;
 				}
@@ -1975,7 +1950,7 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 				DeviceID	deviceID = DeviceID(deviceStr);
 				
 				json reply;
-				if(DeviceDetailJSONForDeviceID(deviceID	, reply) ){
+				if(DeviceDetailJSONForDeviceID(deviceID	, reply, showALDB) ){
 	
 					if(forceLookup) {
 		 
@@ -2978,8 +2953,6 @@ static void Keypads_NounHandler(ServerCmdQueue* cmdQueue,
 }
 
 
-// MARK:  OTHER REST NOUN HANDLERS
-
 // MARK: PLM NOUN HANDLERS
 
 static bool PLM_NounHandler_GET(ServerCmdQueue* cmdQueue,
@@ -3001,43 +2974,32 @@ static bool PLM_NounHandler_GET(ServerCmdQueue* cmdQueue,
 	if(path.size() == 2) {
 		
 		string subpath =   path.at(1);
-
-		if(subpath == SUBPATH_INFO){
-			if( insteon.plmInfo(&deviceID, &deviceInfo) ){
-				json reply;
-				
-				auto state = insteon.currentState();
-				string stateStr = insteon.currentStateString();
 		
-				reply[string(JSON_ARG_DEVICEID)] = 	deviceID.string();
-				reply[string(JSON_ARG_DEVICEINFO)] =	deviceInfo.string();
-				string path = db->getPLMPath();
-				reply[string(JSON_ARG_FILEPATH)] = path;
-				reply[string(JSON_ARG_COUNT)] = db->count();
-				reply[string(JSON_ARG_STATE)] 		=   state;
-				reply[string(JSON_ARG_STATESTR)] 	=   stateStr;
-
-				makeStatusJSON(reply,STATUS_OK);
-				(completion) (reply, STATUS_OK);
-				return true;
-			}
-			else {
-				makeStatusJSON(reply, STATUS_UNAVAILABLE, "PLM is not started" );;
-				(completion) (reply, STATUS_UNAVAILABLE);
-				return true;
-				
-			}
-		}
-		else if(subpath == SUBPATH_PORT){
+		if(subpath == SUBPATH_INFO){
+			
+			auto state = insteon.currentState();
+			string stateStr = insteon.currentStateString();
+			
+			reply[string(JSON_ARG_STATE)] 		=   state;
+			reply[string(JSON_ARG_STATESTR)] 	=   stateStr;
 			
 			string path = db->getPLMPath();
 			reply[string(JSON_ARG_FILEPATH)] = path;
 			reply[string(JSON_ARG_AUTOSTART)] = db->getPLMAutoStart();
+			reply[string(JSON_ARG_REMOTETELNET)] = db->getAllowRemoteTelnet();
+			
+			if( insteon.plmInfo(&deviceID, &deviceInfo) ){
+				
+				reply[string(JSON_ARG_DEVICEID)] = 	deviceID.string();
+				reply[string(JSON_ARG_DEVICEINFO)] =	deviceInfo.string();
+				reply[string(JSON_ARG_COUNT)] = db->count();
+			}
+			
 			makeStatusJSON(reply,STATUS_OK);
 			(completion) (reply, STATUS_OK);
 			return true;
 		}
-
+		
 	}
 
 	return false;
@@ -3153,7 +3115,13 @@ static bool PLM_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 										string path = db->getPLMPath();
 										reply[string(JSON_ARG_FILEPATH)] = path;
 										reply[string(JSON_ARG_COUNT)] = db->count();
+					
+										auto state = insteon.currentState();
+										string stateStr = insteon.currentStateString();
 										
+										reply[string(JSON_ARG_STATE)] 		=   state;
+										reply[string(JSON_ARG_STATESTR)] 	=   stateStr;
+	
 										makeStatusJSON(reply,STATUS_OK);
 										(completion) (reply, STATUS_OK);
 									}
@@ -3246,7 +3214,8 @@ static bool PLM_NounHandler_PATCH(ServerCmdQueue* cmdQueue,
 			
 			string filepath;
 			bool  autostart = false;
-			
+			bool  remoteTelnet = false;
+	
 			if(v1.getStringFromJSON(JSON_ARG_FILEPATH, url.body(), filepath)){
 				db->setPLMpath(filepath);
 				didPatch = true;
@@ -3256,7 +3225,12 @@ static bool PLM_NounHandler_PATCH(ServerCmdQueue* cmdQueue,
 				db->setPLMAutoStart(autostart);
 				didPatch = true;
 			}
-	
+
+			if(v1.getBoolFromJSON(JSON_ARG_REMOTETELNET, url.body(), remoteTelnet)){
+				db->setAllowRemoteTelnet(	remoteTelnet);
+				didPatch = true;
+			}
+ 
 			if(didPatch){
 				makeStatusJSON(reply,STATUS_OK);
 				(completion) (reply, STATUS_OK);
@@ -3687,6 +3661,310 @@ static void Log_NounHandler(ServerCmdQueue* cmdQueue,
 	}
 }
 
+// MARK: LINK - NOUN HANDLER
+
+// Linking keypad we add in responder for group 1-8
+static void link_Keypad(DeviceID	deviceID, boolCallback_t cb){
+	
+	using namespace rest;
+	auto db = insteon.getDB();
+	
+	vector<pair<bool,uint8_t>> aldbGroups
+	{ {true, 0x01}, {true, 0x02}, {true, 0x03}, {true, 0x04},
+		{true, 0x05}, {true, 0x06},{true, 0x07}, {true, 0x08}};
+	
+	insteon.addToDeviceALDB(deviceID, aldbGroups, [=](bool didSucceed) {
+		
+		if(!didSucceed){ (cb)(false); return; }
+		
+		// create a keypad entry
+		db->createKeypad(deviceID);
+		
+		// update it with button count
+		
+		InsteonKeypadDevice(deviceID).getButtonConfiguration( [=](bool eightKey, bool didSucceed){
+			if(!didSucceed){ (cb)(false); return; }
+			db->setKeypadButtonCount(deviceID, eightKey?8:6);
+			(cb)(true);
+		});
+	});
+}
+
+// Linking non keypad we add in master for group 1 ?
+
+static void link_nonKeypad(DeviceID	deviceID, boolCallback_t cb){
+
+	using namespace rest;
+
+	insteon.addToDeviceALDB(deviceID, false, 0x01, [=](bool didSucceed) {
+		(cb)(didSucceed);
+	});
+
+}
+
+
+static bool Link_NounHandler_PUT(ServerCmdQueue* cmdQueue,
+									  REST_URL url,
+									  TCPClientInfo cInfo,
+									  ServerCmdQueue::cmdCallback_t completion) {
+	
+	using namespace rest;
+	using namespace timestamp;
+	json reply;
+	bool isValidURL = false;
+
+	auto db = insteon.getDB();
+
+	ServerCmdArgValidator v1;
+ 	
+	auto path = url.path();
+	string noun;
+	
+	if(path.size() > 0) {
+		noun = path.at(0);
+	}
+ 
+	if(path.size() == 1) {  // just link
+		isValidURL = true;
+		
+		
+		///  ViNNIE WRITE THIS CODE
+		makeStatusJSON(reply,STATUS_OK);
+		(completion) (reply, STATUS_OK);
+	}
+	else if(path.size() == 2) { // link a specific device.
+		
+		DeviceIDArgValidator vDeviceID;
+		
+		auto deviceStr = path.at(1);
+		if(vDeviceID.validateArg(deviceStr)){
+			DeviceID	deviceID = DeviceID(deviceStr);
+			
+			insteon.linkDevice(deviceID, true, 0xFE, [=](bool didSucceed) {
+				
+				if(didSucceed){
+		
+					// what kind of device did we link?
+					insteon_dbEntry_t info;
+					if( ! db->getDeviceInfo(deviceID,  &info)){
+						json reply;
+						makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "getDeviceInfo failed" );
+						(completion) (reply, STATUS_INTERNAL_ERROR);
+						return ;
+					}
+
+			
+					// link additional ALDB entries
+	
+					if(info.deviceInfo.isKeyPad()) {
+						// is it a keypad?
+			
+						link_Keypad(deviceID, [=](bool didSucceed){
+						
+							json reply;
+							reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+			 
+						if(didSucceed){
+							makeStatusJSON(reply,STATUS_OK);
+							(completion) (reply, STATUS_OK);
+						}
+						else {
+							makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "addToDeviceALDB failed" );;
+							(completion) (reply, STATUS_INTERNAL_ERROR);
+						}
+
+						});
+					}
+					else {
+						// not a keypad?
+			
+						link_nonKeypad(deviceID, [=](bool didSucceed){
+							json reply;
+							reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+			 
+							if(didSucceed){
+								makeStatusJSON(reply,STATUS_OK);
+								(completion) (reply, STATUS_OK);
+							}
+							else {
+								makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "addToDeviceALDB failed" );;
+								(completion) (reply, STATUS_INTERNAL_ERROR);
+							}
+
+						});
+					}
+				}
+				else {
+					json reply;
+					reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+					makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed" );;
+					(completion) (reply, STATUS_INTERNAL_ERROR);
+				}
+			});
+			
+			isValidURL = true;
+		}}
+	else if(path.size() == 3) { //  add To DeviceALDB
+		
+		//   link/33.4F.F6/group
+		// isCNTRL = true?
+		DeviceIDArgValidator vDeviceID;
+		
+		auto deviceStr = path.at(1);
+		auto groupStr = path.at(2);
+		
+		if(vDeviceID.validateArg(deviceStr)){
+			DeviceID	deviceID = DeviceID(deviceStr);
+			
+			if( regex_match(string(groupStr), std::regex("^[A-Fa-f0-9]{2}$"))){
+				uint8_t groupID;
+				bool isCNTRL = false;
+				if( std::sscanf(groupStr.c_str(), "%hhx", &groupID) == 1){
+					
+					v1.getBoolFromJSON(JSON_ARG_ISCNTRL, url.body(), isCNTRL);
+					
+					bool queued =  insteon.addToDeviceALDB(deviceID, isCNTRL, groupID, [=](bool didSucceed) {
+						json reply;
+						
+						if(didSucceed){
+							
+							makeStatusJSON(reply,STATUS_OK);
+							(completion) (reply, STATUS_OK);
+						}
+						else {
+							makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "addToDeviceALDB failed" );;
+							(completion) (reply, STATUS_INTERNAL_ERROR);
+						}
+					});
+					
+					if(!queued) {
+						makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is not running" );;
+						(completion) (reply, STATUS_UNAVAILABLE);
+					}
+					
+					isValidURL = true;
+				}
+			}
+		}
+	}
+	
+	return isValidURL;
+ }
+
+
+static bool Link_NounHandler_DELETE(ServerCmdQueue* cmdQueue,
+									  REST_URL url,
+									  TCPClientInfo cInfo,
+									  ServerCmdQueue::cmdCallback_t completion) {
+	
+	using namespace rest;
+	using namespace timestamp;
+	json reply;
+	DeviceIDArgValidator vDeviceID;
+	DeviceID	deviceID;
+  
+	auto path = url.path();
+
+	if(path.size() < 1) {
+		return false;
+	}
+ 
+	
+	if(path.size() > 1) {
+		auto deviceStr = path.at(1);
+		if(vDeviceID.validateArg(deviceStr)){
+			deviceID = DeviceID(deviceStr);
+		}
+	}
+ 
+	// DELETE /link/XX.XX.XX/XXXX
+	if(path.size() == 3 && !deviceID.isNULL()) {
+		auto str = path.at(2);
+		uint16_t address = 0;
+		
+		if( regex_match(string(str), std::regex("^[0-9a-fA-F]{4}$"))
+				  && ( std::sscanf(str.c_str(), "%hx", &address) == 1)){
+
+			
+			printf(" Do something with ADLB addr:%04x on deviceID: %s\n",
+					 address, deviceID.string().c_str() );
+			
+			// do something with ADLB addr on deviceID
+			
+			bool queued = insteon.removeEntryFromDeviceALDB(deviceID, address, [=](bool didSucceed) {
+				json reply;
+				
+				if(didSucceed){
+
+					makeStatusJSON(reply,STATUS_NO_CONTENT);
+					(completion) (reply, STATUS_NO_CONTENT);
+				}
+				else {
+					makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Delete Failed", "removeEntryFromDeviceALDB failed" );;
+					(completion) (reply, STATUS_INTERNAL_ERROR);
+				}
+
+			});
+			
+			if(!queued) {
+				makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is not running" );;
+				(completion) (reply, STATUS_UNAVAILABLE);
+ 			}
+			return true;
+		}
+		
+	}
+	return false;
+}
+
+static void Link_NounHandler(ServerCmdQueue* cmdQueue,
+										 REST_URL url,  // entire request
+										 TCPClientInfo cInfo,
+										 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	json reply;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	string noun;
+	
+	bool isValidURL = false;
+	
+	if(path.size() > 0) {
+		noun = path.at(0);
+	}
+	
+	switch(url.method()){
+//		case HTTP_GET:
+//			isValidURL = Link_NounHandler_GET(cmdQueue,url,cInfo, completion);
+//			break;
+
+		case HTTP_PUT:
+			isValidURL = Link_NounHandler_PUT(cmdQueue,url,cInfo, completion);
+			break;
+
+//		case HTTP_PATCH:
+//			isValidURL = Link_NounHandler_PATCH(cmdQueue,url,cInfo, completion);
+//			break;
+
+//		case HTTP_POST:
+//			isValidURL = Log_NounHandler_POST(cmdQueue,url,cInfo, completion);
+//			break;
+//
+		case HTTP_DELETE:
+			isValidURL = Link_NounHandler_DELETE(cmdQueue,url,cInfo, completion);
+			break;
+  
+		default:
+			(completion) (reply, STATUS_INVALID_METHOD);
+			return;
+	}
+	
+	if(!isValidURL) {
+		(completion) (reply, STATUS_NOT_FOUND);
+	}
+}
 
 // MARK:  OTHER REST NOUN HANDLERS
 
@@ -3774,205 +4052,49 @@ static void Date_NounHandler(ServerCmdQueue* cmdQueue,
 	(completion) (reply, STATUS_OK);
 }
 
-// Linking keypad we add in responder for group 1-8
-static void link_Keypad(DeviceID	deviceID, boolCallback_t cb){
-	
-	using namespace rest;
-	auto db = insteon.getDB();
-	
-	vector<pair<bool,uint8_t>> aldbGroups
-	{ {true, 0x01}, {true, 0x02}, {true, 0x03}, {true, 0x04},
-		{true, 0x05}, {true, 0x06},{true, 0x07}, {true, 0x08}};
-	
-	insteon.addToDeviceALDB(deviceID, aldbGroups, [=](bool didSucceed) {
-		
-		if(!didSucceed){ (cb)(false); return; }
-		
-		// create a keypad entry
-		db->createKeypad(deviceID);
-		
-		// update it with button count
-		
-		InsteonKeypadDevice(deviceID).getButtonConfiguration( [=](bool eightKey, bool didSucceed){
-			if(!didSucceed){ (cb)(false); return; }
-			db->setKeypadButtonCount(deviceID, eightKey?8:6);
-			(cb)(true);
-		});
-	});
-}
-
-// Linking non keypad we add in master for group 1 ?
-
-static void link_nonKeypad(DeviceID	deviceID, boolCallback_t cb){
-
-	using namespace rest;
-
-	insteon.addToDeviceALDB(deviceID, false, 0x01, [=](bool didSucceed) {
-		(cb)(didSucceed);
-	});
-
-}
-
-
-static void Link_NounHandler(ServerCmdQueue* cmdQueue,
-									  REST_URL url,
-									  TCPClientInfo cInfo,
-									  ServerCmdQueue::cmdCallback_t completion) {
-	
-	using namespace rest;
-	using namespace timestamp;
-	json reply;
-	bool isValidURL = false;
-
-	auto db = insteon.getDB();
-
-	ServerCmdArgValidator v1;
- 
-	// CHECK METHOD
-	if(url.method() != HTTP_PUT ) {
-		(completion) (reply, STATUS_INVALID_METHOD);
-		return;
-	}
-	
-	auto path = url.path();
-	string noun;
-	
-	if(path.size() > 0) {
-		noun = path.at(0);
-	}
-	
-	// CHECK sub paths
-	if(noun != NOUN_LINK){
-		(completion) (reply, STATUS_NOT_FOUND);
-		return;
-	}
-	
-	if(path.size() == 1) {  // just link
-		isValidURL = true;
-		
-		makeStatusJSON(reply,STATUS_OK);
-		(completion) (reply, STATUS_OK);
-		
-	}
-	else if(path.size() == 2) { // link a specific device.
-		
-		DeviceIDArgValidator vDeviceID;
-		
-		auto deviceStr = path.at(1);
-		if(vDeviceID.validateArg(deviceStr)){
-			DeviceID	deviceID = DeviceID(deviceStr);
-			
-			insteon.linkDevice(deviceID, true, 0xFE, [=](bool didSucceed) {
-				
-				if(didSucceed){
-		
-					// what kind of device did we link?
-					insteon_dbEntry_t info;
-	 				if( ! db->getDeviceInfo(deviceID,  &info)){
-						json reply;
-						makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "getDeviceInfo failed" );
-						(completion) (reply, STATUS_INTERNAL_ERROR);
-						return ;
-					}
-
-			
-					// link additional ALDB entries
-	
-			 		if(info.deviceInfo.isKeyPad()) {
-						// is it a keypad?
-			
-						link_Keypad(deviceID, [=](bool didSucceed){
-						
-							json reply;
-							reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
-			 
-						if(didSucceed){
-							makeStatusJSON(reply,STATUS_OK);
-							(completion) (reply, STATUS_OK);
-						}
-						else {
-							makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "addToDeviceALDB failed" );;
-							(completion) (reply, STATUS_INTERNAL_ERROR);
-						}
-
-						});
-					}
-					else {
-						// not a keypad?
-			
-						link_nonKeypad(deviceID, [=](bool didSucceed){
-							json reply;
-							reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
-			 
-							if(didSucceed){
-								makeStatusJSON(reply,STATUS_OK);
-								(completion) (reply, STATUS_OK);
-							}
-							else {
-								makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "addToDeviceALDB failed" );;
-								(completion) (reply, STATUS_INTERNAL_ERROR);
-							}
-
-						});
-					}
-				}
-				else {
-					json reply;
-					reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
-					makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed" );;
-					(completion) (reply, STATUS_INTERNAL_ERROR);
-				}
-			});
-			
-			isValidURL = true;
-		}}
-	else if(path.size() == 3) { //  add To DeviceALDB
-		
-		//   link/33.4F.F6/group
-		// isCNTRL = true?
-		DeviceIDArgValidator vDeviceID;
-
-		auto deviceStr = path.at(1);
-		auto groupStr = path.at(2);
-
-		if(vDeviceID.validateArg(deviceStr)){
-			DeviceID	deviceID = DeviceID(deviceStr);
-			
-			if( regex_match(string(groupStr), std::regex("^[A-Fa-f0-9]{2}$"))){
-				uint8_t groupID;
-				bool isCNTRL = false;
-				if( std::sscanf(groupStr.c_str(), "%hhx", &groupID) == 1){
-					
-					v1.getBoolFromJSON(JSON_ARG_ISCNTRL, url.body(), isCNTRL);
-					
-					insteon.addToDeviceALDB(deviceID, isCNTRL, groupID, [=](bool didSucceed) {
-						json reply;
-						
-						if(didSucceed){
-
-							makeStatusJSON(reply,STATUS_OK);
-							(completion) (reply, STATUS_OK);
-						}
-						else {
-							makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "addToDeviceALDB failed" );;
-							(completion) (reply, STATUS_INTERNAL_ERROR);
-						}
- 					});
-					
-					isValidURL = true;
-				}
-			}
-		}
-	}
-	
-	if(!isValidURL) {
-		(completion) (reply, STATUS_NOT_FOUND);
-	}
-}
-
-
 // MARK: - COMMAND LINE FUNCTIONS Utilities
 
+
+static void getCurrentPLMInfo( CmdLineMgr* mgr,
+									std::function<void(DeviceID, DeviceInfo, bool)> cb = NULL) {
+	
+	using namespace rest;
+ 	REST_URL url;
+	TCPClientInfo cInfo = mgr->getClientInfo();
+
+	std::ostringstream oss;
+	oss << "GET /plm/info" << " HTTP/1.1\n";
+	oss << "Connection: close\n";
+	oss << "\n";
+	url.setURL(oss.str());
+
+	ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
+		
+		bool success = didSucceed(reply);
+		DeviceID 	 deviceID;
+		DeviceInfo deviceInfo;
+		
+		if(success){
+			
+			DeviceIDArgValidator vDeviceID;
+			ServerCmdArgValidator v1;
+			string str;
+			
+			if(vDeviceID.getvalueFromJSON(JSON_ARG_DEVICEID, reply, str)){
+				
+				deviceID = DeviceID(str);
+				
+				if(v1.getStringFromJSON(JSON_ARG_DEVICEINFO, reply, str))
+					deviceInfo = DeviceInfo(str);
+				
+				if(cb) (cb) (deviceID,deviceInfo, true);
+				return;
+			}
+		}
+		
+		if(cb) (cb) (deviceID,deviceInfo, false);
+	});
+}
 
 // create a map for deviceIDs and Names
 
@@ -4133,7 +4255,17 @@ static bool DATECmdHandler( stringvector line,
 			oss << setw(10) << "TIME: " << setw(0) <<  TimeStamp(tt).ClockString(false);
 			if(!tz.empty()) oss << " " << tz;
 			oss << "\n\r";
-	 	}
+		}
+
+		int offsetInt = int(gmtOffset/ (60*60));
+		oss << setw(10) << "OFFSET: " << setw(0) ;
+		if(gmtOffset > 0){
+			oss << "GMT +" +  to_string(offsetInt) ;
+		}
+		else {
+			oss << "GMT " + to_string(offsetInt) ;
+		}
+		oss << "\n\r";
 
 		double latitude, longitude;
  
@@ -4259,15 +4391,18 @@ static bool ListCmdHandler( stringvector line,
 	string errorStr;
 	string command = line[0];
 	bool showDetails = false;
+	bool showALDB = false;
 	
 	REST_URL url;
 	TCPClientInfo cInfo = mgr->getClientInfo();
 	
+	string subcommand;
+	
 	if(line.size() < 2){
-		errorStr =  "\x1B[36;1;4m"  + command + "\x1B[0m what?.";
+		url.setURL("GET /devices?details=1\n\n");
 	}
 	else {
-		string subcommand = line[1];
+		subcommand = line[1];
 		
 		if(subcommand == JSON_VAL_ALL) {
 			url.setURL("GET /devices?details=1\n\n");
@@ -4279,8 +4414,17 @@ static bool ListCmdHandler( stringvector line,
 			url.setURL("GET /devices?details=1\n\n");
 			showDetails = true;
 		}
+		else 	if(subcommand == JSON_VAL_ALDB) {
+			url.setURL("GET /devices?details=1&aldb=1\n\n");
+			showALDB = true;
+			showDetails = true;
+		}
+	}
+	
+	if(url.isValid()) {
 		
-		if(url.isValid()) {
+		getCurrentPLMInfo(mgr, [=](DeviceID plmDeviceID, DeviceInfo plmDeviceInfo, bool hasPLM){
+			
 			
 			ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
 				bool success = didSucceed(reply);
@@ -4310,7 +4454,7 @@ static bool ListCmdHandler( stringvector line,
 							
 							DeviceID deviceID = DeviceID(key);
 							
-							string strDeviceInfo = value["deviceInfo"];
+							string strDeviceInfo = value[string(JSON_ARG_DEVICEINFO)];
 							DeviceInfo deviceInfo = DeviceInfo(strDeviceInfo);
 							
 							oss << deviceID.string();
@@ -4352,8 +4496,46 @@ static bool ListCmdHandler( stringvector line,
 								oss << resetiosflags(ios::left);
 								
 							};
- 
+							
 							oss << "\r\n";
+							
+							if( value.contains(JSON_ARG_ALDB)
+								&& value.at(string(JSON_ARG_ALDB)).is_object()){
+								auto entries = value.at(string(JSON_ARG_ALDB));
+								
+								for (auto& [aldbKey, aldbEntry] : entries.items()) {
+									
+									DeviceIDArgValidator vDeviceID;
+									ServerCmdArgValidator v1;
+									
+									DeviceID 	 deviceID;
+									uint8_t	flag;
+									uint8_t	group;
+									
+									string str;
+									
+									if(vDeviceID.getvalueFromJSON(JSON_ARG_DEVICEID, aldbEntry, str))
+										deviceID = DeviceID(str);
+									
+									v1.getHexByteFromJSON(JSON_VAL_ALDB_GROUP, aldbEntry, group);
+									v1.getHexByteFromJSON(JSON_VAL_ALDB_FLAG, aldbEntry, flag);
+									
+									//	Bit 6: 1 = Controller (Master) of Device ID, 0 = Responder to (Slave of) Device ID
+										bool isRESP = (flag & 0x40) == 0x00;
+				
+									if(hasPLM  && plmDeviceID == deviceID)
+										oss << " -> " ;
+									else
+										oss << "    ";
+									
+									oss <<  aldbKey  << ": ";
+									oss << deviceID.string() << " ";
+									
+									oss << (isRESP?"[":" ") << to_hex<uint8_t>(group) <<  (isRESP?"]":" ");
+		 							oss <<  "\r\n";
+								}
+								oss << "\r\n";
+							}
 						}
 						
 						oss << "\r\n";
@@ -4376,12 +4558,14 @@ static bool ListCmdHandler( stringvector line,
 				
 				(cb) (success);
 			});
-			return true;
-		}
-		else {
-			errorStr =  "Command: \x1B[36;1;4m"  + subcommand + "\x1B[0m is an invalid function for " + command;
-		}
+		});
+		
+		return true;
 	}
+	else {
+		errorStr =  "Command: \x1B[36;1;4m"  + subcommand + "\x1B[0m is an invalid function for " + command;
+	}
+	
 	
 	mgr->sendReply(errorStr + "\n\r");
 	(cb)(false);
@@ -4738,39 +4922,58 @@ static bool PLMCmdHandler( stringvector line,
 			url.setURL(oss.str());
 		
 	 		ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
-				
-				std::ostringstream oss;
-				DeviceIDArgValidator vDeviceID;
-				ServerCmdArgValidator v1;
-				
+							
 				bool success = didSucceed(reply);
 				
 				if(success) {
 					std::ostringstream oss;
-					
-					DeviceID 	 deviceID;
-					DeviceInfo deviceInfo;
+					DeviceIDArgValidator vDeviceID;
+					ServerCmdArgValidator v1;
+		
 					string path;
 					int 	deviceCount = 0;
 					string str;
+					bool  autostart = false;
+					bool  remoteTelnet = false;
+			
+					if(reply.count(JSON_ARG_STATESTR) ) {
+						string status = reply[string(JSON_ARG_STATESTR)];
+						oss  << setw(11) << "STATE: " <<  setw(0) << status << "\n\r";
+					}
 					
-					if(vDeviceID.getvalueFromJSON(JSON_ARG_DEVICEID, reply, str))
+					if(vDeviceID.getvalueFromJSON(JSON_ARG_DEVICEID, reply, str)){
+						DeviceID 	 deviceID;
+						DeviceInfo deviceInfo;
+							
 						deviceID = DeviceID(str);
-					
-					if(v1.getStringFromJSON(JSON_ARG_DEVICEINFO, reply, str))
-						deviceInfo = DeviceInfo(str);
+
+						if(v1.getStringFromJSON(JSON_ARG_DEVICEINFO, reply, str))
+							deviceInfo = DeviceInfo(str);
+		
+						oss <<  setw(11)  << "PLM: " <<  setw(0)
+						<< "<"   << deviceID.string() << "> " << deviceInfo.skuString()
+						<<  " " << deviceInfo.descriptionString();
+		
+						if(v1.getIntFromJSON(JSON_ARG_COUNT, reply, deviceCount))
+							oss << ", " << deviceCount  << " devices.";
+						oss << "\n\r";
+					}
 					
 					if(v1.getStringFromJSON(JSON_ARG_FILEPATH, reply, str))
 						path = str;
 
-					oss << " PLM:  <" << deviceID.string() << "> " << deviceInfo.skuString()
-					<<  " " << deviceInfo.descriptionString();
-	
-					if(v1.getIntFromJSON(JSON_ARG_COUNT, reply, deviceCount))
-						oss << ", " << deviceCount  << " devices.";
-					oss << "\n\r";
+					if(!path.empty()) {
+						oss  << setw(11) << "PORT: " <<  setw(0) << path << "\n\r";
+					}
 					
-					if(!path.empty())  oss << " port: " << path << "\n\r";
+					if(v1.getBoolFromJSON(JSON_ARG_AUTOSTART, reply, autostart)){
+						oss  << setw(11) << "STARTUP: " <<  setw(0) << (autostart?"Auto":"Off") << "\n\r";
+					}
+		
+					if(v1.getBoolFromJSON(JSON_ARG_REMOTETELNET, reply, remoteTelnet)){
+						oss  << setw(11) << "REMOTETELNET: " <<  setw(0) << (remoteTelnet?"On":"Off") << "\n\r";
+					}
+						
 					mgr->sendReply(oss.str());
 				}
 				else {
@@ -4825,17 +5028,27 @@ static bool PLMCmdHandler( stringvector line,
 					
 					if(v1.getStringFromJSON(JSON_ARG_FILEPATH, reply, str))
 						path = str;
-			 
+					
 					oss << "PLM started.\n\r";
-					oss << " PLM:  <" << deviceID.string() << "> " << deviceInfo.skuString()
+					
+					if(reply.count(JSON_ARG_STATESTR) ) {
+						string status = reply[string(JSON_ARG_STATESTR)];
+						oss  << setw(10) << "STATE: " <<  setw(0) << status << "\n\r";
+					}
+					
+					oss <<  setw(10)  << "PLM: " <<  setw(0)
+					<< "<"   << deviceID.string() << "> " << deviceInfo.skuString()
 					<<  " " << deviceInfo.descriptionString();
 					
 					if(v1.getIntFromJSON(JSON_ARG_COUNT, reply, deviceCount))
 						oss << ", " << deviceCount  << " devices.";
 					oss << "\n\r";
 					
-					if(!path.empty())  oss << " port: " << path << "\n\r";
-			
+					
+					if(!path.empty()) {
+						oss  << setw(10) << "PORT: " <<  setw(0) << path << "\n\r";
+					}
+					
 					mgr->sendReply(oss.str());
 				}
 				else {
@@ -4921,6 +5134,57 @@ static bool PLMCmdHandler( stringvector line,
 				return true;
 			}
 		}
+		else if(subcommand == "path"){
+			
+			if(line.size() < 3){
+				errorStr =  "\x1B[36;1;4m"  + command + " " + subcommand + "\x1B[0m expects a valid filepath";
+			}
+			else {
+				
+				string path = line[2];
+				
+				if( access(path.c_str(), W_OK | R_OK) != 0) {
+				
+					std::ostringstream oss;
+					oss << "  Error: " << to_string(errno)
+						<< " " << string(::strerror(errno)) << "\n\r";
+					mgr->sendReply(oss.str());
+					
+					(cb) (false);
+					return false;
+			}
+	 
+				oss << "PATCH /plm/port"  << " HTTP/1.1\n";
+				oss << "Content-Type: application/json; charset=utf-8\n";
+				oss << "Connection: close\n";
+				
+				json request;
+				request[string(JSON_ARG_FILEPATH)] =  line[2];
+				
+				string jsonStr = request.dump(4);
+				oss << "Content-Length: " << jsonStr.size() << "\n\n";
+				oss << jsonStr << "\n";
+				url.setURL(oss.str());
+				
+				ServerCmdQueue::shared()->queueRESTCommand(url, cInfo,[=] (json reply, httpStatusCodes_t code) {
+					
+					std::ostringstream oss;
+					bool success = didSucceed(reply);
+					
+					if(success){
+						mgr->sendReply("OK\n\r");
+					}
+					else {
+						string error = errorMessage(reply);
+						mgr->sendReply( error + "\n\r");
+					}
+					(cb) (success);
+				});
+				
+				return true;
+			}
+		}
+
 		else {
 			errorStr =  "Command: \x1B[36;1;4m"  + subcommand + "\x1B[0m is an invalid function for " + command;
 		}

@@ -4,8 +4,10 @@
 //
 //  Created by Vincent Moscaritolo on 1/26/21.
 //
+#include <vector>
 
 #include "InsteonALDB.hpp"
+
 
 #include "InsteonCmdQueue.hpp"
 #include "InsteonParser.hpp"
@@ -22,7 +24,7 @@ InsteonALDB::InsteonALDB(InsteonCmdQueue*  cmdQueue){
 	_plm 				= _cmdQueue->_plm;
 	_isReadingPLM 	= false;
 	_timeout_ALDB_RESPONSE = 4;	// seconds
-	_timeout_CMD_READ_ALDB	= 8; // seconds
+	_timeout_CMD_RW_ALDB	= 8; // seconds
 	
 	_entryCnt = 0;
 	_aldbQueue.clear();
@@ -194,7 +196,7 @@ bool InsteonALDB::readDeviceALDB(DeviceID deviceID, readALDBCallback_t callback)
 	
 	uint8_t buffer[] = { 0x00, 0x00, 0x00, 0x00, 0x00};
 	_cmdQueue->queueMessage(deviceID,
-									InsteonParser::CMD_READ_ALDB, 0x00,
+									InsteonParser::CMD_RW_ALDB, 0x00,
 									buffer, sizeof(buffer),
 									[this, replyID]( auto arg, bool didSucceed) {
 		
@@ -280,10 +282,11 @@ bool InsteonALDB::addToDeviceALDB(DeviceID targetDevice,
 											 bool  isCNTL,
 											 uint8_t groupID,
 											 u_int8_t* data,
-											 std::function<void(const insteon_aldb_t* newAldb,
-																	  bool didSucceed)> callback){
-												 
-#define CHK_FAIL if(!didSucceed){ callback(NULL, false); return; }
+											 readALDBCallback_t callback ){
+
+	std::vector<insteon_aldb_t> emptyDB;
+	emptyDB.clear();
+#define CHK_FAIL if(!didSucceed){ callback(emptyDB, false); return; }
 
 	if(!_cmdQueue->isConnected())
 		return false;
@@ -304,49 +307,79 @@ bool InsteonALDB::addToDeviceALDB(DeviceID targetDevice,
 									NULL, 0, [=]( auto reply, bool didSucceed) {
 		CHK_FAIL;
 			
- 		readDeviceALDB(targetDevice, [=](std::vector<insteon_aldb_t> aldb,  bool didSucceed) {
+		readDeviceALDB(targetDevice, [=](std::vector<insteon_aldb_t> aldb,  bool didSucceed) {
 			CHK_FAIL;
-			
+ 
+			std::vector<insteon_aldb_t> newDB;
+			// copy the read aldB
+			copy(aldb.begin(), aldb.end(), back_inserter(newDB));
+	 
 			DeviceID plmDevice =  DeviceID(reply.info.devID);
-			uint16_t		lastAddress = 0xfff;
+			uint16_t		newAddress = 0xfff;
 			
-			for(auto e :aldb){
-				lastAddress = e.address;
-	
-				// is it already there?
-				if( cmpDevID(e.devID, reply.info.devID)
-					&& e.group == groupID)
-				{
-					if((e.flag & 0x40) == (isCNTL?0x40:0))  // is it a controller
+			auto aldbCount = aldb.size();
+			int idx = -1;
+
+			if(aldbCount > 0){
+				
+				for(auto  i = 0; i < aldbCount; i++) {
+					auto e = aldb[i];
+					
+					// is it already there?
+					if( cmpDevID(e.devID, reply.info.devID)
+						&& e.group == groupID)
 					{
-						callback(NULL, true);
-						return ;
+						if((e.flag & 0x40) == (isCNTL?0x40:0))  // is it a controller
+						{
+							callback(aldb, true);
+							return ;
+						}
+					}
+					
+					// check for a free spot
+					if((idx == -1) && ((e.flag & 0x80) == 0)){
+						idx = i;
 					}
 				}
+				
+				if(idx == -1){
+					newAddress = aldb[aldbCount -1].address - 8;
+ 				}
+				else {
+					newAddress = aldb[idx].address;
+				}
 			}
-
+			
+			
 			// create an aldb record
 			// create the new ALDB record to append
-			insteon_aldb_t newAldb = {0};
-			copyDevID(reply.info.devID, newAldb.devID);
-			newAldb.group = groupID;
-			newAldb.flag = isCNTL?0xC2:0xAA; // = Record is in use, Controller/rsponder of Device ID,
-													  // Record has been used before
-			memcpy(newAldb.info, info, 3);
- 
-			newAldb.address = lastAddress-8;
+			insteon_aldb_t newEntry = {0};
+			copyDevID(reply.info.devID, newEntry.devID);
+			newEntry.group = groupID;
+			newEntry.flag = isCNTL?0xC2:0xAA; // = Record is in use, Controller/rsponder of Device ID,
+			// Record has been used before
+			memcpy(newEntry.info, info, 3);
+			newEntry.address = newAddress;
 			
- 			auto buffer = _plm->_parser.makeALDBWriteRecord(newAldb, newAldb.address);
-	
-			printf("INSERT %04x %s group:%02x\n",  lastAddress-8, plmDevice.string().c_str(), groupID);
-	
+			if(idx == -1){
+				newDB.push_back(newEntry);
+			}
+			else {
+				newDB[idx] =  newEntry;
+			}
+			
+			auto buffer = _plm->_parser.makeALDBWriteRecord(newEntry, newEntry.address);
+			
+			
+			printf("INSERT %04x %s group:%02x\n",  newAddress, plmDevice.string().c_str(), groupID);
+			
 			START_VERBOSE;
 			_cmdQueue->queueMessage(targetDevice,
-											InsteonParser::CMD_READ_ALDB, 0x00,
+											InsteonParser::CMD_RW_ALDB, 0x00,
 											buffer.data(), buffer.size(),
 											[=]( auto arg, bool didSucceed) {
 				CHK_FAIL;
-	  			callback(&newAldb,
+				callback(newDB,
 							didSucceed && arg.reply.msgType == MSG_TYP_DIRECT_ACK );
 			});
 		});
@@ -357,13 +390,79 @@ bool InsteonALDB::addToDeviceALDB(DeviceID targetDevice,
 #undef CHK_FAIL
 }
 
-bool InsteonALDB::removeFromDeviceALDB(DeviceID deviceID, uint8_t groupID, boolCallback_t callback){
+
+bool InsteonALDB::removeEntryFromDeviceALDB(DeviceID targetDevice, uint16_t address,
+														  readALDBCallback_t callback){
+
+	std::vector<insteon_aldb_t> emptyDB;
+	emptyDB.clear();
+#define CHK_FAIL if(!didSucceed){ callback(emptyDB, false); return; }
+
+	if(!_cmdQueue->isConnected())
+		return false;
 	
-	
-	if(callback)
-		(callback)(false);
-	
-	return false;
+	if(_isReadingPLM)
+		return false;
+
+	readDeviceALDB(targetDevice, [=](std::vector<insteon_aldb_t> aldb,  bool didSucceed) {
+		CHK_FAIL;
+
+		std::vector<insteon_aldb_t> newDB;
+		// copy the read aldB
+		copy(aldb.begin(), aldb.end(), back_inserter(newDB));
+
+		bool found = false;
+		bool isHighWater  = false;
+		auto aldbCount = aldb.size();
+		int idx = -1;
+
+		if(aldbCount > 0){
+			
+			for(auto  i = 0; i < aldbCount; i++) {
+				auto e = aldb[i];
+				
+				if(address == e.address){
+					isHighWater = i == aldbCount-1;
+					idx = i;
+					found = true;
+					break;
+				}
+			}
+		}
+			
+ 
+		if(!found){
+			callback(emptyDB, false);
+			return;
+		}
+		
+		// create a zeroed  aldb record for remote
+		insteon_aldb_t newAldb = {0};
+		newAldb.flag = isHighWater?0x00:0x02;  // free and record used befor
+		newAldb.address = address;
+		newDB[idx] =  newAldb;
+
+	 
+		auto buffer = _plm->_parser.makeALDBWriteRecord(newAldb, newAldb.address);
+		
+		printf("DELETE  ALDB %04x %s\n",  address, targetDevice.string().c_str());
+		
+		START_VERBOSE;
+		_cmdQueue->queueMessage(targetDevice,
+										InsteonParser::CMD_RW_ALDB, 0x00,
+										buffer.data(), buffer.size(),
+										[=]( auto arg, bool didSucceed) {
+			
+			CHK_FAIL;
+			callback(newDB,
+						didSucceed && arg.reply.msgType == MSG_TYP_DIRECT_ACK );
+		});
+		
+	});
+		
+	return true;
+#undef CHK_FAIL
+
 }
 
 
@@ -407,7 +506,7 @@ void InsteonALDB::processNextWrite(){
 			size_t buflen = aldbData->buffer.size() ;
 	
 			_cmdQueue->queueMessage(entry->deviceID,
-											InsteonParser::CMD_READ_ALDB, 0x00,
+											InsteonParser::CMD_RW_ALDB, 0x00,
 											buffer, buflen,
 											[this, entry, aldbData ]( auto arg, bool didSucceed) {
 				
@@ -439,10 +538,10 @@ void InsteonALDB::processNextWrite(){
 			
 			printf("02 62 %02X %02X %02X 1F %02X %02X ",
 					 devID[2], devID[1], devID[0],
-					 InsteonParser::CMD_READ_ALDB, 0x00);
+					 InsteonParser::CMD_RW_ALDB, 0x00);
 			
 			u_int8_t sum = 0;
-			sum  += InsteonParser::CMD_READ_ALDB;
+			sum  += InsteonParser::CMD_RW_ALDB;
 			
 			
 			for(auto val : aldbData->buffer) {
@@ -518,8 +617,8 @@ std::list<uint8_t> InsteonALDB::getExpiredIDs(){
 			timeval diff;
 			timersub(&now, &e.time, &diff);
 	 
-			if(_timeout_CMD_READ_ALDB
-				&& diff.tv_sec > _timeout_CMD_READ_ALDB) {
+			if(_timeout_CMD_RW_ALDB
+				&& diff.tv_sec > _timeout_CMD_RW_ALDB) {
 				expiredIDs.push_back(e.id);
 			}
 		}
@@ -549,7 +648,7 @@ bool InsteonALDB::processPLMresponse(plm_result_t response){
 			if(auto expiredID = getExpiredIDs(); expiredID.size() > 0) {
 				for(uint8_t replyID : expiredID) {
 					
-					// these CMD_READ_ALDB timed out
+					// these CMD_RW_ALDB timed out
 					auto rep = findReplyWithID(replyID);
 					if(rep){
 						
@@ -579,7 +678,7 @@ bool InsteonALDB::processPLMresponse(plm_result_t response){
 			
 			if(_plm->parseMessage(&msg)
 				&& msg.ext
-				&& msg.cmd[0] == InsteonParser::CMD_READ_ALDB){
+				&& msg.cmd[0] == InsteonParser::CMD_RW_ALDB){
 				
 				DeviceID deviceID = DeviceID(msg.from);
  

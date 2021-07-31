@@ -93,6 +93,9 @@ TOPIC-START: "plm"
 SYNOPSIS
 	plm info
 	plm backup
+	plm start
+	plm stop
+	plm path /dev/cu.usbserial-AK05ZAZ7
 
 TOPIC-END:
 

@@ -1,4 +1,4 @@
-## INSTEON DATABASE 2021-07-23 18:56:12
+## INSTEON DATABASE 2021-07-24 00:02:41
 
 config-start:
 port: /dev/cu.usbserial-AK05ZAZ7
@@ -8,6 +8,7 @@ apikey: test 40v)ywv*e2e&$k(6
 log-path: logfile.txt
 log-flags: 0x07
 plm-autostart: no
+allow_remote_telnet: yes
 config-end:
 
 device-start: 53.C2.B8

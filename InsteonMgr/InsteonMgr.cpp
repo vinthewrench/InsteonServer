@@ -880,32 +880,61 @@ bool InsteonMgr::setKeypadLEDState(DeviceID deviceID, uint8_t mask,
 
 bool InsteonMgr::runActionForKeypad(DeviceID deviceID, uint8_t buttonID, uint8_t cmd,
 												boolCallback_t cb){
-	if(_state == STATE_READY)
-		if( _db.invokeKeyPadButton(deviceID,buttonID, cmd)) {
-			
-			uint8_t newMask = _db.LEDMaskForKeyPad( _db.findKeypadEntryWithDeviceID(deviceID));
-			
-			// Set the LED state
-			InsteonKeypadDevice(deviceID).setKeypadLEDState(newMask, [=](bool didSucceed){
+	
+	LOG_INFO("\tKEYPAD: %s, button: %d, cmd %02x \n",
+				deviceID.string().c_str(),
+				buttonID,cmd);
+	
+	if(_state == STATE_READY){
 		
-				LOG_INFO("\tKEYPAD: %s, button: %d, cmd %02x \n",
-							deviceID.string().c_str(),
-							buttonID,cmd);
-
-				if(auto action =  _db.actionForKeypad(deviceID, buttonID, cmd) ; action != NULL){
-						runAction(*action , [=](bool didSucceed){
-						if(cb) (cb)( didSucceed);
-					});
-				}
-			// No Actions for button - just return
-				else {
-					if(cb) (cb)( didSucceed);
-				}
-			});
+		if( _db.invokeKeyPadButton(deviceID,buttonID, cmd)) {
+//			uint8_t newMask = _db.LEDMaskForKeyPad( _db.findKeypadEntryWithDeviceID(deviceID));
 			
-			return true;
+			if(auto action =  _db.actionForKeypad(deviceID, buttonID, cmd) ; action != NULL){
+				runAction(*action , [=](bool didSucceed){
+					if(cb) (cb)( didSucceed);
+//
+//					InsteonKeypadDevice(deviceID).setKeypadLEDState(newMask, [=](bool success){
+//						if(cb) (cb)( didSucceed);
+//
+//					});
+//
+				});
+			}
+			// No Actions for button - just return
+			else {
+//				InsteonKeypadDevice(deviceID).setKeypadLEDState(newMask, [=](bool success){
+					if(cb) (cb)( true);
+//				});
+			}
 		}
+		return true;
+		
+	}
 	return false;
+	
+	//
+	//		if( _db.invokeKeyPadButton(deviceID,buttonID, cmd)) {
+	//
+	//			uint8_t newMask = _db.LEDMaskForKeyPad( _db.findKeypadEntryWithDeviceID(deviceID));
+	//
+	//			// Set the LED state
+	//			InsteonKeypadDevice(deviceID).setKeypadLEDState(newMask, [=](bool didSucceed){
+	//
+	//				if(auto action =  _db.actionForKeypad(deviceID, buttonID, cmd) ; action != NULL){
+	//						runAction(*action , [=](bool didSucceed){
+	//						if(cb) (cb)( didSucceed);
+	//					});
+	//				}
+	//			// No Actions for button - just return
+	//				else {
+	//					if(cb) (cb)( didSucceed);
+	//				}
+	//			});
+	
+	//			return true;
+	//		}
+	//	return false;
 }
 
 
@@ -1035,7 +1064,13 @@ bool InsteonMgr::runAction(Action action,
 															  action.buttonID(),
 															  InsteonParser::CMD_LIGHT_ON,
 															  [=]( bool didSucceed){
-							if(cb) (cb)( didSucceed);
+							
+							uint8_t newMask = _db.LEDMaskForKeyPad( _db.findKeypadEntryWithDeviceID(keypadID));
+							InsteonKeypadDevice(keypadID).setKeypadLEDState(newMask, [=](bool success){
+								if(cb) (cb)( didSucceed);
+							});
+
+		//					if(cb) (cb)( didSucceed);
 						});
 						break;
 			
@@ -1044,7 +1079,13 @@ bool InsteonMgr::runAction(Action action,
 															  action.buttonID(),
 															  InsteonParser::CMD_LIGHT_OFF,
 															  [=]( bool didSucceed){
-							if(cb) (cb)( didSucceed);
+							
+							
+							uint8_t newMask = _db.LEDMaskForKeyPad( _db.findKeypadEntryWithDeviceID(keypadID));
+							InsteonKeypadDevice(keypadID).setKeypadLEDState(newMask, [=](bool success){
+								if(cb) (cb)( didSucceed);
+							});
+//							if(cb) (cb)( didSucceed);
 						});
 						break;
 			 
@@ -1185,10 +1226,10 @@ bool InsteonMgr::addToDeviceALDB(DeviceID deviceID,
 		_plmDeviceInfo.GetVersion()};
 	
 	status = _aldb->addToDeviceALDB(deviceID, isCNTL, groupID, linkData,
-											  [=]( const insteon_aldb_t* newAldb,  bool didSucceed) {
+											  [=]( std::vector<insteon_aldb_t> newAldb,  bool didSucceed) {
 		
-		if(didSucceed && newAldb != NULL){
-			_db.addDeviceALDB(deviceID, *newAldb);
+		if(didSucceed){
+			_db.setDeviceALDB(deviceID, newAldb);
 			_db.saveToCacheFile();
 		};
 		
@@ -1230,6 +1271,32 @@ bool InsteonMgr::addToDeviceALDB(DeviceID deviceID,
 	});
 	
 	return  status;
+}
+
+
+bool InsteonMgr::removeEntryFromDeviceALDB(DeviceID deviceID, uint16_t address,
+														 boolCallback_t cb){
+	bool status = false;
+	
+	if(_state != STATE_READY)
+		return false;
+		
+	if(!_aldb)
+		throw InsteonException("aldb not setup");
+ 
+	status = _aldb->removeEntryFromDeviceALDB(deviceID,address,
+															[=]( std::vector<insteon_aldb_t> newAldb,  bool didSucceed) {
+		
+		if(didSucceed){
+			_db.setDeviceALDB(deviceID, newAldb);
+			_db.saveToCacheFile();
+		};
+		
+		if(cb) (cb)(didSucceed);
+		
+	});
+
+	return status;
 }
 
 
@@ -1329,7 +1396,7 @@ bool InsteonMgr::linkDevice(DeviceID deviceID,
 											 ( std::vector<insteon_aldb_t> aldb,  bool didSucceed) {
 					
 					if(didSucceed){
-						_db.addDeviceALDB(deviceID, aldb);
+						_db.updateDeviceALDB(deviceID, aldb);
 					}
 					
 					LOG_INFO("\tLINKING COMPLETE(%02x) %s %s rev:%02X version:%02X\n",
@@ -1438,6 +1505,7 @@ bool InsteonMgr::cancelLinking(){
 	return status;
 }
 
+
 // MARK:  - unlinking device
 
 bool InsteonMgr::unlinkDevice(DeviceID deviceID,
@@ -1519,105 +1587,127 @@ bool  InsteonMgr::processBroadcastEvents(plm_result_t response) {
 	if(_plm.parseMessage(&msg)){
 		
 		DeviceID deviceID = DeviceID(msg.from);
+	
 		
 		if(msg.msgType == MSG_TYP_GROUP_BROADCAST){
 			
 			uint8_t group 	= msg.to[0];
 			uint8_t cmd 		= msg.cmd[0];
+			time_t now 	= time(NULL);
+	 
+			static	 struct {
+				DeviceID deviceID;
+				uint8_t group;
+				uint8_t cmd;
+				uint8_t cmd1;
+				time_t  when;
+			} last_message
+			= { DeviceID(), 0, 0, 0};
 			
 			// Insteon often sends duplicate ON/OFF broadcast messages.
-			
+			if(deviceID == last_message.deviceID
+				&& group == last_message.group
+				&& cmd == last_message.cmd
+				&& msg.cmd[1] == last_message.cmd1
+				&& now < (last_message.when + 5) )
+			{
+				LOG_INFO("\tDUPLICATE MESSAGE:  - ignored \n");
+				_plm._parser.reset();
+				return true;
+			}
+	
 			// ignore 06
-			didHandle = (cmd == InsteonParser::CMD_INSTEON_06)
-			
-			// for broadcast - we expect the cmd 2 to be zero- else ignore it
-			|| (msg.cmd[1] != 0);
-			
-			
-			if(	!didHandle){
+			if((cmd == InsteonParser::CMD_INSTEON_06)
 				
-				didHandle = _eventMgr.handleEvent(deviceID, group, cmd);
-				
-				if(!didHandle){
-					switch (cmd) {
-						case InsteonParser::CMD_SUCCESS_REPORT:
-							// //  ignore?
-							didHandle = true;
-							break;
-							
-						case InsteonParser::CMD_LIGHT_ON:
-							_db.setDBOnLevel(deviceID, group,  0xff);
-							didHandle = true;
-							break;
-							
-						case InsteonParser::CMD_LIGHT_OFF:
-							_db.setDBOnLevel(deviceID, group, 0x0);
-							didHandle = true;
-							break;
-							
-						case InsteonParser::CMD_START_MANUAL_CHANGE:
-							//  ignore?
-							didHandle = true;
-							break;
-							
-						case InsteonParser::CMD_STOP_MANUAL_CHANGE:
-							InsteonDevice(deviceID).getOnLevel([=](uint8_t level, bool didSucceed) {
-								if(didSucceed){
-									_db.setDBOnLevel(deviceID, group, level);
-								}
-							});
-							didHandle = true;
-							break;
-							
-						default:
-							printf("-- (%02X) [%02x %02x] %s\n",
-									 msg.to[0], // group
-									 msg.cmd[0],
-									 msg.cmd[1],
-									 deviceID.string().c_str()) ;
-							didHandle = true;
-					}
+				// for broadcast - we expect the cmd 2 to be zero- else ignore it
+			|| (msg.cmd[1] != 0))
+			{
+				LOG_INFO("\t MESSAGE 6:  - ignored \n");
+				_plm._parser.reset();
+				return true;
+			}
+		
+			didHandle = _eventMgr.handleEvent(deviceID, group, cmd);
+			
+			if(!didHandle){
+				switch (cmd) {
+					case InsteonParser::CMD_SUCCESS_REPORT:
+						// //  ignore?
+						didHandle = true;
+						break;
+						
+					case InsteonParser::CMD_LIGHT_ON:
+						_db.setDBOnLevel(deviceID, group,  0xff);
+						didHandle = true;
+						break;
+						
+					case InsteonParser::CMD_LIGHT_OFF:
+						_db.setDBOnLevel(deviceID, group, 0x0);
+						didHandle = true;
+						break;
+						
+					case InsteonParser::CMD_START_MANUAL_CHANGE:
+						//  ignore?
+						didHandle = true;
+						break;
+						
+					case InsteonParser::CMD_STOP_MANUAL_CHANGE:
+						InsteonDevice(deviceID).getOnLevel([=](uint8_t level, bool didSucceed) {
+							if(didSucceed){
+								_db.setDBOnLevel(deviceID, group, level);
+							}
+						});
+						didHandle = true;
+						break;
+						
+					default:
+						printf("-- (%02X) [%02x %02x] %s\n",
+								 msg.to[0], // group
+								 msg.cmd[0],
+								 msg.cmd[1],
+								 deviceID.string().c_str()) ;
+						didHandle = true;
 				}
 				
+				last_message = {deviceID, group,  msg.cmd[0], msg.cmd[1], now};
+			}
+			
+			// fire off any events
+			auto evt = EventTrigger(deviceID, group, cmd);
+			auto eventIDs =  _db.matchingEventIDs(evt);
+			if(eventIDs.size() > 0){
+				// run these events.
 				
-				// fire off any events
-				auto evt = EventTrigger(deviceID, group, cmd);
-				auto eventIDs =  _db.matchingEventIDs(evt);
-				if(eventIDs.size() > 0){
-					// run these events.
-					
-					LOG_INFO("\tTRIGGER: %s \n",evt.printString().c_str());
-					
-					
-					for (auto eventID : eventIDs) {
-						// short delay to stablize Insteon bus
-						sleep_ms(500);
-						executeEvent(eventID);
-					}
+				LOG_INFO("\tTRIGGER: %s \n",evt.printString().c_str());
+				
+				for (auto eventID : eventIDs) {
+					// short delay to stablize Insteon bus
+					sleep_ms(500);
+					executeEvent(eventID);
 				}
-				
-				//				printf("-- (%02X) [%02x %02x] %s\n",
-				//						 msg.to[0], // group
-				//						 msg.cmd[0],
-				//						 msg.cmd[1],
-				//						 deviceID.string().c_str()) ;
-				//
-				// are there any keypads that match this?
-				
-				
-				// is this a keypad button?
-				if(auto keypad = _db.findKeypadEntryWithDeviceID(deviceID); keypad != NULL)
-					if(auto button =  _db.findKeypadButton(keypad, group) ; button != NULL){
-						
-						// short delay to stablize isteon bus
-						sleep_ms(500);
-						
-						// run button action
-						runActionForKeypad(deviceID, group, cmd);
-					}
+			}
+			
+			//				printf("-- (%02X) [%02x %02x] %s\n",
+			//						 msg.to[0], // group
+			//						 msg.cmd[0],
+			//						 msg.cmd[1],
+			//						 deviceID.string().c_str()) ;
+			//
+			// are there any keypads that match this?
+			
+			
+			// is this a keypad button?
+			if(auto keypad = _db.findKeypadEntryWithDeviceID(deviceID); keypad != NULL)
+				if(auto button =  _db.findKeypadButton(keypad, group) ; button != NULL){
+					
+					// short delay to stablize isteon bus
+					sleep_ms(500);
+					
+					// run button action
+					runActionForKeypad(deviceID, group, cmd);
 				}
 		}
- 		
+		
 		if(didHandle){
 			_plm._parser.reset();
 			
@@ -2045,7 +2135,7 @@ void InsteonMgr::test1(vector<DeviceID> devices,
 				 didSucceed?"OK":"FAIL");
 
 		if(didSucceed){
-			_db.addDeviceALDB(devID, aldb);
+			_db.updateDeviceALDB(devID, aldb);
 			
 	//		_db.printDeviceInfo(devID,true);
 			

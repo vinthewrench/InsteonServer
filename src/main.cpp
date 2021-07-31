@@ -113,9 +113,12 @@ void test(){
 int main(int argc, const char * argv[]) {
 	
 	START_INFO;
-	
+
 // load the database cachefile
 	insteon.loadCacheFile();
+	bool remoteTelnet = insteon.getDB()->getAllowRemoteTelnet();
+	int telnetPort = insteon.getDB()->getTelnetPort();
+	int restPort = insteon.getDB()->getRESTPort();
 
 //set up the api secrets
 	InsteonAPISecretMgr apiSecrets(insteon.getDB());
@@ -126,12 +129,12 @@ int main(int argc, const char * argv[]) {
 	registerServerCommands();
 	
 	TCPServer telnet_server(cmdQueue);
-	telnet_server.begin(2020, true, [=](){
+	telnet_server.begin(telnetPort, true, [=](){
 		return new TelnetServerConnection();
 	});
 	
 	TCPServer rest_server(cmdQueue);
-	rest_server.begin(8080, false, [=](){
+	rest_server.begin(restPort, remoteTelnet, [=](){
 		return new RESTServerConnection();
 	});
 	
@@ -139,40 +142,6 @@ int main(int argc, const char * argv[]) {
 	while(true) {
 		sleep(60);
 	}
-	
-//		auto state = insteon.currentState();
-//		bool noPLM = state == InsteonMgr::STATE_NO_PLM || state == InsteonMgr::STATE_SETUP;
-//
-//	/*
-//	 try{
-//			if(noPLM){
-//
-//				insteon.begin("",
-//								  [=](bool didSucceed) {
-//
-//					if(didSucceed){
-//						insteon.syncPLM( [=](bool didSucceed) {
-//							if(didSucceed){
-//								insteon.validatePLM( [](bool didSucceed) {
-//								});
-//
-//							}
-//						});
-//					}
-//
-//				});
-//			}
-//		}
-//		catch ( const InsteonException& e)  {
-//			printf("\tError %d %s\n\n", e.getErrorNumber(), e.what());
-//			noPLM = true;
-//		}
-//*/
-//		if(noPLM)
-//			sleep(5);
-//		else
-//			sleep(30);
-//	}
 	
 	return 0;
 	

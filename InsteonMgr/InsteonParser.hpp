@@ -190,7 +190,7 @@ class InsteonParser {
 	
 	static const uint8_t 	CMD_START_MANUAL_CHANGE	= 0x17;
 	static const uint8_t 	CMD_STOP_MANUAL_CHANGE		= 0x18;
-	static const uint8_t 	CMD_READ_ALDB				= 0x2F;
+	static const uint8_t 	CMD_RW_ALDB					= 0x2F;
 
 	static const uint8_t 	CMD_SUCCESS_REPORT			= 0x06; //Sent immediately following a group broadcast
 
