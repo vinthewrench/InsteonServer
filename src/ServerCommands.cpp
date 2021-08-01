@@ -3663,6 +3663,84 @@ static void Log_NounHandler(ServerCmdQueue* cmdQueue,
 
 // MARK: LINK - NOUN HANDLER
 
+static bool Link_NounHandler_GET(ServerCmdQueue* cmdQueue,
+									  REST_URL url,
+									  TCPClientInfo cInfo,
+									  ServerCmdQueue::cmdCallback_t completion) {
+	
+	using namespace rest;
+	using namespace timestamp;
+	json reply;
+	DeviceIDArgValidator vDeviceID;
+	DeviceID	deviceID;
+	auto db = insteon.getDB();
+
+	bool isValidURL = false;
+
+	
+	auto path = url.path();
+
+	if(path.size() < 1) {
+		return false;
+	}
+ 
+	
+	if(path.size() > 1) {
+		auto deviceStr = path.at(1);
+		if(vDeviceID.validateArg(deviceStr)){
+			deviceID = DeviceID(deviceStr);
+		}
+	}
+	
+	if(path.size() == 2) { // update ALDB from a device
+	
+		bool queued = insteon.updateALDBfromDevice(deviceID, [=](bool didSucceed) {
+			json reply;
+			  
+			if(didSucceed){
+				
+				insteon_dbEntry_t info;
+				
+				if( db->getDeviceInfo(deviceID,  &info)) {
+					
+					reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+				
+					json aldbJSON;
+					
+					for(auto aldb :info.deviceALDB){
+						json aldbEntry;
+						DeviceID aldbDev = DeviceID(aldb.devID);
+						aldbEntry[string(JSON_ARG_DEVICEID)] = aldbDev.string();
+						aldbEntry[string(JSON_VAL_ALDB_FLAG)] =  to_hex <unsigned char>(aldb.flag);
+						aldbEntry[string(JSON_VAL_ALDB_ADDR)] =  to_hex <unsigned short>(aldb.address);
+						aldbEntry[string(JSON_VAL_ALDB_GROUP)] =  to_hex <unsigned char>(aldb.group);
+						
+						aldbJSON[to_hex <unsigned short>(aldb.address)] = aldbEntry;
+					}
+					
+					reply[string(JSON_VAL_ALDB)] = aldbJSON;
+				}
+				
+				makeStatusJSON(reply,STATUS_OK);
+				(completion) (reply, STATUS_OK);
+			}
+			  else {
+				  makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Delete Failed", "updateALDBfromDevice failed" );;
+				  (completion) (reply, STATUS_INTERNAL_ERROR);
+			  }
+
+		  });
+		  
+		  if(!queued) {
+			  makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is not running" );;
+			  (completion) (reply, STATUS_UNAVAILABLE);
+		  }
+		  return true;
+	}
+	
+	return isValidURL;
+}
+
 // Linking keypad we add in responder for group 1-8
 static void link_Keypad(DeviceID	deviceID, boolCallback_t cb){
 	
@@ -3740,7 +3818,7 @@ static bool Link_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 		if(vDeviceID.validateArg(deviceStr)){
 			DeviceID	deviceID = DeviceID(deviceStr);
 			
-			insteon.linkDevice(deviceID, true, 0xFE, [=](bool didSucceed) {
+			bool queued =  insteon.linkDevice(deviceID, true, 0xFE, [=](bool didSucceed) {
 				
 				if(didSucceed){
 		
@@ -3802,6 +3880,11 @@ static bool Link_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 				}
 			});
 			
+			if(!queued) {
+				makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is not running" );;
+				(completion) (reply, STATUS_UNAVAILABLE);
+			}
+ 
 			isValidURL = true;
 		}}
 	else if(path.size() == 3) { //  add To DeviceALDB
@@ -3936,9 +4019,9 @@ static void Link_NounHandler(ServerCmdQueue* cmdQueue,
 	}
 	
 	switch(url.method()){
-//		case HTTP_GET:
-//			isValidURL = Link_NounHandler_GET(cmdQueue,url,cInfo, completion);
-//			break;
+		case HTTP_GET:
+			isValidURL = Link_NounHandler_GET(cmdQueue,url,cInfo, completion);
+			break;
 
 		case HTTP_PUT:
 			isValidURL = Link_NounHandler_PUT(cmdQueue,url,cInfo, completion);

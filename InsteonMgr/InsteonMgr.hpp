@@ -94,6 +94,9 @@ public:
 	bool removeEntryFromDeviceALDB(DeviceID deviceID, uint16_t address,
 											 boolCallback_t callback = NULL);
  
+	bool updateALDBfromDevice(DeviceID deviceID,
+											 boolCallback_t callback = NULL);
+ 
 	bool unlinkDevice(DeviceID deviceID,
 						 boolCallback_t callback = NULL);
 	

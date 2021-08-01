@@ -1299,6 +1299,31 @@ bool InsteonMgr::removeEntryFromDeviceALDB(DeviceID deviceID, uint16_t address,
 	return status;
 }
 
+bool InsteonMgr::updateALDBfromDevice(DeviceID deviceID,
+												  boolCallback_t cb){
+	bool status = false;
+	
+	if(_state != STATE_READY)
+		return false;
+		
+	if(!_aldb)
+		throw InsteonException("aldb not setup");
+
+	
+	status = _aldb->readDeviceALDB(deviceID,
+											 [=]( std::vector<insteon_aldb_t> newAldb,  bool didSucceed){
+		if(didSucceed){
+			_db.setDeviceALDB(deviceID, newAldb);
+			_db.saveToCacheFile();
+		};
+		
+		if(cb) (cb)(didSucceed);
+
+	});
+	
+	return status;
+}
+
 
 bool InsteonMgr::linkKeyPadButtonsToGroups(DeviceID deviceID,
 										 vector<pair<uint8_t,uint8_t>> buttonGroups,
