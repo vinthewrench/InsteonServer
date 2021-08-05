@@ -179,7 +179,7 @@ bool DeviceInfo::isDimmer(){
 		{0x01,0x09}, // 2486D	KeypadLinc Dimmer
 		{0x01,0x0B}, // 2632-422	Insteon Dimmer Module, France (869 MHz)
 		{0x01,0x0C}, // 2486DWH8	KeypadLinc Dimmer
-		{0x01,0x0F}, // 2457D2	LampLinc (Dual-Band)
+		{0x01,0x0E}, // 2457D2	LampLinc (Dual-Band)
 		{0x01,0x0F}, // 2632-432	Insteon Dimmer Module, Germany (869 MHz)
 		{0x01,0x11}, // 2632-442	Insteon Dimmer Module, UK (869 MHz)
 		{0x01,0x12}, // 2632-522	Insteon Dimmer Module, Aus/NZ (921 MHz)
