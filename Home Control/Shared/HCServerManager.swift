@@ -151,7 +151,7 @@ class RESTDateInfo: Codable {
 struct RESTKeyButtons: Codable {
 	var name:String?
 	var level:String
-	var actions: Dictionary<String,RESTEventAction>
+ 	var actions: Dictionary<String,RESTEventAction>?
 
 	enum CodingKeys: String, CodingKey {
 		case name = "name"
@@ -163,6 +163,22 @@ struct RESTKeyButtons: Codable {
 struct RESTKeypad: Codable {
 	var name:String?
 	var buttons: Dictionary<String,RESTKeyButtons>?
+	var config: Int
+	var deviceID: String
+	var deviceInfo: String
+	var lastUpdated: String
+	var valid: Bool
+
+	enum CodingKeys: String, CodingKey {
+		case name
+		case buttons
+		case config
+		case deviceID
+		case deviceInfo
+		case lastUpdated
+		case valid
+	}
+
 }
 
 struct RESTKeypads: Codable {

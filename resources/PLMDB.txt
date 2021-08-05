@@ -1,7 +1,8 @@
-## INSTEON DATABASE 2021-07-31 23:03:54
+## INSTEON DATABASE 2021-08-04 22:18:08
 
 config-start:
-port: /dev/cu.usbserial-AK05ZAZ7
+#port: /dev/cu.usbserial-AK05ZAZ7
+port: /dev/ttyUSB0
 lat-long: 42.235389 -122.865947
 apikey: foobar 12345
 apikey: test 40v)ywv*e2e&$k(6
@@ -30,7 +31,7 @@ device-end:
 
 device-start: 52.AC.35
 name: Bedroom light
-updated: 2021-07-30 23:04:59
+updated: 2021-08-03 00:23:11
 cntl: 40 ff 01 20 45 02
 aldb: 0fff aa 01 2C.DE.42 fe 1c
 aldb: 0ff7 e2 01 53.C2.B8 03 1f
@@ -43,7 +44,7 @@ device-end:
 
 device-start: 57.2F.51
 name: couch lights
-updated: 2021-07-30 23:04:59
+updated: 2021-08-03 00:23:11
 cntl: 40 ff 01 20 45 02
 resp: 00 01
 aldb: 0fff e2 01 53.C2.B8 03 1f
@@ -59,7 +60,7 @@ device-end:
 
 device-start: 54.F6.F9
 name: living room string led
-updated: 2021-07-30 23:04:59
+updated: 2021-08-03 00:23:11
 cntl: 40 ff 02 38 43 02
 resp: 00 01
 aldb: 0fff a2 ff 52.18.42 ff 00
@@ -71,7 +72,7 @@ device-end:
 
 device-start: 2A.4D.D6
 name: flood garage
-updated: 2021-07-30 23:23:03
+updated: 2021-08-03 00:23:11
 cntl: 40 ff 02 2a 43 02
 aldb: 0fff e2 01 53.C2.B8 03 1f
 aldb: 0ff7 aa ff 52.18.42 00 1c
@@ -81,7 +82,7 @@ device-end:
 
 device-start: 52.B6.E4
 name: flood back porch
-updated: 2021-07-30 23:15:47
+updated: 2021-08-03 00:23:11
 cntl: 40 ff 02 2a 45 02
 aldb: 0fff e2 01 53.C2.B8 03 1f
 aldb: 0ff7 aa ff 52.18.42 00 1c
@@ -96,7 +97,7 @@ device-end:
 
 device-start: 2A.50.AD
 name: Front Deck lights
-updated: 2021-07-30 23:04:59
+updated: 2021-08-03 00:23:11
 cntl: 40 ff 02 2a 43 02
 aldb: 0fff ea 01 53.C2.B8 03 1f
 aldb: 0ff7 02 00 00.00.00 00 00
@@ -108,7 +109,7 @@ device-end:
 
 device-start: 29.B6.49
 name: hall lights
-updated: 2021-07-30 23:04:59
+updated: 2021-08-03 00:23:11
 cntl: 40 ff 01 20 41 02
 aldb: 0fff e2 01 53.C2.B8 03 1f
 aldb: 0ff7 aa ff 52.18.42 00 1c
@@ -121,7 +122,7 @@ device-end:
 
 device-start: 54.F6.99
 name: House Christmas Light
-updated: 2021-07-30 23:04:59
+updated: 2021-08-03 00:23:11
 cntl: 40 ff 02 38 43 02
 aldb: 0fff a2 ff 52.18.42 00 00
 aldb: 0ff7 02 00 00.00.00 00 00
@@ -132,7 +133,7 @@ device-end:
 
 device-start: 29.B9.04
 name: Kitchen
-updated: 2021-07-30 23:04:59
+updated: 2021-08-03 00:23:11
 cntl: 40 ff 01 20 41 02
 aldb: 0fff ea 01 53.C2.B8 03 1f
 aldb: 0ff7 aa ff 52.18.42 00 1c
@@ -143,7 +144,7 @@ device-end:
 
 device-start: 54.F5.56
 name: Living Room LED
-updated: 2021-07-30 23:04:59
+updated: 2021-08-03 00:23:11
 cntl: 40 ff 02 38 43 02
 aldb: 0fe7 e2 01 53.C2.B8 03 00
 aldb: 0fdf a2 fe 53.C2.B8 00 00
@@ -153,7 +154,7 @@ device-end:
 
 device-start: 57.2F.FA
 name: Bathroom
-updated: 2021-07-30 23:04:59
+updated: 2021-08-03 00:23:11
 cntl: 40 ff 01 20 45 02
 aldb: 0fff e2 01 53.C2.B8 03 1f
 aldb: 0ff7 aa ff 52.18.42 00 1c
@@ -164,7 +165,7 @@ device-end:
 
 device-start: 29.AA.FF
 name: counter lights
-updated: 2021-07-30 23:04:59
+updated: 2021-08-03 00:23:11
 cntl: 40 ff 01 20 41 02
 aldb: 0fff ea 01 53.C2.B8 03 1f
 aldb: 0ff7 aa 01 2C.DE.42 00 1c
@@ -175,7 +176,7 @@ device-end:
 
 device-start: 54.7E.26
 name: Driveway Lights
-updated: 2021-07-30 23:04:59
+updated: 2021-08-03 00:23:11
 cntl: 40 ff 02 38 43 02
 aldb: 0ff7 e2 01 2A.4D.D6 03 00
 aldb: 0fef a2 fe 53.C2.B8 00 00
@@ -185,7 +186,7 @@ device-end:
 
 device-start: 54.FA.39
 name: Garage Christmas Lights
-updated: 2021-07-30 23:04:59
+updated: 2021-08-03 00:23:11
 cntl: 40 ff 02 38 43 02
 aldb: 0fff e2 01 53.C2.B8 03 1f
 aldb: 0ff7 e2 01 52.AC.35 03 00
@@ -196,7 +197,7 @@ device-end:
 
 device-start: 4D.BC.2A
 name: flood shop
-updated: 2021-07-30 23:15:47
+updated: 2021-08-03 00:23:11
 cntl: 40 ff 02 2a 45 02
 aldb: 0fff f2 01 53.C2.B8 03 1f
 aldb: 0ff7 aa ff 52.18.42 00 1c
@@ -206,7 +207,7 @@ device-end:
 
 device-start: 54.F6.C6
 name: Back Deck Railing
-updated: 2021-07-30 23:15:47
+updated: 2021-08-03 00:23:11
 cntl: 40 ff 02 38 43 02
 aldb: 0fff a2 ff 52.18.42 00 00
 aldb: 0fef e2 01 53.C2.B8 03 00
@@ -215,7 +216,7 @@ device-end:
 
 device-start: 53.20.59
 name: Driveway lights 2
-updated: 2021-07-30 23:04:59
+updated: 2021-08-03 00:23:11
 cntl: 40 ff 02 38 43 02
 aldb: 0ff7 02 00 00.00.00 00 00
 aldb: 0fef a2 ff 52.18.42 00 00
@@ -225,7 +226,7 @@ device-end:
 
 device-start: 17.39.51
 name: Back Deck Lights
-updated: 2021-07-30 23:04:59
+updated: 2021-08-03 00:23:11
 cntl: 40 fe 01 19 38 01
 aldb: 0fff a2 01 14.F2.C8 fe 1c
 aldb: 0ff7 e2 01 14.F2.C8 03 1c
@@ -239,7 +240,7 @@ device-end:
 
 device-start: 1B.3F.74
 name: Kara's Room
-updated: 2021-07-30 23:04:59
+updated: 2021-08-03 00:23:11
 cntl: 40 fe 02 16 39 01
 aldb: 00ff c2 fe 52.18.42 00 00
 aldb: 00f7 82 01 52.18.42 00 00
@@ -247,7 +248,7 @@ device-end:
 
 device-start: 29.AA.F5
 name: living room
-updated: 2021-07-30 23:04:59
+updated: 2021-08-03 00:23:11
 cntl: 40 fe 01 20 41 02
 aldb: 0fff 82 fe 53.C2.B8 00 00
 aldb: 0ff7 c2 01 53.C2.B8 00 00
@@ -264,7 +265,7 @@ device-end:
 
 device-start: 56.79.30
 name: bedroom keypad
-updated: 2021-07-30 23:23:03
+updated: 2021-08-03 00:23:11
 cntl: 40 fe 01 41 45 02
 aldb: 0fff e2 01 53.C2.B8 03 1f
 aldb: 0ff7 e2 02 53.C2.B8 03 1f
@@ -287,7 +288,7 @@ device-end:
 
 device-start: 2A.A4.15
 name: Flood Front porch
-updated: 2021-07-30 23:04:59
+updated: 2021-08-03 00:23:11
 cntl: 40 fe 02 1f 43 02
 aldb: 0fff c2 01 2B.5C.C9 03 1c
 aldb: 0ff7 c2 00 53.C2.B8 03 1c
@@ -299,7 +300,7 @@ device-end:
 
 device-start: 4E.82.96
 name: flood back porch 2
-updated: 2021-07-30 23:15:47
+updated: 2021-08-03 00:23:11
 cntl: 40 fe 02 2a 45 02
 aldb: 0fff e2 01 53.C2.B8 03 1f
 aldb: 0ff7 a2 31 52.18.42 00 00
@@ -314,6 +315,7 @@ device-end:
 
 device-start: 33.4F.F6
 name: Test Keypad
+updated: 2021-08-03 00:23:11
 cntl: 40 fe 02 2c 41 02
 aldb: 0fff aa fe 52.18.42 00 1c
 aldb: 0ff7 c2 08 52.18.42 03 20
@@ -327,11 +329,21 @@ aldb: 0fbf ca 01 52.18.42 03 20
 device-end:
 
 device-start: 54.F5.2D
-name: vinnie's Desk Lamp
-updated: 2021-07-31 22:38:34
+name: Outdoor Module - Spare
+updated: 2021-08-04 22:11:06
 cntl: 40 fe 02 38 43 02
 aldb: 0fff a2 fe 52.18.42 ff 00
 aldb: 0ff7 a2 01 52.18.42 03 20
+aldb: 0fef 00 00 00.00.00 00 00
+device-end:
+
+device-start: 2E.A1.1B
+name: Desk Lamp
+updated: 2021-08-04 22:02:47
+cntl: 40 fe 01 0e 43 02
+aldb: 0fff a2 fe 52.18.42 00 1c
+aldb: 0ff7 a2 01 52.18.42 03 20
+aldb: 0fef aa 30 52.18.42 03 20
 device-end:
 
 keypad-start: 33.4F.F6
@@ -374,7 +386,7 @@ group-end:
 group-start: 0003 Evening Lights
 dev: 54.F6.F9 # living room string led
 dev: 54.F5.56 # Living Room LED
-dev: 54.F5.2D # vinnie's Desk Lamp
+dev: 54.F5.2D # Outdoor Module - Spare
 group-end:
 
 action_group-start: 0001 Morning Actions
@@ -422,7 +434,7 @@ action_group-end:
 
 event-start: 0001 Timed Evening Lights
 act: {"buttonID":"4","cmd":"on","keypadID":"33.4F.F6"}
-trigger: {"mins":1020,"timeBase":1}
+trigger: {"mins":1100,"timeBase":1}
 event-end:
 
 event-start: 0002 ten past  Sunset
@@ -432,7 +444,7 @@ event-end:
 
 event-start: 0003 Good Night
 act: {"action.group":"0x0002","cmd":"execute"}
-trigger: {"mins":1320,"timeBase":1}
+trigger: {"mins":1335,"timeBase":1}
 event-end:
 
 event-start: 0004 Good Morning
@@ -444,4 +456,3 @@ event-start: 9999 Startup
 act: {"action.group":"0x9999","cmd":"execute"}
 trigger: {"event":"startup"}
 event-end:
-
