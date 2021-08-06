@@ -34,80 +34,19 @@
 #include "CommonIncludes.h"
 
 #include "Action.hpp"
-
-#if __APPLE__
-//  #define SERIAL_DEVICE "/dev/cu.usbserial-AK05Z8CQ"
-//   #define SERIAL_DEVICE "/dev/cu.usbserial-AL02YD29"
-#define SERIAL_DEVICE "/dev/cu.usbserial-AK05ZAZ7"
-#elif __arm__
-#define SERIAL_DEVICE "/dev/ttyUSB0"
-#else
-#warning  NO CLUE
-
-#endif
+//
+//#if __APPLE__
+////  #define SERIAL_DEVICE "/dev/cu.usbserial-AK05Z8CQ"
+////   #define SERIAL_DEVICE "/dev/cu.usbserial-AL02YD29"
+//#define SERIAL_DEVICE "/dev/cu.usbserial-AK05ZAZ7"
+//#elif __arm__
+//#define SERIAL_DEVICE "/dev/ttyUSB0"
+//#else
+//#warning  NO CLUE
+//
+//#endif
 
 using namespace std;
-
-void linkKP(){
-	DeviceID deviceID =  DeviceID("33.4F.F6");
-	auto keypad = InsteonKeypadDevice(deviceID );
-	
-	START_VERBOSE;
-	
-	// link up the keypad button to groups.
-	vector<pair<uint8_t, uint8_t> > pairs =
-	{ {2, 0xA2},{3,0xA3},{4,0xA4},{5,0xA5},{6,0xA6},{7,0xA7},{8,0xA8},   };
-	
-	
-	insteon.linkKeyPadButtonsToGroups(deviceID, pairs, [=](bool didSucceed) {
-		
-		insteon.addToDeviceALDB(deviceID, false,  0x02,  [=](bool didSucceed) {
-			insteon.addToDeviceALDB(deviceID, false, 0x03,  [=](bool didSucceed) {
-				insteon.addToDeviceALDB(deviceID, false, 0x04,  [=](bool didSucceed) {
-					insteon.addToDeviceALDB(deviceID, false, 0x05,  [=](bool didSucceed) {
-						insteon.addToDeviceALDB(deviceID, false, 0x06,  [=](bool didSucceed) {
-							insteon.addToDeviceALDB(deviceID, false, 0x07,  [=](bool didSucceed) {
-								insteon.addToDeviceALDB(deviceID, false, 0x08,  [=](bool didSucceed) {
-									
-									printf("success");
-									
-									
-								});
-							});
-						});
-					});
-				});
-			});
-		});
-	});
-}
-
-void test(){
-	DeviceID deviceID =  DeviceID("33.4F.F6");
-	
-	//	InsteonKeypadDevice(deviceID).setNonToggleMask(00, [=]( bool didSucceed) {
-	//	});
-	//
-	
-	InsteonKeypadDevice(deviceID).getKeypadLEDState( [=](uint8_t mask, bool didSucceed) {
-		
-		if(didSucceed){
-			mask = ~mask;
-			InsteonKeypadDevice(deviceID).setKeypadLEDState(mask, [=](bool didSucceed) {
-				
-				test();
-			});
-			
-		}
-		else {
-			test();
-		}
-		
-		
-	});
-	
-	
-}
 
 // MARK: - cmdline options
 
