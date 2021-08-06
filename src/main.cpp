@@ -200,7 +200,6 @@ int main(int argc, const char **argv) {
 		LogMgr::shared()->_logFlags = LogMgr::LogFlagDebug;
 	}
  
-	
 	START_INFO;
 
 // load the database cachefile

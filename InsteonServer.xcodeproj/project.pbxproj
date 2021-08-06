@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2E095CE726BDD6D800C7ACD5 /* start_server in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E095CE426BDD6AC00C7ACD5 /* start_server */; };
 		2E431A162634E6EF000BEAF8 /* libFOOServer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E431A0E2634E6DD000BEAF8 /* libFOOServer.a */; };
 		2E51ECD1266EDEAA00DC2548 /* InsteonAPISecretMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E51ECCD266EDB6100DC2548 /* InsteonAPISecretMgr.cpp */; };
 		2E592E422620C1150041AA34 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E412620C1150041AA34 /* main.cpp */; };
@@ -37,6 +38,20 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		2E095CE326BDD6AC00C7ACD5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2E095CDF26BDD6AC00C7ACD5 /* start_server.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 2E095CCF26BDD5D400C7ACD5;
+			remoteInfo = start_server;
+		};
+		2E095CE526BDD6C400C7ACD5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2E095CDF26BDD6AC00C7ACD5 /* start_server.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 2E095CCE26BDD5D400C7ACD5;
+			remoteInfo = start_server;
+		};
 		2E431A0D2634E6DD000BEAF8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 2E431A082634E6DD000BEAF8 /* FooServer.xcodeproj */;
@@ -62,12 +77,14 @@
 			files = (
 				2E592EC32620C9660041AA34 /* catagories.txt in CopyFiles */,
 				2EC68B32264DA54600541251 /* helpfile.txt in CopyFiles */,
+				2E095CE726BDD6D800C7ACD5 /* start_server in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2E095CDF26BDD6AC00C7ACD5 /* start_server.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = start_server.xcodeproj; sourceTree = "<group>"; };
 		2E431A082634E6DD000BEAF8 /* FooServer.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = FooServer.xcodeproj; path = Submodule/FooServer/FooServer.xcodeproj; sourceTree = "<group>"; };
 		2E51ECCD266EDB6100DC2548 /* InsteonAPISecretMgr.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = InsteonAPISecretMgr.cpp; sourceTree = "<group>"; };
 		2E51ECCE266EDB6100DC2548 /* InsteonAPISecretMgr.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = InsteonAPISecretMgr.hpp; sourceTree = "<group>"; };
@@ -137,6 +154,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2E095CE026BDD6AC00C7ACD5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				2E095CE426BDD6AC00C7ACD5 /* start_server */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		2E431A072634E6D2000BEAF8 /* Submodules */ = {
 			isa = PBXGroup;
 			children = (
@@ -159,6 +184,7 @@
 				2E592E3D2620C0FC0041AA34 /* src */,
 				2E592E892620C8F50041AA34 /* InsteonMgr */,
 				2E431A072634E6D2000BEAF8 /* Submodules */,
+				2E095CDF26BDD6AC00C7ACD5 /* start_server.xcodeproj */,
 				2E592E312620C09C0041AA34 /* Products */,
 				2E592E5F2620C1B00041AA34 /* Frameworks */,
 			);
@@ -268,6 +294,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				2E095CE626BDD6C400C7ACD5 /* PBXTargetDependency */,
 				2E431A152634E6E7000BEAF8 /* PBXTargetDependency */,
 			);
 			name = insteonserver;
@@ -304,6 +331,10 @@
 					ProductGroup = 2E431A092634E6DD000BEAF8 /* Products */;
 					ProjectRef = 2E431A082634E6DD000BEAF8 /* FooServer.xcodeproj */;
 				},
+				{
+					ProductGroup = 2E095CE026BDD6AC00C7ACD5 /* Products */;
+					ProjectRef = 2E095CDF26BDD6AC00C7ACD5 /* start_server.xcodeproj */;
+				},
 			);
 			projectRoot = "";
 			targets = (
@@ -313,6 +344,13 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
+		2E095CE426BDD6AC00C7ACD5 /* start_server */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.executable";
+			path = start_server;
+			remoteRef = 2E095CE326BDD6AC00C7ACD5 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 		2E431A0E2634E6DD000BEAF8 /* libFOOServer.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
@@ -357,6 +395,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		2E095CE626BDD6C400C7ACD5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = start_server;
+			targetProxy = 2E095CE526BDD6C400C7ACD5 /* PBXContainerItemProxy */;
+		};
 		2E431A152634E6E7000BEAF8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = FOOServer;

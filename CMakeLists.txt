@@ -58,7 +58,12 @@ set_target_properties(InsteonMgr PROPERTIES
             CXX_STANDARD 17
             CXX_EXTENSIONS OFF
             )
-            
+ 
+set_target_properties(InsteonMgr PROPERTIES 
+			OUTPUT_NAME "insteond"
+			)
+
+           
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 target_link_libraries(InsteonMgr PRIVATE Threads::Threads)
@@ -75,7 +80,6 @@ target_include_directories(InsteonMgr
 
 set(CMAKE_BINARY_DIR "bin")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
-
 add_custom_target(copy_assets
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/resources ${CMAKE_BINARY_DIR}
 )
