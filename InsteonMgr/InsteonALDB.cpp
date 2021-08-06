@@ -371,7 +371,7 @@ bool InsteonALDB::addToDeviceALDB(DeviceID targetDevice,
 			auto buffer = _plm->_parser.makeALDBWriteRecord(newEntry, newEntry.address);
 			
 			
-			printf("INSERT %04x %s group:%02x\n",  newAddress, plmDevice.string().c_str(), groupID);
+	//		printf("INSERT %04x %s group:%02x\n",  newAddress, plmDevice.string().c_str(), groupID);
 			
 			START_VERBOSE;
 			_cmdQueue->queueMessage(targetDevice,
@@ -445,7 +445,7 @@ bool InsteonALDB::removeEntryFromDeviceALDB(DeviceID targetDevice, uint16_t addr
 	 
 		auto buffer = _plm->_parser.makeALDBWriteRecord(newAldb, newAldb.address);
 		
-		printf("DELETE  ALDB %04x %s\n",  address, targetDevice.string().c_str());
+//		printf("DELETE  ALDB %04x %s\n",  address, targetDevice.string().c_str());
 		
 		START_VERBOSE;
 		_cmdQueue->queueMessage(targetDevice,

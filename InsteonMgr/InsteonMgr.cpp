@@ -1571,7 +1571,7 @@ bool InsteonMgr::unlinkDevice(DeviceID deviceID,
 			if(needsALDBupdate){
 	 			_aldb->syncDeviceALDB(deviceID, aldb, [=](bool didSucceed){
 					
-		 			printf("Synced ALDB %s\n", didSucceed?"OK":"FAIL");
+//		 			printf("Synced ALDB %s\n", didSucceed?"OK":"FAIL");
 					
 					_db.removeDevice(deviceID);
 					if(cb) (cb)(true);
@@ -1686,11 +1686,11 @@ bool  InsteonMgr::processBroadcastEvents(plm_result_t response) {
 						break;
 						
 					default:
-						printf("-- (%02X) [%02x %02x] %s\n",
-								 msg.to[0], // group
-								 msg.cmd[0],
-								 msg.cmd[1],
-								 deviceID.string().c_str()) ;
+//						printf("-- (%02X) [%02x %02x] %s\n",
+//								 msg.to[0], // group
+//								 msg.cmd[0],
+//								 msg.cmd[1],
+//								 deviceID.string().c_str()) ;
 						didHandle = true;
 				}
 				
@@ -2143,21 +2143,21 @@ void InsteonMgr::test1(vector<DeviceID> devices,
 	
 	auto deviceID = devices.back();
 	devices.pop_back();
-	
-	printf("%2ld ALDB_READ: %s %s\n",
-			 devices.size(),
-			 deviceID.string().c_str(),
-			 deviceID.nameString().c_str());
+//
+//	printf("%2ld ALDB_READ: %s %s\n",
+//			 devices.size(),
+//			 deviceID.string().c_str(),
+//			 deviceID.nameString().c_str());
 	
 	_aldb->readDeviceALDB(deviceID,
 						 [this, deviceID, devices, callback]
 						 ( std::vector<insteon_aldb_t> aldb,  bool didSucceed) {
 		
 		DeviceID	devID = deviceID;
-		
-		printf("\t ALDB_READ: %s - %s\n",
-				 devID.string().c_str(),
-				 didSucceed?"OK":"FAIL");
+//
+//		printf("\t ALDB_READ: %s - %s\n",
+//				 devID.string().c_str(),
+//				 didSucceed?"OK":"FAIL");
 
 		if(didSucceed){
 			_db.updateDeviceALDB(devID, aldb);
@@ -2198,10 +2198,10 @@ void InsteonMgr::test() {
 										buffer, sizeof(buffer),
 										[this]( auto arg, bool didSucceed) {
 			
-			printf("\tCOMMAND(%02X, %02X)  %s\n",
-					 arg.reply.cmd[0],
-					 arg.reply.cmd[1],
-					 didSucceed?"OK":"FAIL");
+//			printf("\tCOMMAND(%02X, %02X)  %s\n",
+//					 arg.reply.cmd[0],
+//					 arg.reply.cmd[1],
+//					 didSucceed?"OK":"FAIL");
 
 			
 		});
@@ -2293,7 +2293,7 @@ void InsteonMgr::test() {
 			_aldb->syncDeviceALDB(info.deviceID, info.deviceALDB,
 										 [](bool didSucceed){
 
-		  printf("Sync %s\n", didSucceed?"OK":"FAIL");
+//		  printf("Sync %s\n", didSucceed?"OK":"FAIL");
 
 		});
  	}

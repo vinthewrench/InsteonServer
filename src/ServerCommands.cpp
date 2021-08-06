@@ -3572,13 +3572,21 @@ static bool Log_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 		if(v1.getStringFromJSON(JSON_ARG_FILEPATH, url.body(), path)){
 			//VINNIE		// set the log file
 			
-			LogMgr::shared()->setLogFilePath(path);
-			db->logFileSetPath(path);
-			
-			makeStatusJSON(reply,STATUS_OK);
-			(completion) (reply, STATUS_OK);
-			return true;
-			
+			bool success = LogMgr::shared()->setLogFilePath(path);
+			if(success){
+				db->logFileSetPath(path);
+
+				makeStatusJSON(reply,STATUS_OK);
+				(completion) (reply, STATUS_OK);
+			}
+			else {
+				string lastError =  string("Error: ") + to_string(errno);
+				string lastErrorString = string(::strerror(errno));
+				
+				makeStatusJSON(reply, STATUS_BAD_REQUEST, lastError, lastErrorString);;
+				(completion) (reply, STATUS_BAD_REQUEST);
+			}
+			return true;			
 		}
 	}
  
@@ -3968,12 +3976,7 @@ static bool Link_NounHandler_DELETE(ServerCmdQueue* cmdQueue,
 		if( regex_match(string(str), std::regex("^[0-9a-fA-F]{4}$"))
 				  && ( std::sscanf(str.c_str(), "%hx", &address) == 1)){
 
-			
-			printf(" Do something with ADLB addr:%04x on deviceID: %s\n",
-					 address, deviceID.string().c_str() );
-			
-			// do something with ADLB addr on deviceID
-			
+		
 			bool queued = insteon.removeEntryFromDeviceALDB(deviceID, address, [=](bool didSucceed) {
 				json reply;
 				
