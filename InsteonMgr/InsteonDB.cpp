@@ -73,7 +73,6 @@ InsteonDB *InsteonDB::sharedInstance = 0;
 InsteonDB::InsteonDB() {
 	
 	_expired_age = 60*60*24*30;
-	_directoryPath = "";
 	_db.clear();
 	_deviceGroups.clear();
 	_actionGroups.clear();
@@ -949,9 +948,9 @@ bool InsteonDB::syncALDB(vector<insteon_aldb_t> aldbIn,
 
 // MARK: -  database cachefile
 
-string  InsteonDB::default_fileName(){
-	string fileName = "PLMDB.txt";
-	return fileName;
+string  InsteonDB::default_filePath(){
+	string filePath = "PLMDB.txt";
+	return filePath;
  }
 
 
@@ -1195,16 +1194,14 @@ bool InsteonDB::backupCacheFile(string filepath){
 }
  
 
-bool InsteonDB::saveToCacheFile(string fileName ){
+bool InsteonDB::saveToCacheFile(string filePath ){
 	
 	// debug  printDB();
 	
-	if(fileName.size() == 0)
-		fileName = default_fileName();
-	
-	string path = _directoryPath + fileName;
-	
-	return backupCacheFile(path);
+	if(filePath.size() == 0)
+		filePath = default_filePath();
+		
+	return backupCacheFile(filePath);
 }
 
 typedef enum  {
@@ -1219,7 +1216,7 @@ typedef enum  {
 
 }restoreState_t;
 
-bool InsteonDB::restoreFromCacheFile(string fileName,
+bool InsteonDB::restoreFromCacheFile(string filePath,
 												 time_t validityDuration){
 	
 	
@@ -1229,11 +1226,10 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 	std::ifstream	ifs;
 	
 	// create a file path
-	if(fileName.size() == 0)
-		fileName = default_fileName();
-	string path = _directoryPath + fileName;
+	if(filePath.size() == 0)
+		filePath = default_filePath();
 	
-	LOG_INFO("READ_CACHEFILE: %s\n", path.c_str());
+	LOG_INFO("READ_CACHEFILE: %s\n", filePath.c_str());
 
 	try{
 		string line;
@@ -1252,7 +1248,7 @@ bool InsteonDB::restoreFromCacheFile(string fileName,
 		eventGroupID_t		eventGroupID = 0;
 	
 		// open the file
-		ifs.open(path, ios::in);
+		ifs.open(filePath, ios::in);
 		if(!ifs.is_open()) return false;
 	
 		while ( std::getline(ifs, line) ) {

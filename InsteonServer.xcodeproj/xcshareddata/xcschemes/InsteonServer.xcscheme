@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2E592E2F2620C09C0041AA34"
-               BuildableName = "InsteonServer"
-               BlueprintName = "InsteonServer"
+               BuildableName = "insteonserver"
+               BlueprintName = "insteonserver"
                ReferencedContainer = "container:InsteonServer.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -47,11 +47,17 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2E592E2F2620C09C0041AA34"
-            BuildableName = "InsteonServer"
-            BlueprintName = "InsteonServer"
+            BuildableName = "insteonserver"
+            BlueprintName = "insteonserver"
             ReferencedContainer = "container:InsteonServer.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+         <CommandLineArgument
+            argument = "-f  PLMDB2.txt"
+            isEnabled = "NO">
+         </CommandLineArgument>
+      </CommandLineArguments>
       <AdditionalOptions>
          <AdditionalOption
             key = "NSZombieEnabled"
@@ -71,8 +77,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2E592E2F2620C09C0041AA34"
-            BuildableName = "InsteonServer"
-            BlueprintName = "InsteonServer"
+            BuildableName = "insteonserver"
+            BlueprintName = "insteonserver"
             ReferencedContainer = "container:InsteonServer.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

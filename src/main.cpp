@@ -10,6 +10,8 @@
 #include "ServerCmdQueue.hpp"
 #include "InsteonAPISecretMgr.hpp"
 
+#include <string.h>
+
 #include <regex>
 #include <string>
 #include <iostream>
@@ -107,15 +109,163 @@ void test(){
 	
 }
 
+// MARK: - cmdline options
+
+#ifndef IsNull
+#define IsntNull( p )	( (bool) ( (p) != NULL ) )
+#define IsNull( p )		( (bool) ( (p) == NULL ) )
+#endif
+
+int		gVerbose_flag	= 0;
+int		gDebug_flag		= 0;
+ 
+char*	gCacheFilePath		= NULL;
+
+/* for command line processing */
+typedef enum
+{
+	kArg_Invalid   = 0,
+	kArg_Boolean,
+	kArg_String,
+	kArg_UInt,
+	kArg_HexString,
+	kArg_Other,
+	kArg_Count,
+} argType_t;
+
+
+typedef struct
+{
+	argType_t 		type;
+	void*				argument;
+	const char*		shortName;
+	char				charName;
+	const char*		longName;
+} argTable_t;
+ 
+
+static argTable_t sArgTable[] =
+{
+		
+	/* arguments/modifiers */
+	{ kArg_Count,	&gVerbose_flag ,	"verbose",	'v',	"Enables verbose output" },
+	{ kArg_Count,	&gDebug_flag	,		"debug",		'd',	"Enables debug output" },
+	{ kArg_String,  &gCacheFilePath,	NULL,			'f',	"cacheFile path" },
+  };
+
+#define TableEntries  ((int)(sizeof(sArgTable) /  sizeof(argTable_t)))
+
+static void sUsage()
+{
+	int j;
+	
+	printf ("\nInsteon Server \n\nusage: insteonserver [options] ..\nOptions: \n ");
+		
+	printf("\tOptions:\n" );
+	for( j = 0; j < TableEntries; j ++)
+		if( ((sArgTable[j].type == kArg_Boolean)
+			 || (sArgTable[j].type == kArg_String)
+			 || (sArgTable[j].type == kArg_HexString)
+			 || (sArgTable[j].type == kArg_Other))
+			&& sArgTable[j].longName)
+			printf("\t%s%c   %2s%-10s %s\n",
+					 sArgTable[j].charName?"-":"",  sArgTable[j].charName?sArgTable[j].charName:' ',
+					 sArgTable[j].shortName?"--":"",  sArgTable[j].shortName?sArgTable[j].shortName:"",
+					 sArgTable[j].longName);
+}
+
+
+static void sSetupCmdOptions (int argc, const char **argv)
+{
+	
+	if(argc > 1)
+	{
+		for (int i = 1; i < argc; i++)
+		{
+	 			bool found = false;
+				size_t	temp;
+
+				for(int  j = 0; j < TableEntries; j ++)
+					if ( (IsntNull( sArgTable[j].shortName)
+						 &&  ((strncmp(argv[i], "--", 2) == 0)
+						  && (strcasecmp(argv[i] + 2,  sArgTable[j].shortName) == 0)) )
+					 || (( *(argv[i]) ==  '-' ) && ( *(argv[i] + 1) == sArgTable[j].charName)))
+					{
+						found = true;
+						switch(sArgTable[j].type)
+						{
+									
+							case kArg_Boolean:
+								if(IsNull(sArgTable[j].argument)) continue;
+								*((bool*)sArgTable[j].argument) = true;
+								break;
+
+							case kArg_Count:
+								if(IsNull(sArgTable[j].argument)) continue;
+								*((bool*)sArgTable[j].argument) = *((bool*)sArgTable[j].argument)+1;
+								break;
+								
+							case kArg_String:
+								if(IsNull(sArgTable[j].argument)) continue;
+								if(IsNull(argv[++i]))  goto error;
+								temp = strlen(argv[i]);
+								*((char**)sArgTable[j].argument) = (char*) malloc(temp + 2);
+								strcpy(*((char**)sArgTable[j].argument), argv[i]);
+								break;
+								
+							case kArg_HexString:
+								if(IsNull(sArgTable[j].argument)) continue;
+								if(IsNull(argv[++i]))  goto error;
+									temp = strlen(argv[i]);
+								*((char**)sArgTable[j].argument) = (char*) malloc(temp + 2);
+								strcpy(*((char**)sArgTable[j].argument), argv[i]);
+								break;
+								
+							case kArg_UInt:
+								if(IsNull(sArgTable[j].argument)) continue;
+							{
+								uint tmp;
+								if( sscanf(argv[++i],"%u",&tmp) == 1)
+									*((uint*)sArgTable[j].argument) = tmp;
+							}
+								break;
+								
+							case kArg_Other:
+							default:;
+						}
+						break;
+					}
+				if(!found) goto error;
+			}
+		}
+	return;
+	
+error:
+	sUsage();
+	exit(1);
+
+}
+
+
 // MARK: - MAIN
 [[clang::no_destroy]]  InsteonMgr	insteon;
 
-int main(int argc, const char * argv[]) {
+int main(int argc, const char **argv) {
+	
+	/* process Test options */
+	sSetupCmdOptions(argc, argv);
+ 
+	if(gVerbose_flag) {
+		LogMgr::shared()->_logFlags = LogMgr::LogLevelVerbose;
+	}else if(gDebug_flag) {
+		LogMgr::shared()->_logFlags = LogMgr::LogFlagDebug;
+	}
+ 
 	
 	START_INFO;
 
 // load the database cachefile
-	insteon.loadCacheFile();
+	insteon.loadCacheFile( IsntNull(gCacheFilePath)?string(gCacheFilePath):string());
 	bool remoteTelnet = insteon.getDB()->getAllowRemoteTelnet();
 	int telnetPort = insteon.getDB()->getTelnetPort();
 	int restPort = insteon.getDB()->getRESTPort();

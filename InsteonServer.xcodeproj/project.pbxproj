@@ -71,7 +71,7 @@
 		2E431A082634E6DD000BEAF8 /* FooServer.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = FooServer.xcodeproj; path = Submodule/FooServer/FooServer.xcodeproj; sourceTree = "<group>"; };
 		2E51ECCD266EDB6100DC2548 /* InsteonAPISecretMgr.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = InsteonAPISecretMgr.cpp; sourceTree = "<group>"; };
 		2E51ECCE266EDB6100DC2548 /* InsteonAPISecretMgr.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = InsteonAPISecretMgr.hpp; sourceTree = "<group>"; };
-		2E592E302620C09C0041AA34 /* InsteonServer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = InsteonServer; sourceTree = BUILT_PRODUCTS_DIR; };
+		2E592E302620C09C0041AA34 /* insteonserver */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = insteonserver; sourceTree = BUILT_PRODUCTS_DIR; };
 		2E592E412620C1150041AA34 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		2E592E662620C2EC0041AA34 /* ServerCmdValidators.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ServerCmdValidators.cpp; sourceTree = "<group>"; };
 		2E592E672620C2EC0041AA34 /* ServerCmdValidators.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ServerCmdValidators.hpp; sourceTree = "<group>"; };
@@ -167,7 +167,7 @@
 		2E592E312620C09C0041AA34 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				2E592E302620C09C0041AA34 /* InsteonServer */,
+				2E592E302620C09C0041AA34 /* insteonserver */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -257,9 +257,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		2E592E2F2620C09C0041AA34 /* InsteonServer */ = {
+		2E592E2F2620C09C0041AA34 /* insteonserver */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 2E592E372620C09C0041AA34 /* Build configuration list for PBXNativeTarget "InsteonServer" */;
+			buildConfigurationList = 2E592E372620C09C0041AA34 /* Build configuration list for PBXNativeTarget "insteonserver" */;
 			buildPhases = (
 				2E592E2C2620C09C0041AA34 /* Sources */,
 				2E592E2D2620C09C0041AA34 /* Frameworks */,
@@ -270,9 +270,9 @@
 			dependencies = (
 				2E431A152634E6E7000BEAF8 /* PBXTargetDependency */,
 			);
-			name = InsteonServer;
+			name = insteonserver;
 			productName = InsteonServer;
-			productReference = 2E592E302620C09C0041AA34 /* InsteonServer */;
+			productReference = 2E592E302620C09C0041AA34 /* insteonserver */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
@@ -307,7 +307,7 @@
 			);
 			projectRoot = "";
 			targets = (
-				2E592E2F2620C09C0041AA34 /* InsteonServer */,
+				2E592E2F2620C09C0041AA34 /* insteonserver */,
 			);
 		};
 /* End PBXProject section */
@@ -530,7 +530,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		2E592E372620C09C0041AA34 /* Build configuration list for PBXNativeTarget "InsteonServer" */ = {
+		2E592E372620C09C0041AA34 /* Build configuration list for PBXNativeTarget "insteonserver" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				2E592E382620C09C0041AA34 /* Debug */,

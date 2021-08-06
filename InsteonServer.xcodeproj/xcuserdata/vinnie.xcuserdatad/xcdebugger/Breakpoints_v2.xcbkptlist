@@ -55,17 +55,17 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "FA8DACE4-1C3D-4EC1-BDB5-CA24AA5E1197"
+            uuid = "3E60FB94-A367-4FDC-BB6B-3319D8117E38"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "InsteonMgr/InsteonDB.cpp"
+            filePath = "src/main.cpp"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1192"
-            endingLineNumber = "1192"
-            landmarkName = "InsteonDB::backupCacheFile(filepath)"
-            landmarkType = "7">
+            startingLineNumber = "258"
+            endingLineNumber = "258"
+            landmarkName = "main(argc, argv)"
+            landmarkType = "9">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

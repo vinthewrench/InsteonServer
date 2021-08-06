@@ -152,11 +152,11 @@ public:
 
 	vector<DeviceID> devicesRespondingToInsteonGroup(uint8_t group);
 	
-	bool saveToCacheFile(string fileName = "");
+	bool saveToCacheFile(string filePath = "");
 
 	bool backupCacheFile(string filepath);
  
-	bool restoreFromCacheFile( string fileName = "",
+	bool restoreFromCacheFile( string filePath = "",
 									 time_t validityDuration = 60*60*24		// how long is valid?
 									  );
 	
@@ -272,16 +272,13 @@ public:
 	// MARK: -   debugging
 	string dumpDB(bool printALDB = false);
 	void   dumpDBInfo(std::ostringstream &oss, DeviceID deviceID, bool printALDB = false );
-	
-	void 	setDirectoryPath(std::string path) { _directoryPath = path;};
-	string getDirectoryPath() { return _directoryPath;};
-	
+		
 	string cacheFileNameFromPLM(DeviceID deviceID);
 
 	// MARK: - private
 private:
  
-	string  default_fileName();
+	string  default_filePath();
 	
 	// config info
 	string 	_plmPath;
@@ -348,7 +345,6 @@ private:
 	
 	map<string,  string> 						_APISecrets;
 
-	string 						_directoryPath;
 	mt19937						_rng;
 };
 #endif /* InsteonDB_hpp */
