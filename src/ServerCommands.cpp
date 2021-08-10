@@ -105,7 +105,7 @@ constexpr string_view JSON_ARG_ALDB 			= "aldb";
 
 constexpr string_view JSON_ARG_STATE			= "state";
 constexpr string_view JSON_ARG_STATESTR		= "stateString";
-constexpr string_view JSON_ARG_CPU_TEMP		= "cputemp";
+constexpr string_view JSON_ARG_CPU_TEMP		= "cpuTemp";
 
 constexpr string_view JSON_ARG_ETAG			= "ETag";
 constexpr string_view JSON_ARG_FORCE			= "force";
@@ -142,6 +142,33 @@ constexpr string_view JSON_VAL_RESET			= "reset";
 
 
 // MARK: -
+
+static bool getCPUTemp(double &tempOut) {
+	bool didSucceed = false;
+
+#if defined(__PIE__)
+	// return the CPU temp
+		{
+			try{
+				std::ifstream   ifs;
+				ifs.open("/sys/class/thermal/thermal_zone0/temp", ios::in);
+				if( ifs.is_open()){
+					string val;
+					ifs >> val;
+					ifs.close();
+					double temp = std::stod(val);
+					temp = temp /1000.0;
+					tempOut = temp;
+					didSucceed = true;
+				}
+				
+			}
+			catch(std::ifstream::failure &err) {
+			}
+		}
+#endif
+	return didSucceed;
+}
 
 // MARK:  EVENTS NOUN HANDLERS
 
@@ -2997,6 +3024,10 @@ static bool PLM_NounHandler_GET(ServerCmdQueue* cmdQueue,
 				reply[string(JSON_ARG_COUNT)] = db->count();
 			}
 			
+			double temp;
+			if(getCPUTemp(temp)){
+				reply[string(JSON_ARG_CPU_TEMP)] =   temp;
+			}
 			makeStatusJSON(reply,STATUS_OK);
 			(completion) (reply, STATUS_OK);
 			return true;
@@ -3432,28 +3463,10 @@ static bool Status_NounHandler_GET(ServerCmdQueue* cmdQueue,
 		reply[string(JSON_ARG_STATE)] =   state;
 		reply[string(JSON_ARG_STATESTR)] =   stateStr;
 
-#if defined(__PIE__)
-		// return the CPU temp
-		{
-			try{
-				std::ifstream   ifs;
-				ifs.open("/sys/class/thermal/thermal_zone0/temp", ios::in);
-				if( ifs.is_open()){
-					string val;
-					double temp;
-					ifs >> val;
-					ifs.close();
-					temp = std::stod(val);
-					temp = temp /1000.0;
-					reply[string(JSON_ARG_CPU_TEMP)] =   temp;
-				}
-				
-			}
-			catch(std::ifstream::failure &err) {
-			}
+		double temp;
+		if(getCPUTemp(temp)){
+			reply[string(JSON_ARG_CPU_TEMP)] =   temp;
 		}
-		
-#endif
 		
 		makeStatusJSON(reply,STATUS_OK);
 		(completion) (reply, STATUS_OK);
