@@ -2562,7 +2562,7 @@ void  InsteonDB::initDBEntry(insteon_dbEntry_t *newEntry, DeviceID deviceID){
 	newEntry->levelMap.clear();
 	newEntry->deviceALDB.clear();
 	newEntry->properties.clear();
-	newEntry->name.clear();
+//	newEntry->name.clear();   // Know c++ bug
 }
 
 
