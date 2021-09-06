@@ -100,7 +100,6 @@ typedef struct  {
 
 extern "C" {
 
-
 	constexpr void copyDevID( const deviceID_t fromDev, deviceID_t toDev ) {
 		toDev[2] = fromDev[2];
 		toDev[1] = fromDev[1];

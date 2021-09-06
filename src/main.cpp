@@ -215,7 +215,8 @@ int main(int argc, const char **argv) {
 	
 	// create the server command processor
 	auto cmdQueue = new ServerCmdQueue(&apiSecrets);
-	registerServerCommands();
+	registerServerNouns();
+	registerCommandsLineFunctions();
 	
 	TCPServer telnet_server(cmdQueue);
 	telnet_server.begin(telnetPort, true, [=](){

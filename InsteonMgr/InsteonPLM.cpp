@@ -37,6 +37,10 @@ bool InsteonPLM::begin(PLMStream *stream,
 		if(result == PLR_NOTHING){
 			break;
 		}
+		else if(result == PLR_ERROR){
+			return false;
+		}
+	
 		_parser.reset();
 	}
 
@@ -44,12 +48,17 @@ bool InsteonPLM::begin(PLMStream *stream,
 }
 
 bool InsteonPLM::isConnected(){
+	if(!_stream)
+		return false;
 	
 	return _stream->isOpen();
 }
 
 void InsteonPLM::stop(){
-	
+	if(_stream->isOpen()){
+		_stream->stop();
+		_parser.reset();
+	}
 }
 
 void InsteonPLM::dumpBuf(){

@@ -314,7 +314,7 @@ bool InsteonALDB::addToDeviceALDB(DeviceID targetDevice,
 			// copy the read aldB
 			copy(aldb.begin(), aldb.end(), back_inserter(newDB));
 	 
-			DeviceID plmDevice =  DeviceID(reply.info.devID);
+	//		DeviceID plmDevice =  DeviceID(reply.info.devID);
 			uint16_t		newAddress = 0xfff;
 			
 			auto aldbCount = aldb.size();

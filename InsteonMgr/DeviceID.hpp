@@ -141,6 +141,8 @@ public:
 		copyDevID(_rawDevID, toDev);
 	}
 	
+	bool isntNULL() { return(!isNULL()); };
+	
 	bool isNULL() {
 		return ( _rawDevID[0] == 0
 				  && _rawDevID[1] == 0

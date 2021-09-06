@@ -394,7 +394,12 @@ const nlohmann::json Action::JSON(){
 		case ACTION_TYPE_GROUP:
 			j[string(JSON_GROUPID)] = _groupID.string();
 			j[string(JSON_ACTION_CMD)] = stringForCmd(_cmd);
-			j[string(JSON_ACTION_LEVEL)] = InsteonDevice::onLevelString(_byteVal);
+			
+			if(_cmd == ACTION_SET_LEVEL)
+				j[string(JSON_ACTION_LEVEL)] = InsteonDevice::onLevelString(_byteVal);
+			else if(_cmd == ACTION_SET_LED_BRIGHTNESS)
+				j[string(JSON_ACTION_LEVEL)] = InsteonDevice::backLightLevelString(_byteVal);
+
 			break;
 
 		case ACTION_TYPE_DEVICEGROUP:

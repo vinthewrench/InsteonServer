@@ -24,7 +24,6 @@
 #include "InsteonDeviceEventMgr.hpp"
 #include "ScheduleMgr.hpp"
 
-
 class InsteonMgr {
  
 public:
@@ -55,17 +54,21 @@ public:
 	~InsteonMgr();
 	
 	
-	void begin(string plmPath = "",  // path to PLM Serial
-				  boolCallback_t callback = NULL);
-	void stop();
+	void startPLM(string plmPath = "",  // path to PLM Serial
+				  std::function<void(bool didSucceed, string error_text)> callback = NULL);
 
-	void erasePLM(boolCallback_t callback);
+	void initPLM(string plmPath = "",  // path to PLM Serial
+					  std::function<void(bool didSucceed, string error_text)> callback = NULL);
+
+	void stopPLM();
+
 	void syncPLM(boolCallback_t callback);
 	void readPLM(boolCallback_t callback);
 	void validatePLM(boolCallback_t callback = NULL);
 	void savePLMCacheFile();
 	bool loadCacheFile(string filePath = "");
-
+	
+	
 	mgr_state_t currentState() {return _state;};
 	bool serverAvailable() { return ( _state == STATE_READY
 												|| _state == STATE_VALIDATING
@@ -81,10 +84,14 @@ public:
  	bool linkDevice(DeviceID deviceID,
 						 bool isCTRL = true,
 						 uint8_t groupID = 0xfE,
+						 string deviceName = "",
 						 boolCallback_t callback = NULL);
 
+	bool importDevices(vector<plmDevicesEntry_t> devices,
+						  std::function<void(vector<DeviceID> failedDevices,  bool didSucceed)> callback = NULL);
+
 	bool addToDeviceALDB(DeviceID deviceID,
-								vector<pair<bool,uint8_t>> aldbGroups, // <bool isCNTL, uint8_t groupID>
+								vector<pair<uint8_t,bool>> aldbGroups, // <bool isCNTL, uint8_t groupID>
 								boolCallback_t callback = NULL);
  
 	bool addToDeviceALDB(DeviceID deviceID,
@@ -130,6 +137,9 @@ public:
  
 	// groups set
 	bool setOnLevel(GroupID groupID, uint8_t onLevel = 0,
+						 std::function<void(bool didSucceed)> callback = NULL);
+
+	bool setLEDBrightness(GroupID groupID, uint8_t Level,
 						 std::function<void(bool didSucceed)> callback = NULL);
 
 	// action groups
@@ -181,7 +191,11 @@ private:
 	bool 					_hasInfo;		// indicates that we got PLM Info
 
 	void 					startSetupPLM();
-	
+
+	vector<DeviceID>  _importDevices_failList; // internal used by linkDevices
+	bool 					importDevices_Internal(vector<plmDevicesEntry_t> devices,
+														boolCallback_t callback = NULL);
+
 	bool 					syncALDB();
 	void 					syncALDBContinue();
 	size_t					aldbTaskCount;		// needed for readALDBContinue tasks.

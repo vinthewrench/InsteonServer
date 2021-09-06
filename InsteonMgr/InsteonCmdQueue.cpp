@@ -518,7 +518,7 @@ bool InsteonCmdQueue::processPLMresponse(plm_result_t response) {
 				
 				if(cmdEntry && (cmdEntry->sendCount > 0)){
 					
-					LOG_DEBUG("\tRECV-%s  %s \n",
+					LOG_DEBUG("\tRECV-%s %s \n",
 								reply.msgType == MSG_TYP_DIRECT_ACK?"ACK":"NAK",
 								deviceID.string().c_str() );
 					

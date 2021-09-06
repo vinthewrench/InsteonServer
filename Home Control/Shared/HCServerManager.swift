@@ -124,6 +124,7 @@ class RESTError: Codable {
 struct RESTStatus: Codable {
 	var state: Int
 	var stateString: String
+	var cpuTemp: Double?
 }
 
 struct RESTVersion: Codable {
@@ -322,6 +323,7 @@ struct RESTPlmInfo: Codable {
 	var filepath: String
 	var state: Int
 	var stateString: String
+	var cpuTemp: Double?
 }
 
 

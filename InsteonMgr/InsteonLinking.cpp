@@ -40,6 +40,7 @@ bool InsteonLinking::startLinking(uint8_t link_code, uint8_t groupID,
 	
 	_callback = callback;
 	_isLinking = true;
+	_timeout_LINKING = 4 * 60;	// 4 mins
 
 //	LOG_DEBUG("\tLINKING START (%02x %02x)\n", link_code, groupID);
 
@@ -97,8 +98,6 @@ bool InsteonLinking::linkDevice(DeviceID deviceID,
 										  uint8_t groupID,
 										  linkCallback_t callback){
 	
-	bool statusOK = false;
-
 	if(_isLinking)
 		return false;
 	
@@ -107,7 +106,11 @@ bool InsteonLinking::linkDevice(DeviceID deviceID,
 	
 	_callback = callback;
 	_isLinking = true;
-	
+	_timeout_LINKING = 60;	//  must be greater than cmd queue timeout
+
+	// set the timer waiting for a PLR_LINKING_COMPLETED
+	gettimeofday(&_startTime, NULL);
+
 	//get into linking mode.  as controller
  	uint8_t cmdArgs[]  = {0, groupID };
 	cmdArgs[0] = isCTRL? 0x01:0x00;
@@ -141,8 +144,7 @@ bool InsteonLinking::linkDevice(DeviceID deviceID,
 				
 				
 				if(didSucceed){
-					// set the timer waiting for a PLR_LINKING_COMPLETED
-					gettimeofday(&_startTime, NULL);
+
 				}
 				else
 				{
@@ -160,7 +162,7 @@ bool InsteonLinking::linkDevice(DeviceID deviceID,
 	});
 	
 	
-	return statusOK;
+	return true;
 }
 
 bool InsteonLinking::processPLMresponse(plm_result_t response){
@@ -183,16 +185,19 @@ bool InsteonLinking::processPLMresponse(plm_result_t response){
 				_isLinking = false;
 				didHandle = true;
 				
+				link_result_t link_result ={0};
+				link_result.status = LINK_TIMEOUT;
+		
+				if(_callback)
+					_callback(link_result);
+				
+				// dont callback again
+				_callback = NULL;
+
 				//Cancel any linking in progress?
 				_cmdQueue->queueCommand(InsteonParser::IM_CANCEL_LINKING,
 												NULL, 0, [this]( auto reply, bool didSucceed) {
-					
-					link_result_t link_result ={0};
-					link_result.status = LINK_TIMEOUT;
-			
-					if(_callback)
-						_callback(link_result);
-				});
+					});
 			}
 		}
 		
@@ -222,6 +227,10 @@ bool InsteonLinking::processPLMresponse(plm_result_t response){
 
 				if(_callback)
 					_callback(link_result);
+				
+				// dont callback again
+				_callback = NULL;
+
 			}
 		}
 		

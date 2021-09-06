@@ -12,7 +12,7 @@
 		2E51ECD1266EDEAA00DC2548 /* InsteonAPISecretMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E51ECCD266EDB6100DC2548 /* InsteonAPISecretMgr.cpp */; };
 		2E592E422620C1150041AA34 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E412620C1150041AA34 /* main.cpp */; };
 		2E592E682620C2EC0041AA34 /* ServerCmdValidators.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E662620C2EC0041AA34 /* ServerCmdValidators.cpp */; };
-		2E592E6D2620C3990041AA34 /* ServerCommands.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E6B2620C3990041AA34 /* ServerCommands.cpp */; };
+		2E592E6D2620C3990041AA34 /* ServerCommandsLineFunctions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E6B2620C3990041AA34 /* ServerCommandsLineFunctions.cpp */; };
 		2E592EAF2620C9380041AA34 /* InsteonMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E8A2620C9370041AA34 /* InsteonMgr.cpp */; };
 		2E592EB02620C9380041AA34 /* DeviceID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E8E2620C9380041AA34 /* DeviceID.cpp */; };
 		2E592EB12620C9380041AA34 /* InsteonDeviceEventMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E592E922620C9380041AA34 /* InsteonDeviceEventMgr.cpp */; };
@@ -35,6 +35,7 @@
 		2E96641F265EB075007A3D93 /* ScheduleMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E96641D265EB075007A3D93 /* ScheduleMgr.cpp */; };
 		2EC68B32264DA54600541251 /* helpfile.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2EC68B2D264DA3C600541251 /* helpfile.txt */; };
 		2EC68B38265303C200541251 /* Action.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EC68B36265303C200541251 /* Action.cpp */; };
+		2EE3FB5F26D831DC00184360 /* ServerNouns.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EE3FB5D26D831DC00184360 /* ServerNouns.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -92,7 +93,7 @@
 		2E592E412620C1150041AA34 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		2E592E662620C2EC0041AA34 /* ServerCmdValidators.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ServerCmdValidators.cpp; sourceTree = "<group>"; };
 		2E592E672620C2EC0041AA34 /* ServerCmdValidators.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ServerCmdValidators.hpp; sourceTree = "<group>"; };
-		2E592E6B2620C3990041AA34 /* ServerCommands.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ServerCommands.cpp; sourceTree = "<group>"; };
+		2E592E6B2620C3990041AA34 /* ServerCommandsLineFunctions.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ServerCommandsLineFunctions.cpp; sourceTree = "<group>"; };
 		2E592E6C2620C3990041AA34 /* ServerCommands.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ServerCommands.hpp; sourceTree = "<group>"; };
 		2E592E8A2620C9370041AA34 /* InsteonMgr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InsteonMgr.cpp; sourceTree = "<group>"; };
 		2E592E8B2620C9370041AA34 /* PLMStream.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PLMStream.hpp; sourceTree = "<group>"; };
@@ -140,6 +141,7 @@
 		2EC68B2D264DA3C600541251 /* helpfile.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = helpfile.txt; sourceTree = "<group>"; };
 		2EC68B36265303C200541251 /* Action.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Action.cpp; sourceTree = "<group>"; };
 		2EC68B37265303C200541251 /* Action.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Action.hpp; sourceTree = "<group>"; };
+		2EE3FB5D26D831DC00184360 /* ServerNouns.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ServerNouns.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -207,7 +209,8 @@
 				2E592E672620C2EC0041AA34 /* ServerCmdValidators.hpp */,
 				2E592E662620C2EC0041AA34 /* ServerCmdValidators.cpp */,
 				2E592E6C2620C3990041AA34 /* ServerCommands.hpp */,
-				2E592E6B2620C3990041AA34 /* ServerCommands.cpp */,
+				2E592E6B2620C3990041AA34 /* ServerCommandsLineFunctions.cpp */,
+				2EE3FB5D26D831DC00184360 /* ServerNouns.cpp */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -367,11 +370,12 @@
 			files = (
 				2E592EB02620C9380041AA34 /* DeviceID.cpp in Sources */,
 				2E592EB72620C9380041AA34 /* xxhash.c in Sources */,
+				2EE3FB5F26D831DC00184360 /* ServerNouns.cpp in Sources */,
 				2E51ECD1266EDEAA00DC2548 /* InsteonAPISecretMgr.cpp in Sources */,
 				2E592EB82620C9380041AA34 /* InsteonDevice.cpp in Sources */,
 				2E592EBB2620C9380041AA34 /* InsteonALDB.cpp in Sources */,
 				2E592EB32620C9380041AA34 /* sleep.c in Sources */,
-				2E592E6D2620C3990041AA34 /* ServerCommands.cpp in Sources */,
+				2E592E6D2620C3990041AA34 /* ServerCommandsLineFunctions.cpp in Sources */,
 				2E592EB12620C9380041AA34 /* InsteonDeviceEventMgr.cpp in Sources */,
 				2E592EBA2620C9380041AA34 /* InsteonCmdQueue.cpp in Sources */,
 				2EC68B38265303C200541251 /* Action.cpp in Sources */,

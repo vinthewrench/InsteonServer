@@ -28,6 +28,7 @@ constexpr static string_view KEY_END_CONFIG 			= "config-end";
 constexpr static string_view KEY_CONFIG_PORT			= "port";
 constexpr static string_view KEY_CONFIG_LATLONG		= "lat-long";
 constexpr static string_view KEY_CONFIG_APIKEY		= "apikey";
+constexpr static string_view KEY_CONFIG_PLMID			= "plm-id";
 
 constexpr static string_view KEY_CONFIG_LOGFILE_PATH	= "log-path";
 constexpr static string_view KEY_CONFIG_LOGFILE_FLAGS	= "log-flags";
@@ -110,11 +111,12 @@ InsteonDB::~InsteonDB() {
 
 // MARK: - public API
 
-bool InsteonDB::linkDevice(DeviceID 	deviceID,
-								  bool		 	isCTRL,
-								  uint8_t 	group,
-								  DeviceInfo	deviceInfo,
-								  bool 		isValidated
+bool InsteonDB::linkDevice(DeviceID 		deviceID,
+									bool		 	isCTRL,
+									uint8_t 		group,
+									DeviceInfo	deviceInfo,
+									string			deviceName ,
+									bool 			isValidated
 								  ){
 	
 	std::lock_guard<std::mutex> lock(_mutex);
@@ -131,6 +133,10 @@ bool InsteonDB::linkDevice(DeviceID 	deviceID,
 		}
 		existing->isValidated = isValidated;
 		existing->lastUpdated = time(NULL);
+		
+		if(!deviceName.empty())
+			existing->name = deviceName;
+		
 	}
 	else {
 		insteon_dbEntry_t newEntry;
@@ -141,7 +147,12 @@ bool InsteonDB::linkDevice(DeviceID 	deviceID,
 		if(isCTRL){
 			newEntry.deviceInfo	= deviceInfo;
 		}
-		
+	 
+		if(!deviceName.empty()){
+			string name = deviceName;
+			newEntry.name = name;
+		}
+	 
 		newEntry.isValidated = isValidated;
 		newEntry.lastUpdated = time(NULL);
 		newEntry.levelMap.clear();
@@ -946,6 +957,62 @@ bool InsteonDB::syncALDB(vector<insteon_aldb_t> aldbIn,
 }
 
 
+bool InsteonDB::exportPLMlinks(DeviceID plmID,  vector<plmDevicesEntry_t> &entries){
+	bool success = false;
+	
+	
+	vector< plmDevicesEntry_t>  devicesTolink;
+	devicesTolink.clear();
+
+	if(plmID.isNULL())
+		plmID = _plmDeviceID;
+	
+	if(!plmID.isNULL()){
+	 
+		for(auto deviceID : allDevices()){
+			insteon_dbEntry_t  info;
+			
+			if(getDeviceInfo(deviceID, &info)){
+				
+				for(auto group :info.groups){
+					bool isCntr =  get<0>(group);
+					uint8_t cntlID =  get<1>(group);
+					
+					if(isCntr){
+						plmDevicesEntry_t entry;
+						entry.responders.clear();
+						entry.deviceID = deviceID;
+						entry.cntlID = cntlID;
+						entry.name = info.name;
+						
+						for(auto devALDB :info.deviceALDB){
+							if(plmID.isEqual(devALDB.devID)) {
+			
+								// skip the control aldb entry
+								bool isCNTL = (devALDB.flag & 0x40) == 0x00;
+								if(isCNTL && devALDB.group == cntlID)
+									continue;
+									
+								entry.responders.push_back( make_pair(devALDB.group, isCNTL));
+							}
+						}
+						devicesTolink.push_back(entry);
+					}
+				}
+			}
+		}
+		
+		success = true;
+	}
+	
+	if(success){
+		entries = devicesTolink;
+	}
+	return success;
+	
+};
+
+
 // MARK: -  database cachefile
 
 string  InsteonDB::default_filePath(){
@@ -1001,12 +1068,14 @@ bool InsteonDB::backupCacheFile(string filepath){
 			ofs << KEY_CONFIG_ALLOW_REMOTE_TELNET << ": " << (_allowRemoteTelnet?"yes":"no")  << "\n";
 	 		ofs << KEY_CONFIG_TELNET_PORT << ": " << _telnetPort  << "\n";
 			ofs << KEY_CONFIG_REST_PORT << ": " << _restPort  << "\n";
-	 
+		
+			if(!_plmDeviceID.isNULL()){
+				ofs << KEY_CONFIG_PLMID << ": " << _plmDeviceID.string()  << "\n";
+			}
+			
 	 		ofs << KEY_END_CONFIG << ":\n";
 			ofs << "\n";
 			
-		
-	//		ofs << "## PLM " << _plmDeviceID.string() << "  "<<  string(str) << "\n\n";
 		}
 		 
 		// save device Info
@@ -1471,12 +1540,13 @@ bool InsteonDB::restoreFromCacheFile(string filePath,
 							_telnetPort = portNum;
  						}
 					}
-					else if(token == KEY_CONFIG_REST_PORT){
-						int portNum = 0;
-						if( sscanf(p, "%d %n", &portNum ,&n) == 1){
-							_restPort = portNum;
+					else if(token == KEY_CONFIG_PLMID){
+ 						DeviceID plmID  = DeviceID( string(p));
+						if(!plmID.isNULL()) {
+							_plmDeviceID = plmID;
 						}
 					}
+	 
 				}
 				break;
 					
@@ -2492,6 +2562,7 @@ void  InsteonDB::initDBEntry(insteon_dbEntry_t *newEntry, DeviceID deviceID){
 	newEntry->levelMap.clear();
 	newEntry->deviceALDB.clear();
 	newEntry->properties.clear();
+	newEntry->name.clear();
 }
 
 

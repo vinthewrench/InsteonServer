@@ -44,6 +44,15 @@ InsteonMgr::InsteonMgr(){
 	
 	// clear database
 	_db.clear();
+	
+	// start the thread running
+	_running = true;
+	
+//	// cleanup from previous thread?
+//	if(_thread.joinable())
+//		_thread.join();
+	
+	_thread = std::thread(&InsteonMgr::run, this);
 }
 
 
@@ -118,7 +127,7 @@ void InsteonMgr::run(){
 		printf("\tError %d %s\n\n", e.getErrorNumber(), e.what());
 		
 		if(e.getErrorNumber()	 == ENXIO){
-			stop();
+			stopPLM();
 	
 			
 //			if (_thread.joinable()){
@@ -149,7 +158,7 @@ bool InsteonMgr::loadCacheFile(string filePath){
 	}
 	
 	if(_db.getPLMAutoStart()){
- 		begin("",  [=](bool didSucceed) {
+ 		startPLM("",  [=](bool didSucceed, string errorTxt) {
 			if(didSucceed){
 				syncPLM( [=](bool didSucceed) {
 					if(didSucceed){
@@ -163,167 +172,6 @@ bool InsteonMgr::loadCacheFile(string filePath){
 		});
 	}	
  	return success;
-}
-
-	
-/**
- * @brief set the device path for the PLM
- *
- * - begin is a async process that
- * - Setup plm command queue
- * - uses the _cmdQueue queue to run a series of commands through the PLM in order
- *   to initialize the PLM to a known state.
- *
- */
-
-void InsteonMgr::begin(string plmPath,
-			  boolCallback_t callback){
-
-	int  errnum = 0;
-
-	_state 			= STATE_NO_PLM;
-	_hasPLM 			= false;
-	_plmDeviceID 	=  DeviceID();
-	_plmDeviceInfo 	=  DeviceInfo();
-	_hasInfo			= false;
-	
-	if(plmPath.empty())
-		plmPath = _db.getPLMPath();
-	 
-	if(plmPath.empty()){
-		callback(false);
-		return;
-	}
-
-	// setup plm command queue
-	if(!_cmdQueue){
-		_cmdQueue = new InsteonCmdQueue(&_plm, &_db);
-	}
-	
-	if(!_aldb){
-		_aldb = new InsteonALDB(_cmdQueue);
-	}
-  
-	// start the thread running
-	_running = true;
-	
-	// cleanup from previous thread?
-	if(_thread.joinable())
-		_thread.join();
-	
-	_thread = std::thread(&InsteonMgr::run, this);
-
-	LOGT_INFO("PLM_START: %s", plmPath.c_str());
-
-	if(! _stream.begin(plmPath.c_str(), errnum))
-		throw InsteonException(string(strerror(errnum)), errnum);
-
-	_plm.begin(&_stream, InsteonPLM::defaultCmdTimeout);
- 
-	_hasPLM 	= true;
-	_state 	= STATE_SETUP_PLM;
-
-// Step: 1 -- get the PLM info to check if its there?
-	LOG_DEBUG("\tPLM_SETUP: GET IM_INFO\n");
-	_cmdQueue->queueCommand(InsteonParser::IM_INFO,
-								  NULL, 0, [this, callback]( auto reply, bool didSucceed) {
-		
-		if(!didSucceed){
-			_state = STATE_PLM_ERROR;
-			callback(false);
-		}
-		else {
-			_plmDeviceID 	=  DeviceID(reply.info.devID);
-			_plmDeviceInfo 	=  DeviceInfo(reply.info.cat,reply.info.subcat,reply.info.firmware);
-			_hasInfo	= true;
-			
-			// set the deviceID for the PLM database
-			_db.setPlmDeviceID(_plmDeviceID);
-			
-			LOG_INFO("\tPLM INFO: %s - %s %s\n",
-						_plmDeviceID.string().c_str(),
-						_plmDeviceInfo.string().c_str(),
-						_plmDeviceInfo.description_cstr());
-			
-// Step:2 -- Cancel any linking in progress?
-			LOG_DEBUG("\tPLM_SETUP: IM_CANCEL_LINKING\n");
-			_cmdQueue->queueCommand(InsteonParser::IM_CANCEL_LINKING,
-										  NULL, 0, [this, callback]( auto reply, bool didSucceed) {
-				
-				if(!didSucceed){
-					_state = STATE_PLM_ERROR;
-					callback(false);
-				}
-				else{
-// Step:3 -- setup PLM IM config ?
-					uint8_t cmdArgs[]  = {  InsteonParser::IM_CONFIG_FLAG_MONITOR
-					/*	| InsteonParser::IM_CONFIG_FLAG_LED */ };
-					
-					LOG_DEBUG("\tPLM_SETUP: IM_SET_CONFIG (%02X) \n", cmdArgs[0]);
-					_cmdQueue->queueCommand(InsteonParser::IM_SET_CONFIG,
-												  cmdArgs, sizeof(cmdArgs),
-												  [this, callback]( auto reply, bool didSucceed) {
-		
-						if(!didSucceed){
-							_state = STATE_PLM_ERROR;
-							callback(false);
-						}
-						else {
-							_state = STATE_PLM_INIT;
-							callback(true);
-						}});
-				}});
-		}});
-}
-
-
-/**
- * @brief shutdown the Insteom Manager
- *
- *
- */
-
-void InsteonMgr::stop(){
-
-	if(_hasPLM) {
-		
-		LOGT_INFO("PLM_STOP");
-
-		_cmdQueue->abort();
-
-		_plm.stop();
-		_stream.stop();
-		_plmDeviceID 	=  DeviceID();
-		_plmDeviceInfo 	=  DeviceInfo();
-		_hasInfo			= false;
-		_shouldRunStartupEvents = true;
-
-		_state = STATE_PLM_STOPPED;
-		_hasPLM = false;
-		_running = false;
-	}
-}
-
-
-
-
-/**
- * @brief return the PLM ddeviceID and Type
- *
- *
- */
-
-bool InsteonMgr::plmInfo( DeviceID*  deviceIDp, DeviceInfo* infop){
-	
-	if(!_hasPLM)
-		return false;
-	
-	if(deviceIDp)
-		*deviceIDp = _plmDeviceID;
-
-	if(infop)
-		*infop = _plmDeviceInfo;
-	return true;
 }
 
 
@@ -419,43 +267,270 @@ bool InsteonMgr::refreshSolarEvents(){
 
 // MARK: - ALDB and PLM setup
 
+
+void InsteonMgr::startPLM(string plmPath,
+							 std::function<void(bool didSucceed,
+													  string error_text)> callback){
+
+  int  errnum = 0;
+
+  _state 			= STATE_NO_PLM;
+  _hasPLM 			= false;
+  _plmDeviceID 	=  DeviceID();
+  _plmDeviceInfo 	=  DeviceInfo();
+  _hasInfo			= false;
+  
+  if(plmPath.empty())
+	  plmPath = _db.getPLMPath();
+	
+  if(plmPath.empty()){
+	  callback(false, "No PLM path specified");
+	  return;
+  }
+
+  // setup plm command queue
+  if(!_cmdQueue){
+	  _cmdQueue = new InsteonCmdQueue(&_plm, &_db);
+  }
+  
+  if(!_aldb){
+	  _aldb = new InsteonALDB(_cmdQueue);
+  }
+ 
+  LOGT_INFO("PLM_START: %s", plmPath.c_str());
+
+  if(_plm.isConnected()){
+	  _plm.stop();
+  }
+
+  if(! _stream.begin(plmPath.c_str(), errnum))
+	  throw InsteonException(string(strerror(errnum)), errnum);
+	  
+  if(!_plm.begin(&_stream, InsteonPLM::defaultCmdTimeout)) {
+	  _state = STATE_PLM_ERROR;
+	  callback(false, "PLM begin failed");
+  }
+
+  _hasPLM 	= true;
+  _state 	= STATE_SETUP_PLM;
+
+// Step: 1 -- get the PLM info to check if its there?
+  LOG_DEBUG("\tPLM_SETUP: GET IM_INFO\n");
+  _cmdQueue->queueCommand(InsteonParser::IM_INFO,
+								 NULL, 0, [this, callback]( auto reply, bool didSucceed) {
+	  
+	  if(!didSucceed){
+		  _state = STATE_PLM_ERROR;
+		  callback(false, "PLM didn't respond");
+	  }
+	  else {
+		  _plmDeviceID 	=  DeviceID(reply.info.devID);
+		  _plmDeviceInfo 	=  DeviceInfo(reply.info.cat,reply.info.subcat,reply.info.firmware);
+		  _hasInfo	= true;
+		  
+		  LOG_INFO("\tPLM INFO: %s - %s %s\n",
+					  _plmDeviceID.string().c_str(),
+					  _plmDeviceInfo.string().c_str(),
+					  _plmDeviceInfo.description_cstr());
+  
+		  // check if the PLM ID changed
+		  DeviceID lastPLM = _db.getPlmDeviceID();
+		  if(lastPLM.isNULL()){
+			  // assume we never setup a PLM before.
+			  // update the deviceID for the PLM database
+			  _db.setPlmDeviceID(_plmDeviceID);
+			  _db.saveToCacheFile();
+		  }
+		  else if( lastPLM != _plmDeviceID){
+			  
+			  _state = STATE_PLM_ERROR;
+			  callback(false, "PLM deviceID changed");
+			  return;
+			  }
+
+// Step:2 -- Cancel any linking in progress?
+		  LOG_DEBUG("\tPLM_SETUP: IM_CANCEL_LINKING\n");
+		  _cmdQueue->queueCommand(InsteonParser::IM_CANCEL_LINKING,
+										 NULL, 0, [this, callback]( auto reply, bool didSucceed) {
+			  
+			  if(!didSucceed){
+				  _state = STATE_PLM_ERROR;
+				  callback(false, "PLM Cancel Linking failed");
+			  }
+			  else{
+// Step:3 -- setup PLM IM config ?
+				  uint8_t cmdArgs[]  = {  InsteonParser::IM_CONFIG_FLAG_MONITOR
+				  /*	| InsteonParser::IM_CONFIG_FLAG_LED */ };
+				  
+				  LOG_DEBUG("\tPLM_SETUP: IM_SET_CONFIG (%02X) \n", cmdArgs[0]);
+				  _cmdQueue->queueCommand(InsteonParser::IM_SET_CONFIG,
+												 cmdArgs, sizeof(cmdArgs),
+												 [this, callback]( auto reply, bool didSucceed) {
+	  
+					  if(!didSucceed){
+						  _state = STATE_PLM_ERROR;
+						  callback(false, "PLM set config failed");
+					  }
+					  else {
+						  _state = STATE_PLM_INIT;
+						  callback(true, string());
+					  }});
+			  }});
+	  }});
+}
+
+
 /**
- * @brief erase and reset  the PLM
- *
- *
- */
+* @brief shutdown the Insteom Manager
+*
+*
+*/
 
-void InsteonMgr::erasePLM(boolCallback_t callback){
+void InsteonMgr::stopPLM(){
 
-	LOGT_INFO("ERASE_PLM:");
+  if(_hasPLM) {
+	  
+	  LOGT_INFO("PLM_STOP");
 
-	if(!_hasPLM)
-		throw InsteonException("PLM is not setup");
+	  _cmdQueue->abort();
 
-	_cmdQueue->abort();
+	  _plm.stop();
+	  _stream.stop();
+	  _plmDeviceID 	=  DeviceID();
+	  _plmDeviceInfo 	=  DeviceInfo();
+	  _hasInfo			= false;
+	  _shouldRunStartupEvents = true;
 
+	  _state = STATE_PLM_STOPPED;
+	  _hasPLM = false;
+  }
+}
+
+
+
+
+/**
+* @brief return the PLM ddeviceID and Type
+*
+*
+*/
+
+bool InsteonMgr::plmInfo( DeviceID*  deviceIDp, DeviceInfo* infop){
+  
+  if(!_hasPLM)
+	  return false;
+  
+  if(deviceIDp)
+	  *deviceIDp = _plmDeviceID;
+
+  if(infop)
+	  *infop = _plmDeviceInfo;
+  return true;
+}
+
+
+void InsteonMgr::initPLM(string plmPath,
+								 std::function<void(bool didSucceed,
+														string error_text)> callback){
+
+	int  errnum = 0;
+	
+	LOGT_INFO("INIT_PLM:");
+	
+	// check that managers are in place.
+	if(!_cmdQueue){
+		_cmdQueue = new InsteonCmdQueue(&_plm, &_db);
+	}
+	
+	if(!_aldb){
+		_aldb = new InsteonALDB(_cmdQueue);
+	}
+ 
+	switch (_state) {
+		case STATE_PLM_INIT:
+		case STATE_PLM_ERROR:
+		case STATE_PLM_STOPPED:
+		case STATE_NO_PLM:
+		case STATE_UNKNOWN:
+		case STATE_SETUP:
+			break;
+			
+		default:
+			callback(false, "PLM in wrong state");
+			return;
+	}
+	
+	stopPLM();
+	
+	if(plmPath.empty())
+		plmPath = _db.getPLMPath();
+	
+	if(plmPath.empty()){
+		callback(false, "No PLM path specified");
+		return;
+	}
+	
+	if(! _stream.begin(plmPath.c_str(), errnum))
+		throw InsteonException(string(strerror(errnum)), errnum);
+	
+	if(!_plm.begin(&_stream, InsteonPLM::defaultCmdTimeout)) {
+		_state = STATE_PLM_ERROR;
+		callback(false, "PLM begin failed");
+	}
+
+	_hasPLM 	= true;
 	_state = STATE_RESETING;
- 
-	_cmdQueue->queueCommand(InsteonParser::IM_RESET,
-									NULL, 0,
-								  [this, callback]( auto reply, bool didSucceed) {
-	// 	_db.clear();
+	
+	// Step: 1 -- get the PLM info to check if its there?
+	LOG_DEBUG("\tPLM_INIT: GET IM_INFO\n");
+	_cmdQueue->queueCommand(InsteonParser::IM_INFO,
+									NULL, 0, [this, callback]( auto reply, bool didSucceed) {
 		
-		// set the deviceID for the PLM database
-		_db.setPlmDeviceID(_plmDeviceID);
-
-		_state = STATE_PLM_INIT;
-		
-		callback(true);
-
+		if(!didSucceed){
+			_state = STATE_PLM_ERROR;
+			callback(false, "PLM didn't respond");
+		}
+		else {
+			_plmDeviceID 	=  DeviceID(reply.info.devID);
+			_plmDeviceInfo 	=  DeviceInfo(reply.info.cat,reply.info.subcat,reply.info.firmware);
+			_hasInfo	= true;
+			// Step:2 -- RESET THE DEVICE
+			
+			_cmdQueue->queueCommand(InsteonParser::IM_RESET,
+											NULL, 0,
+											[this, callback]( auto reply, bool didSucceed) {
+				
+				if(!didSucceed){
+					_state = STATE_PLM_ERROR;
+					callback(false, "PLM RESET failed");
+				}
+				else{
+					// Step:3 -- setup PLM IM config ?
+					uint8_t cmdArgs[]  = {  InsteonParser::IM_CONFIG_FLAG_MONITOR
+						/*	| InsteonParser::IM_CONFIG_FLAG_LED */ };
+					
+					LOG_DEBUG("\tPLM_SETUP: IM_SET_CONFIG (%02X) \n", cmdArgs[0]);
+					_cmdQueue->queueCommand(InsteonParser::IM_SET_CONFIG,
+													cmdArgs, sizeof(cmdArgs),
+													[this, callback]( auto reply, bool didSucceed) {
+						
+						if(!didSucceed){
+							_state = STATE_PLM_ERROR;
+							callback(false, "PLM set config failed");
+						}
+						else {
+							_state = STATE_PLM_INIT;
+							callback(true, string());
+						}});
+				}});
+		}
 	});
- 
 }
 
 /**
  * @brief sync the PLM database with InsteonDB
  *
- *  we start the process of reading the AlDB from the PLM.  Once we get this data we
+ *  we start the process of reading the ALDB from the PLM.  Once we get this data we
  *  attempt to sync the ALDB with what our Insteon DB says is the truth. This might
  *  require us to add or delete some entries from the PLM.
  *
@@ -486,9 +561,19 @@ void InsteonMgr::syncPLM(boolCallback_t callback){
 		vector<insteon_aldb_t> plmRemove;
 		vector<insteon_aldb_t> plmAdd;
 	 
-		// reset the deviceID for the PLM database
-		_db.setPlmDeviceID(_plmDeviceID);
- 
+		// check if the PLM ID changed
+		DeviceID lastPLM = _db.getPlmDeviceID();
+		if(lastPLM.isNULL() || lastPLM != _plmDeviceID){
+			// WE replaced the PLM --- fail for now.
+		
+			LOG_ERROR("\tPLM CHANGED: %s\n",_plmDeviceID.string().c_str());
+			// reset the deviceID for the PLM database
+
+			_state = STATE_PLM_ERROR;
+			callback(false);
+			return;
+		};
+
 		if(_db.syncALDB(aldbEntries, &plmRemove, &plmAdd)){
 			
 			LOG_INFO("\tSYNC_PLM: SYNC ALDB  add: %d remove: %d \n",
@@ -578,8 +663,7 @@ void InsteonMgr::readPLM(boolCallback_t callback){
 void InsteonMgr::savePLMCacheFile(){
 	_db.saveToCacheFile();
 }
-
-
+ 
  
 // MARK: - device validation
 
@@ -763,30 +847,37 @@ bool InsteonMgr::validateDevice(DeviceID deviceID,
 										 [=]( auto result) {
 		
 		boolCallback_t cb = callback;
-		bool success = false;
 		
+		_state = STATE_READY;
+
 		auto e  = result.front();
+		
 		if(e.validated){
-			success = true;
 			_db.validateDeviceInfo(e.deviceID, &e.deviceInfo);
+			_db.saveToCacheFile();
+
 		}
 		else  {
 			_db.validateDeviceInfo(e.deviceID, NULL);
+			if(cb)
+				(cb)(false);
+			return ;
 		}
-		
-		if(result.size() > 0){
-			_db.saveToCacheFile();
-		}
-		
-		_state = STATE_READY;
-		
+	 
 		// can we free it up from a callback?
 		delete _validator;
 		_validator = NULL;
-		updateLevels();
 		
-		if(cb)
-			(cb)(success);
+		InsteonDevice(deviceID).getOnLevel([=](uint8_t level, bool didSucceed) {
+			
+			if(didSucceed){
+				_db.setDBOnLevel(e.deviceID, 0x01, level);
+				_db.saveToCacheFile();
+			}
+			if(cb)
+				(cb)(true);
+		});
+		
 	});
 	
 	return true;
@@ -888,24 +979,15 @@ bool InsteonMgr::runActionForKeypad(DeviceID deviceID, uint8_t buttonID, uint8_t
 	if(_state == STATE_READY){
 		
 		if( _db.invokeKeyPadButton(deviceID,buttonID, cmd)) {
-//			uint8_t newMask = _db.LEDMaskForKeyPad( _db.findKeypadEntryWithDeviceID(deviceID));
 			
 			if(auto action =  _db.actionForKeypad(deviceID, buttonID, cmd) ; action != NULL){
 				runAction(*action , [=](bool didSucceed){
 					if(cb) (cb)( didSucceed);
-//
-//					InsteonKeypadDevice(deviceID).setKeypadLEDState(newMask, [=](bool success){
-//						if(cb) (cb)( didSucceed);
-//
-//					});
-//
 				});
 			}
 			// No Actions for button - just return
 			else {
-//				InsteonKeypadDevice(deviceID).setKeypadLEDState(newMask, [=](bool success){
 					if(cb) (cb)( true);
-//				});
 			}
 		}
 		return true;
@@ -913,28 +995,6 @@ bool InsteonMgr::runActionForKeypad(DeviceID deviceID, uint8_t buttonID, uint8_t
 	}
 	return false;
 	
-	//
-	//		if( _db.invokeKeyPadButton(deviceID,buttonID, cmd)) {
-	//
-	//			uint8_t newMask = _db.LEDMaskForKeyPad( _db.findKeypadEntryWithDeviceID(deviceID));
-	//
-	//			// Set the LED state
-	//			InsteonKeypadDevice(deviceID).setKeypadLEDState(newMask, [=](bool didSucceed){
-	//
-	//				if(auto action =  _db.actionForKeypad(deviceID, buttonID, cmd) ; action != NULL){
-	//						runAction(*action , [=](bool didSucceed){
-	//						if(cb) (cb)( didSucceed);
-	//					});
-	//				}
-	//			// No Actions for button - just return
-	//				else {
-	//					if(cb) (cb)( didSucceed);
-	//				}
-	//			});
-	
-	//			return true;
-	//		}
-	//	return false;
 }
 
 
@@ -942,7 +1002,6 @@ bool InsteonMgr::runActionForKeypad(DeviceID deviceID, uint8_t buttonID, uint8_t
 
 bool InsteonMgr::setOnLevel(GroupID groupID, uint8_t onLevel,
 									 std::function<void(bool didSucceed)> cb){
-
  
 	if(_state != STATE_READY)
 		return false;
@@ -986,6 +1045,52 @@ bool InsteonMgr::setOnLevel(GroupID groupID, uint8_t onLevel,
 
 	return true;
 }
+
+
+bool InsteonMgr::setLEDBrightness(GroupID groupID, uint8_t level,
+							 std::function<void(bool didSucceed)> cb){
+	
+	if(_state != STATE_READY)
+		return false;
+	
+	if(!_db.groupIsValid(groupID))
+		return false;
+	
+	// pin brightnes -- its an 7 bit value
+	if(level > 127)
+		level = 127;
+
+	auto devices = _db.groupGetDevices(groupID);
+	if(devices.size() >  0){
+		
+		size_t* taskCount  = (size_t*) malloc(sizeof(size_t));
+		*taskCount = devices.size();
+		
+		uint8_t buffer[] = {
+			0x00, 0x07, level};
+		
+		// queue up all the devices.. and then reply when we are done.
+		for(auto deviceID : devices) {
+			
+			_cmdQueue->queueMessage(deviceID,
+											InsteonParser::CMD_EXT_SET_GET, 0x00,
+											buffer, sizeof(buffer),
+											[=]( auto arg, bool didSucceed) {
+				
+				if(--(*taskCount) == 0) {
+					free(taskCount);
+					if(cb) (cb)( true);
+				}
+			});
+		}
+	}
+	else {
+		if(cb) (cb)( true);
+	}
+
+	return true;
+}
+	
 
 //MARK: -  action groups
 
@@ -1047,7 +1152,13 @@ bool InsteonMgr::runAction(Action action,
 						if(cb) (cb)( didSucceed);
 					});
 					break;
-					
+
+				case Action::ACTION_SET_LED_BRIGHTNESS:
+					handled = setLEDBrightness(groupID, level, [=](bool didSucceed){
+						if(cb) (cb)( didSucceed);
+					});
+					break;
+
 				default:
 					break;
 			}
@@ -1210,13 +1321,13 @@ bool InsteonMgr::executeEvent(eventID_t eventID,
 // MARK: - Linking
 
 bool InsteonMgr::addToDeviceALDB(DeviceID deviceID,
-											bool isCNTL,
-											uint8_t groupID, boolCallback_t callback){
+											bool isCNTL, uint8_t groupID,
+											boolCallback_t callback){
 	bool status = false;
 	
-	if(_state != STATE_READY)
+	if( (_state != STATE_READY) && (_state != STATE_PLM_INIT))
 		return false;
-	
+ 
 	if(!_aldb)
 		throw InsteonException("aldb not setup");
 	
@@ -1241,7 +1352,7 @@ bool InsteonMgr::addToDeviceALDB(DeviceID deviceID,
 
 
 bool InsteonMgr::addToDeviceALDB(DeviceID deviceID,
-							vector<pair<bool,uint8_t>> aldbGroups, // <bool isCNTL, uint8_t groupID>
+							vector<pair<uint8_t,bool>> aldbGroups, // <uint8_t groupID, bool isCNTL >
 							boolCallback_t cb) {
 	bool status = false;
  
@@ -1251,7 +1362,7 @@ bool InsteonMgr::addToDeviceALDB(DeviceID deviceID,
 	auto gInfo = aldbGroups.back();
 	aldbGroups.pop_back();
  
-	status = addToDeviceALDB(deviceID,  gInfo.first , gInfo.second,
+	status = addToDeviceALDB(deviceID,  gInfo.second , gInfo.first,
 									  [=](bool didSucceed){
 		if(!didSucceed) {
 			if(cb) (cb)(false);
@@ -1278,7 +1389,7 @@ bool InsteonMgr::removeEntryFromDeviceALDB(DeviceID deviceID, uint16_t address,
 														 boolCallback_t cb){
 	bool status = false;
 	
-	if(_state != STATE_READY)
+	if( (_state != STATE_READY) && (_state != STATE_PLM_INIT))
 		return false;
 		
 	if(!_aldb)
@@ -1303,7 +1414,7 @@ bool InsteonMgr::updateALDBfromDevice(DeviceID deviceID,
 												  boolCallback_t cb){
 	bool status = false;
 	
-	if(_state != STATE_READY)
+	if( (_state != STATE_READY) && (_state != STATE_PLM_INIT))
 		return false;
 		
 	if(!_aldb)
@@ -1330,7 +1441,7 @@ bool InsteonMgr::linkKeyPadButtonsToGroups(DeviceID deviceID,
 														 boolCallback_t callback){
 	bool status = false;
  
-	if(_state != STATE_READY)
+	if( (_state != STATE_READY) && (_state != STATE_PLM_INIT))
 		return false;
 	
 	if(!_aldb)
@@ -1368,11 +1479,12 @@ bool InsteonMgr::linkKeyPadButtonsToGroups(DeviceID deviceID,
 bool InsteonMgr::linkDevice(DeviceID deviceID,
 									 bool isCTRL,
 									 uint8_t groupID,
+									 string deviceName,
 									 boolCallback_t callback){
 	
 	bool status = false;
 	
-	if(_state != STATE_READY)
+	if( (_state != STATE_READY) && (_state != STATE_PLM_INIT))
 		return false;
 	
 	if(!_linking){
@@ -1415,22 +1527,25 @@ bool InsteonMgr::linkDevice(DeviceID deviceID,
 									true,	// is Controller
 									link.groupID,
 									info,
+									deviceName,
 									true);			// is validated
-	 			
-	 			_aldb->readDeviceALDB(deviceID, [=]
+				
+				_aldb->readDeviceALDB(deviceID, [=]
 											 ( std::vector<insteon_aldb_t> aldb,  bool didSucceed) {
 					
 					if(didSucceed){
 						_db.updateDeviceALDB(deviceID, aldb);
 					}
 					
-					LOG_INFO("\tLINKING COMPLETE(%02x) %s %s rev:%02X version:%02X\n",
+					LOG_INFO("\tLINKING COMPLETE(%02x) %s %s rev:%02X version:%02X %s\n",
 								link.groupID,
 								deviceID.string().c_str(),
 								info.string().c_str(),
 								info.GetFirmware(),
-								info.GetVersion());
-					
+								info.GetVersion(),
+								!deviceName.empty()?deviceName.c_str():"<unknown>"
+								);
+	 
 					_db.saveToCacheFile();
 					callback(true);
 				});
@@ -1440,6 +1555,77 @@ bool InsteonMgr::linkDevice(DeviceID deviceID,
 			callback(false);
 		}
 		
+	});
+	
+	return  status;
+}
+
+bool InsteonMgr::importDevices_Internal(vector<plmDevicesEntry_t> devices,
+								 boolCallback_t cb){
+	
+	bool status = false;
+	
+	// did we complete all of them?
+	if(devices.size() == 0) {
+		if(cb) (cb)(true);
+		return true;
+	}
+ 
+	auto dInfo = devices.back();
+	devices.pop_back();
+ 
+	status = linkDevice(dInfo.deviceID,
+							  true,
+							  dInfo.cntlID,
+							  dInfo.name,
+							  [=](bool didSucceed){
+		if(didSucceed) {
+			
+			
+			// link aldb
+			addToDeviceALDB(dInfo.deviceID, dInfo.responders,
+								 [=](bool didSucceed) {
+				// do the next one.
+				importDevices_Internal(devices, cb);
+			});
+		}
+ 		else
+		{
+			_importDevices_failList.push_back(dInfo.deviceID);
+			
+			// do the next one.
+			importDevices_Internal(devices, cb);
+ 		}
+		 
+ 	});
+	
+	return  status;
+}
+
+
+bool InsteonMgr::importDevices(vector<plmDevicesEntry_t> devices,
+									  std::function<void(vector<DeviceID> failedDevices,  bool didSucceed)> cb){
+	bool status = false;
+	
+	// param check
+	if(devices.size() == 0)
+		return false;
+	
+	if( (_state != STATE_READY) && (_state != STATE_PLM_INIT))
+		return false;
+	
+	if(!_linking){
+		_linking = new InsteonLinking(_cmdQueue);
+	}
+	
+	_importDevices_failList.clear();
+	
+	status =  importDevices_Internal(devices, [=](bool didSucceed){
+		
+		if(cb)
+			(cb)(_importDevices_failList, didSucceed);
+		
+ 		_importDevices_failList.clear();
 	});
 	
 	return  status;
@@ -1476,6 +1662,7 @@ bool InsteonMgr::startLinking(uint8_t groupID){
 									true,	// is Controller
 									link.groupID,
 									link.deviceInfo,
+									"",
 									true);			// is validated
 				
 				_db.saveToCacheFile();
@@ -1614,7 +1801,8 @@ bool  InsteonMgr::processBroadcastEvents(plm_result_t response) {
 		DeviceID deviceID = DeviceID(msg.from);
 	
 		
-		if(msg.msgType == MSG_TYP_GROUP_BROADCAST){
+		if(msg.msgType == MSG_TYP_GROUP_BROADCAST)
+		{
 			
 			uint8_t group 	= msg.to[0];
 			uint8_t cmd 		= msg.cmd[0];
@@ -1663,11 +1851,13 @@ bool  InsteonMgr::processBroadcastEvents(plm_result_t response) {
 						
 					case InsteonParser::CMD_LIGHT_ON:
 						_db.setDBOnLevel(deviceID, group,  0xff);
+						LOG_INFO("\tCMD_LIGHT_ON %s [%02X]\n", deviceID.string().c_str(),group);
 						didHandle = true;
 						break;
 						
 					case InsteonParser::CMD_LIGHT_OFF:
 						_db.setDBOnLevel(deviceID, group, 0x0);
+						LOG_INFO("\tCMD_LIGHT_OFF %s [%02X]\n", deviceID.string().c_str(),group);
 						didHandle = true;
 						break;
 						
@@ -1680,6 +1870,7 @@ bool  InsteonMgr::processBroadcastEvents(plm_result_t response) {
 						InsteonDevice(deviceID).getOnLevel([=](uint8_t level, bool didSucceed) {
 							if(didSucceed){
 								_db.setDBOnLevel(deviceID, group, level);
+								LOG_INFO("\tDIM %s [%02X] %d\n", deviceID.string().c_str(),group, level);
 							}
 						});
 						didHandle = true;

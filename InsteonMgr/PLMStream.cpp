@@ -114,6 +114,9 @@ bool PLMStream::isOpen(){
 void PLMStream::stop(){
 
 	if(_isSetup){
+		
+		tcflush(_fd,TCIOFLUSH);
+		tcsendbreak(_fd, 100);
 		tcsetattr ( _fd, TCSANOW, &_savetty );
 		close(_fd);
  	}

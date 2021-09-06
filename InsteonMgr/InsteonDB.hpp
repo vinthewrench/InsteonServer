@@ -17,6 +17,8 @@
 #include <random>
 #include <set>
 #include <vector>
+#include <tuple>
+
 
 #include <stdio.h>
 #include "InsteonMgrDefs.hpp"
@@ -69,6 +71,15 @@ typedef struct  {
 
 bool  entryHasCNTL(insteon_dbEntry_t entry);
 
+
+// list of devices we would need to export to a new PlM
+typedef struct {
+	DeviceID				deviceID;
+	uint8_t 				cntlID;
+	string  				name;
+	vector<pair<uint8_t, bool>> 	responders;
+} plmDevicesEntry_t;
+ 
 class InsteonDB {
 public:
  
@@ -93,7 +104,8 @@ public:
 	void 	setPlmDeviceID(DeviceID deviceID){
 		_plmDeviceID = deviceID;
 	}
-	
+	DeviceID getPlmDeviceID() { return _plmDeviceID;};
+
 	void  setPLMAutoStart(bool autoStartPLM);
 	bool  getPLMAutoStart();
 
@@ -105,7 +117,6 @@ public:
 	void  setRESTPort(int port);
 	int  	getRESTPort();
 	
-	DeviceID getPlmDeviceID() { return _plmDeviceID;};
 
 	bool setLatLong(double latitude, double longitude);
 	bool getLatLong(double &latitude, double &longitude);
@@ -125,6 +136,7 @@ public:
 						bool		 	isCTRL,		 
 						uint8_t 		group,
 						DeviceInfo 	deviceInfo,
+						string 		deviceName = "",
 						bool 			isValidated = false
 						);
 
@@ -184,6 +196,8 @@ public:
 	// clear local entry for DeviceALDB (not on device)
 	bool clearDeviceALDB(DeviceID deviceID);
 	bool removeDevice(DeviceID deviceID);
+	
+	bool exportPLMlinks(DeviceID plmID,  vector<plmDevicesEntry_t> &entries);
 	
 	// MARK: -   keypads
 	vector<DeviceID>		allKeypads();

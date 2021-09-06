@@ -7,32 +7,16 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "45147A5B-4851-406D-A5EA-D80ADAD35CF4"
+            uuid = "9D3A193A-605F-41F3-80EB-75F044EC4CD3"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "InsteonMgr/PLMStream.cpp"
+            filePath = "InsteonMgr/InsteonMgr.cpp"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "154"
-            endingLineNumber = "154"
-            landmarkName = "PLMStream::available()"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "268B94D4-039B-4682-B2DC-ADB9EFCB5F03"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "Submodule/FooServer/src/hash-library/sha256.cpp"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "350"
-            endingLineNumber = "350"
-            landmarkName = "SHA256::processBuffer()"
+            startingLineNumber = "1614"
+            endingLineNumber = "1614"
+            landmarkName = "InsteonMgr::importDevices(devices, cb)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
