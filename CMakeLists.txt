@@ -8,7 +8,8 @@ project(InsteonMgr)
 set(SOURCES
 	src/main.cpp
 	src/ServerCmdValidators.cpp
-	src/ServerCommands.cpp
+	src/ServerCommandsLineFunctions.cpp
+	src/ServerNouns.cpp
 	src/main.cpp 
 	InsteonMgr/Action.cpp
 	InsteonMgr/DeviceID.cpp
