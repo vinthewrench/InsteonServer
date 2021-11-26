@@ -88,6 +88,8 @@ InsteonDB::InsteonDB() {
 	_telnetPort = 2020;
 	_restPort = 8080;
 	
+	_db_filePath = default_filePath();
+	
 	// create RNG engine
 	constexpr std::size_t SEED_LENGTH = 8;
   std::array<uint_fast32_t, SEED_LENGTH> random_data;
@@ -1264,9 +1266,10 @@ bool InsteonDB::backupCacheFile(string filepath){
  
 
 bool InsteonDB::saveToCacheFile(string filePath ){
-	
-	// debug  printDB();
-	
+		
+	if(filePath.size() == 0)
+		filePath = _db_filePath;
+
 	if(filePath.size() == 0)
 		filePath = default_filePath();
 		
@@ -1297,6 +1300,10 @@ bool InsteonDB::restoreFromCacheFile(string filePath,
 	// create a file path
 	if(filePath.size() == 0)
 		filePath = default_filePath();
+	
+	// cache the filepath
+	else
+		_db_filePath = filePath;
 	
 	LOG_INFO("READ_CACHEFILE: %s\n", filePath.c_str());
 

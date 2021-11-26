@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <sys/utsname.h>
 
 #include "ServerCmdQueue.hpp"
 #include "CmdLineHelp.hpp"
@@ -40,10 +41,11 @@
 
 // MARK: -
 
+
 static bool getCPUTemp(double &tempOut) {
 	bool didSucceed = false;
 
-#if defined(__PIE__)
+//#if defined(__PIE__)
 	// return the CPU temp
 		{
 			try{
@@ -63,11 +65,11 @@ static bool getCPUTemp(double &tempOut) {
 			catch(std::ifstream::failure &err) {
 			}
 		}
-#else
+//#else
 //	tempOut = 38.459;
 //	didSucceed = true;
 
-#endif
+//#endif
 	
 	return didSucceed;
 }
@@ -280,25 +282,26 @@ static bool Events_NounHandler_PATCH(ServerCmdQueue* cmdQueue,
 		
 		if( !str_to_EventID(path.at(1).c_str(), &eventID) || !db->eventsIsValid(eventID))
 			return false;
- 
-		string name;
-		// set name
-		DeviceID	deviceID;
-		if(db->eventSetName(eventID, name)) {
-				reply[string(JSON_ARG_EVENTID)] = to_hex<unsigned short>(eventID);
-				reply[string(JSON_ARG_NAME)] = name;
-				
-				makeStatusJSON(reply,STATUS_OK);
-				(completion) (reply, STATUS_OK);
-			}
-			else {
-				reply[string(JSON_ARG_EVENTID)] = to_hex<unsigned short>(eventID);
-				makeStatusJSON(reply, STATUS_BAD_REQUEST, "Set Failed" );;
-				(completion) (reply, STATUS_BAD_REQUEST);
-			}
-		}
 		
-	 
+		string name;
+		DeviceID	deviceID;
+		// set name
+		
+			if(v1.getStringFromJSON(JSON_ARG_NAME, url.body(), name)
+			&& (db->eventSetName(eventID, name))) {
+			reply[string(JSON_ARG_EVENTID)] = to_hex<unsigned short>(eventID);
+			reply[string(JSON_ARG_NAME)] = name;
+			
+			makeStatusJSON(reply,STATUS_OK);
+			(completion) (reply, STATUS_OK);
+		}
+		else {
+			reply[string(JSON_ARG_EVENTID)] = to_hex<unsigned short>(eventID);
+			makeStatusJSON(reply, STATUS_BAD_REQUEST, "Set Failed" );;
+			(completion) (reply, STATUS_BAD_REQUEST);
+		}
+	}
+
 	return false;
 	
 }
@@ -4216,6 +4219,122 @@ static void Link_NounHandler(ServerCmdQueue* cmdQueue,
 	}
 }
 
+// MARK: STATE - NOUN HANDLER
+
+static bool State_NounHandler_GET(ServerCmdQueue* cmdQueue,
+											  REST_URL url,
+											  TCPClientInfo cInfo,
+											  ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	using namespace timestamp;
+
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	json reply;
+
+ 
+	// GET /status
+	if(path.size() == 1) {
+	 
+		auto state = insteon.currentState();
+		string stateStr = insteon.currentStateString();
+		
+		reply[string(JSON_ARG_STATE)] =   state;
+		reply[string(JSON_ARG_STATESTR)] =   stateStr;
+
+ 
+		solarTimes_t solar;
+		insteon.getSolarEvents(solar);
+
+		reply["civilSunRise"] = solar.civilSunRiseMins;
+		reply["sunRise"] = solar.sunriseMins;
+		reply["sunSet"] = solar.sunSetMins;
+		reply["civilSunSet"] = solar.civilSunSetMins;
+		reply[string(JSON_ARG_LATITUDE)] = solar.latitude;
+		reply[string(JSON_ARG_LONGITUDE)] = solar.longitude;
+		reply["gmtOffset"] = solar.gmtOffset;
+		reply["timeZone"] = solar.timeZoneString;
+		reply["midnight"] = solar.previousMidnight;
+		
+		reply[string(JSON_ARG_UPTIME)] = solar.upTime;
+	   reply[string(JSON_ARG_DATE)] = TimeStamp().RFC1123String();
+ 	
+		reply[string(JSON_ARG_VERSION)] = InsteonMgr::InsteonMgr_Version;
+		reply[string(JSON_ARG_BUILD_TIME)]	=  string(__DATE__) + " " + string(__TIME__);
+			
+		double temp;
+		if(getCPUTemp(temp)){
+			reply[string(JSON_ARG_CPU_TEMP)] =   temp;
+		}
+		
+		struct utsname buffer;
+		if (uname(&buffer) == 0){
+			reply[string(JSON_ARG_OS_SYSNAME)] =   string(buffer.sysname);
+			reply[string(JSON_ARG_OS_NODENAME)] =   string(buffer.nodename);
+			reply[string(JSON_ARG_OS_RELEASE)] =   string(buffer.release);
+			reply[string(JSON_ARG_OS_VERSION)] =   string(buffer.version);
+			reply[string(JSON_ARG_OS_MACHINE)] =   string(buffer.machine);
+		}
+
+		
+		makeStatusJSON(reply,STATUS_OK);
+		(completion) (reply, STATUS_OK);
+		return true;
+	}
+ 
+	  return false;
+}
+
+static void State_NounHandler(ServerCmdQueue* cmdQueue,
+										 REST_URL url,  // entire request
+										 TCPClientInfo cInfo,
+										 ServerCmdQueue::cmdCallback_t completion) {
+	using namespace rest;
+	json reply;
+	
+	auto path = url.path();
+	auto queries = url.queries();
+	auto headers = url.headers();
+	string noun;
+	
+	bool isValidURL = false;
+	
+	if(path.size() > 0) {
+		noun = path.at(0);
+	}
+	
+	switch(url.method()){
+		case HTTP_GET:
+			isValidURL = State_NounHandler_GET(cmdQueue,url,cInfo, completion);
+			break;
+//
+//		case HTTP_PUT:
+//			isValidURL = State_NounHandler_GET(cmdQueue,url,cInfo, completion);
+//			break;
+//
+//		case HTTP_PATCH:
+//			isValidURL = State_NounHandler_GET(cmdQueue,url,cInfo, completion);
+//			break;
+//
+//		case HTTP_POST:
+//			isValidURL = State_NounHandler_GET(cmdQueue,url,cInfo, completion);
+//			break;
+//
+//		case HTTP_DELETE:
+//			isValidURL = State_NounHandler_GET(cmdQueue,url,cInfo, completion);
+//			break;
+  
+		default:
+			(completion) (reply, STATUS_INVALID_METHOD);
+			return;
+	}
+	
+	if(!isValidURL) {
+		(completion) (reply, STATUS_NOT_FOUND);
+	}
+}
+
 // MARK:  OTHER REST NOUN HANDLERS
 
 
@@ -4322,5 +4441,6 @@ void registerServerNouns() {
 	cmdQueue->registerNoun(NOUN_EVENTS,		 Events_NounHandler);
 	cmdQueue->registerNoun(NOUN_EVENTS_GROUPS,  EventGroups_NounHandler);
 	cmdQueue->registerNoun(NOUN_KEYPADS,  Keypads_NounHandler);
+	cmdQueue->registerNoun(NOUN_STATE, 	State_NounHandler);
 
 }

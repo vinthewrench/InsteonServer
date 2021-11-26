@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="19455" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="19454"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Keypads View Controller-->
+        <scene sceneID="s0d-6b-0kx">
+            <objects>
+                <viewController storyboardIdentifier="KeypadsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Y6W-OH-hqX" customClass="KeypadsViewController" customModule="homecontrol_app" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="5EZ-qb-Rvc">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Ief-a0-LHa" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-20" y="-241"/>
+        </scene>
+        <!--Keypad View Controller-->
+        <scene sceneID="Jcm-TF-UAd">
+            <objects>
+                <viewController storyboardIdentifier="KeypadViewController" id="uVp-Bw-WFA" customClass="KeypadViewController" customModule="homecontrol_app" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="9ND-m0-AWq">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="KeypadID" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="oDU-M4-uE6" customClass="EditableUILabel" customModule="homecontrol_app" customModuleProvider="target">
+                                <rect key="frame" x="166.5" y="175" width="81.5" height="23"/>
+                                <fontDescription key="fontDescription" style="UICTFontTextStyleTitle2"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="rIK-uF-4rw">
+                                <rect key="frame" x="87" y="218" width="240" height="460"/>
+                                <subviews>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="rCb-MH-ap1" customClass="KeyCapButton" customModule="homecontrol_app" customModuleProvider="target">
+                                        <rect key="frame" x="20" y="20" width="90" height="90"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="90" id="LGO-8h-5sb"/>
+                                            <constraint firstAttribute="width" secondItem="rCb-MH-ap1" secondAttribute="height" multiplier="1:1" id="aDP-hB-OGm"/>
+                                        </constraints>
+                                        <color key="tintColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <state key="normal" title="Button"/>
+                                        <buttonConfiguration key="configuration" style="plain" title="scene A" cornerStyle="fixed"/>
+                                        <connections>
+                                            <action selector="btnClicked:" destination="uVp-Bw-WFA" eventType="touchUpInside" id="PQ5-cI-XP2"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="BwV-wo-JCP" customClass="KeyCapButton" customModule="homecontrol_app" customModuleProvider="target">
+                                        <rect key="frame" x="130" y="20" width="90" height="90"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" secondItem="BwV-wo-JCP" secondAttribute="height" multiplier="1:1" id="15r-NP-lvg"/>
+                                            <constraint firstAttribute="width" constant="90" id="i4Z-En-nfH"/>
+                                        </constraints>
+                                        <color key="tintColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <state key="normal" title="Button"/>
+                                        <buttonConfiguration key="configuration" style="plain" title="scene B" cornerStyle="fixed">
+                                            <backgroundConfiguration key="background"/>
+                                        </buttonConfiguration>
+                                        <connections>
+                                            <action selector="btnClicked:" destination="uVp-Bw-WFA" eventType="touchUpInside" id="o8r-nt-ba3"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Pvm-BE-dZT" customClass="KeyCapButton" customModule="homecontrol_app" customModuleProvider="target">
+                                        <rect key="frame" x="20" y="130" width="90" height="90"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="90" id="QBh-3p-Ifr"/>
+                                            <constraint firstAttribute="width" secondItem="Pvm-BE-dZT" secondAttribute="height" multiplier="1:1" id="gzv-6t-HQC"/>
+                                        </constraints>
+                                        <color key="tintColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <state key="normal" title="Button"/>
+                                        <buttonConfiguration key="configuration" style="plain" title="scene C" cornerStyle="fixed"/>
+                                        <connections>
+                                            <action selector="btnClicked:" destination="uVp-Bw-WFA" eventType="touchUpInside" id="lPm-Fx-XJY"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="4AG-Bg-H4t" customClass="KeyCapButton" customModule="homecontrol_app" customModuleProvider="target">
+                                        <rect key="frame" x="20" y="240" width="90" height="90"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="90" id="A2o-Jo-pBG"/>
+                                            <constraint firstAttribute="width" secondItem="4AG-Bg-H4t" secondAttribute="height" multiplier="1:1" id="EKi-AT-F3J"/>
+                                        </constraints>
+                                        <color key="tintColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <state key="normal" title="Button"/>
+                                        <buttonConfiguration key="configuration" style="plain" title="scene E" cornerStyle="fixed"/>
+                                        <connections>
+                                            <action selector="btnClicked:" destination="uVp-Bw-WFA" eventType="touchUpInside" id="vNV-nA-aEP"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="XY3-b9-xnb" customClass="KeyCapButton" customModule="homecontrol_app" customModuleProvider="target">
+                                        <rect key="frame" x="130" y="240" width="90" height="90"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" secondItem="XY3-b9-xnb" secondAttribute="height" multiplier="1:1" id="JKj-Re-gax"/>
+                                            <constraint firstAttribute="width" constant="90" id="Qap-xG-HIr"/>
+                                        </constraints>
+                                        <color key="tintColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <state key="normal" title="Button"/>
+                                        <buttonConfiguration key="configuration" style="plain" title="scene F" cornerStyle="fixed"/>
+                                        <connections>
+                                            <action selector="btnClicked:" destination="uVp-Bw-WFA" eventType="touchUpInside" id="60F-fj-IHX"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="4zu-DN-pNn" customClass="KeyCapButton" customModule="homecontrol_app" customModuleProvider="target">
+                                        <rect key="frame" x="20" y="350" width="90" height="90"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="90" id="6jR-NR-moy"/>
+                                            <constraint firstAttribute="width" secondItem="4zu-DN-pNn" secondAttribute="height" multiplier="1:1" id="fCp-hx-UfP"/>
+                                        </constraints>
+                                        <color key="tintColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <state key="normal" title="Button"/>
+                                        <buttonConfiguration key="configuration" style="plain" title="scene G" cornerStyle="fixed"/>
+                                        <connections>
+                                            <action selector="btnClicked:" destination="uVp-Bw-WFA" eventType="touchUpInside" id="Ft2-wU-iiB"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="hPw-Bd-EGm" customClass="KeyCapButton" customModule="homecontrol_app" customModuleProvider="target">
+                                        <rect key="frame" x="130" y="130" width="90" height="90"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="90" id="LaU-85-iuz"/>
+                                            <constraint firstAttribute="width" secondItem="hPw-Bd-EGm" secondAttribute="height" multiplier="1:1" id="hKD-TJ-4OM"/>
+                                        </constraints>
+                                        <color key="tintColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <state key="normal" title="Button"/>
+                                        <buttonConfiguration key="configuration" style="plain" title="scene D" cornerStyle="fixed"/>
+                                        <connections>
+                                            <action selector="btnClicked:" destination="uVp-Bw-WFA" eventType="touchUpInside" id="XU4-1I-mLK"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="G7T-t4-DB8" customClass="KeyCapButton" customModule="homecontrol_app" customModuleProvider="target">
+                                        <rect key="frame" x="130" y="350" width="90" height="90"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" secondItem="G7T-t4-DB8" secondAttribute="height" multiplier="1:1" id="51E-Jx-3Wi"/>
+                                            <constraint firstAttribute="width" constant="90" id="U3G-fc-SGb"/>
+                                        </constraints>
+                                        <color key="tintColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <state key="normal" title="Button"/>
+                                        <buttonConfiguration key="configuration" style="plain" title="scene H" cornerStyle="fixed"/>
+                                        <connections>
+                                            <action selector="btnClicked:" destination="uVp-Bw-WFA" eventType="touchUpInside" id="x1b-ks-yfv"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                <constraints>
+                                    <constraint firstItem="BwV-wo-JCP" firstAttribute="centerY" secondItem="rCb-MH-ap1" secondAttribute="centerY" id="0Sl-91-c5e"/>
+                                    <constraint firstItem="4zu-DN-pNn" firstAttribute="width" secondItem="4zu-DN-pNn" secondAttribute="height" multiplier="1:1" id="2OA-NX-pgZ"/>
+                                    <constraint firstItem="Pvm-BE-dZT" firstAttribute="centerX" secondItem="rCb-MH-ap1" secondAttribute="centerX" id="2mg-tQ-um5"/>
+                                    <constraint firstItem="hPw-Bd-EGm" firstAttribute="width" secondItem="hPw-Bd-EGm" secondAttribute="height" multiplier="1:1" id="CxM-6R-Zve"/>
+                                    <constraint firstItem="4AG-Bg-H4t" firstAttribute="width" secondItem="4AG-Bg-H4t" secondAttribute="height" multiplier="1:1" id="Dcm-IB-1Td"/>
+                                    <constraint firstItem="hPw-Bd-EGm" firstAttribute="centerY" secondItem="Pvm-BE-dZT" secondAttribute="centerY" id="Drv-FW-XqT"/>
+                                    <constraint firstItem="4AG-Bg-H4t" firstAttribute="width" secondItem="4AG-Bg-H4t" secondAttribute="height" multiplier="1:1" id="FC7-Bm-pd1"/>
+                                    <constraint firstItem="4zu-DN-pNn" firstAttribute="width" secondItem="4zu-DN-pNn" secondAttribute="height" multiplier="1:1" id="FaU-vb-L3z"/>
+                                    <constraint firstAttribute="trailing" secondItem="BwV-wo-JCP" secondAttribute="trailing" constant="20" id="Ghp-Op-eMP"/>
+                                    <constraint firstItem="4zu-DN-pNn" firstAttribute="width" secondItem="4zu-DN-pNn" secondAttribute="height" multiplier="1:1" id="I2D-Id-Upe"/>
+                                    <constraint firstItem="G7T-t4-DB8" firstAttribute="width" secondItem="G7T-t4-DB8" secondAttribute="height" multiplier="1:1" id="Ih1-9M-sTh"/>
+                                    <constraint firstItem="BwV-wo-JCP" firstAttribute="width" secondItem="BwV-wo-JCP" secondAttribute="height" multiplier="1:1" id="Lx4-eV-2Pn"/>
+                                    <constraint firstItem="G7T-t4-DB8" firstAttribute="width" secondItem="G7T-t4-DB8" secondAttribute="height" multiplier="1:1" id="Ns3-eK-t0N"/>
+                                    <constraint firstItem="rCb-MH-ap1" firstAttribute="leading" secondItem="rIK-uF-4rw" secondAttribute="leading" constant="20" id="PJO-bF-6W9"/>
+                                    <constraint firstAttribute="bottom" secondItem="4zu-DN-pNn" secondAttribute="bottom" constant="20" id="WJ0-Ks-4p9"/>
+                                    <constraint firstItem="4AG-Bg-H4t" firstAttribute="centerX" secondItem="Pvm-BE-dZT" secondAttribute="centerX" id="XtD-qV-kfZ"/>
+                                    <constraint firstItem="4zu-DN-pNn" firstAttribute="width" secondItem="4zu-DN-pNn" secondAttribute="height" multiplier="1:1" id="Zju-WP-lag"/>
+                                    <constraint firstItem="Pvm-BE-dZT" firstAttribute="width" secondItem="Pvm-BE-dZT" secondAttribute="height" multiplier="1:1" id="c66-9q-Zdn"/>
+                                    <constraint firstItem="XY3-b9-xnb" firstAttribute="width" secondItem="XY3-b9-xnb" secondAttribute="height" multiplier="1:1" id="cBR-Ld-KWD"/>
+                                    <constraint firstItem="XY3-b9-xnb" firstAttribute="width" secondItem="XY3-b9-xnb" secondAttribute="height" multiplier="1:1" id="ceu-tR-xcX"/>
+                                    <constraint firstItem="4zu-DN-pNn" firstAttribute="top" secondItem="4AG-Bg-H4t" secondAttribute="bottom" constant="20" id="clz-Id-MlI"/>
+                                    <constraint firstItem="XY3-b9-xnb" firstAttribute="centerY" secondItem="4AG-Bg-H4t" secondAttribute="centerY" id="eCB-3f-cpK"/>
+                                    <constraint firstItem="G7T-t4-DB8" firstAttribute="centerY" secondItem="4zu-DN-pNn" secondAttribute="centerY" id="f4A-II-HUj"/>
+                                    <constraint firstItem="XY3-b9-xnb" firstAttribute="width" secondItem="XY3-b9-xnb" secondAttribute="height" multiplier="1:1" id="gdg-Jo-eLd"/>
+                                    <constraint firstItem="G7T-t4-DB8" firstAttribute="width" secondItem="G7T-t4-DB8" secondAttribute="height" multiplier="1:1" id="ilh-85-pLp"/>
+                                    <constraint firstItem="Pvm-BE-dZT" firstAttribute="top" secondItem="rCb-MH-ap1" secondAttribute="bottom" constant="20" id="lLd-pX-51H"/>
+                                    <constraint firstItem="G7T-t4-DB8" firstAttribute="width" secondItem="G7T-t4-DB8" secondAttribute="height" multiplier="1:1" id="m5j-37-KW5"/>
+                                    <constraint firstItem="G7T-t4-DB8" firstAttribute="centerX" secondItem="XY3-b9-xnb" secondAttribute="centerX" id="mhW-b3-HVa"/>
+                                    <constraint firstItem="hPw-Bd-EGm" firstAttribute="width" secondItem="hPw-Bd-EGm" secondAttribute="height" multiplier="1:1" id="mkz-cg-VHH"/>
+                                    <constraint firstItem="rCb-MH-ap1" firstAttribute="top" secondItem="rIK-uF-4rw" secondAttribute="top" constant="20" id="n0C-MK-gAM"/>
+                                    <constraint firstItem="XY3-b9-xnb" firstAttribute="centerX" secondItem="hPw-Bd-EGm" secondAttribute="centerX" id="ofK-w5-aSK"/>
+                                    <constraint firstItem="G7T-t4-DB8" firstAttribute="width" secondItem="G7T-t4-DB8" secondAttribute="height" multiplier="1:1" id="r61-j1-Z2h"/>
+                                    <constraint firstItem="Pvm-BE-dZT" firstAttribute="width" secondItem="Pvm-BE-dZT" secondAttribute="height" multiplier="1:1" id="rsd-D6-hnA"/>
+                                    <constraint firstItem="hPw-Bd-EGm" firstAttribute="width" secondItem="hPw-Bd-EGm" secondAttribute="height" multiplier="1:1" id="sjm-ii-wwZ"/>
+                                    <constraint firstItem="XY3-b9-xnb" firstAttribute="width" secondItem="XY3-b9-xnb" secondAttribute="height" multiplier="1:1" id="tGW-fn-ZLS"/>
+                                    <constraint firstItem="4AG-Bg-H4t" firstAttribute="width" secondItem="4AG-Bg-H4t" secondAttribute="height" multiplier="1:1" id="wgx-Hl-Zku"/>
+                                    <constraint firstItem="BwV-wo-JCP" firstAttribute="leading" secondItem="rCb-MH-ap1" secondAttribute="trailing" constant="20" id="yfw-7K-Nba"/>
+                                    <constraint firstItem="4AG-Bg-H4t" firstAttribute="top" secondItem="Pvm-BE-dZT" secondAttribute="bottom" constant="20" id="z8m-9W-Fpf"/>
+                                    <constraint firstItem="hPw-Bd-EGm" firstAttribute="centerX" secondItem="BwV-wo-JCP" secondAttribute="centerX" id="zWF-g6-uK2"/>
+                                    <constraint firstItem="4zu-DN-pNn" firstAttribute="centerX" secondItem="4AG-Bg-H4t" secondAttribute="centerX" id="zun-RE-IG6"/>
+                                </constraints>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                        <real key="value" value="7"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
+                                        <real key="value" value="2"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
+                                        <color key="value" systemColor="systemGray3Color"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                            </view>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="ww8-Xg-oMF"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="rIK-uF-4rw" firstAttribute="centerY" secondItem="9ND-m0-AWq" secondAttribute="centerY" id="3rU-eX-zTo"/>
+                            <constraint firstItem="rIK-uF-4rw" firstAttribute="top" secondItem="oDU-M4-uE6" secondAttribute="bottom" constant="20" id="FHh-GH-Qtp"/>
+                            <constraint firstItem="oDU-M4-uE6" firstAttribute="centerX" secondItem="9ND-m0-AWq" secondAttribute="centerX" id="MlH-eL-K4f"/>
+                            <constraint firstItem="rIK-uF-4rw" firstAttribute="centerX" secondItem="9ND-m0-AWq" secondAttribute="centerX" id="gM4-d1-azj"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="btn0" destination="rCb-MH-ap1" id="yVX-wg-QOY"/>
+                        <outlet property="btn1" destination="BwV-wo-JCP" id="HAT-U1-tz8"/>
+                        <outlet property="btn2" destination="Pvm-BE-dZT" id="JZ9-0w-alG"/>
+                        <outlet property="btn3" destination="hPw-Bd-EGm" id="cOU-B6-InX"/>
+                        <outlet property="btn4" destination="4AG-Bg-H4t" id="4e7-Jt-wDX"/>
+                        <outlet property="btn5" destination="XY3-b9-xnb" id="Q8g-LA-Gnx"/>
+                        <outlet property="btn6" destination="4zu-DN-pNn" id="6cM-Y3-JRj"/>
+                        <outlet property="btn7" destination="G7T-t4-DB8" id="IYr-k7-wOh"/>
+                        <outlet property="lblID" destination="oDU-M4-uE6" id="O7Q-pH-PEv"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="j4F-ht-FI2" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="702.89855072463774" y="-244.41964285714283"/>
+        </scene>
+    </scenes>
+    <resources>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="systemGray3Color">
+            <color red="0.7803921568627451" green="0.7803921568627451" blue="0.80000000000000004" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+    </resources>
+</document>

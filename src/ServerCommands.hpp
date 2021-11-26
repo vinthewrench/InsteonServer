@@ -16,6 +16,8 @@ constexpr string_view NOUN_VERSION		 		= "version";
 constexpr string_view NOUN_DATE		 			= "date";
 constexpr string_view NOUN_DEVICES	 			= "devices";
 constexpr string_view NOUN_STATUS		 		= "status";
+constexpr string_view NOUN_STATE		 		= "state";
+
 constexpr string_view NOUN_LOG		 			= "log";
 constexpr string_view NOUN_PLM			 		= "plm";
 constexpr string_view NOUN_GROUPS			 	= "groups";
@@ -62,6 +64,10 @@ constexpr string_view JSON_ARG_SAVE 			= "save";
 
 constexpr string_view JSON_ARG_DATE			= "date";
 constexpr string_view JSON_ARG_VERSION		= "version";
+constexpr string_view JSON_ARG_BUILD_TIME	= "buildtime";
+constexpr string_view JSON_ARG_UPTIME		= "uptime";
+
+
 constexpr string_view JSON_ARG_TIMESTAMP		= "timestamp";
 constexpr string_view JSON_ARG_DEVICEIDS	= 	"deviceIDs";
 
@@ -112,7 +118,13 @@ constexpr string_view JSON_VAL_ALDB_GROUP	= "aldb.group";
 constexpr string_view JSON_VAL_START			= "start";
 constexpr string_view JSON_VAL_STOP			= "stop";
 constexpr string_view JSON_VAL_ERASE			= "erase";
-constexpr string_view JSON_VAL_IMPORT		= "import";
+constexpr string_view JSON_VAL_IMPORT			= "import";
+
+constexpr string_view JSON_ARG_OS_SYSNAME	= "os.sysname";
+constexpr string_view JSON_ARG_OS_NODENAME	= "os.nodename";
+constexpr string_view JSON_ARG_OS_RELEASE	= "os.release";
+constexpr string_view JSON_ARG_OS_MACHINE	= "os.machine";
+constexpr string_view JSON_ARG_OS_VERSION	= "os.version";
 
 void registerCommandsLineFunctions();
 void registerServerNouns();

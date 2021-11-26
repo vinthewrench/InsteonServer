@@ -202,14 +202,14 @@ public:
 	// MARK: -   keypads
 	vector<DeviceID>		allKeypads();
 	keypad_dbEntry_t*	findKeypadEntryWithDeviceID(DeviceID deviceID);
-	keypad_Button_t*		findKeypadButton(keypad_dbEntry_t* entry, uint8_t buttonID );
+	keypad_Button_t*	findKeypadButton(keypad_dbEntry_t* entry, uint8_t buttonID );
 	Action*				actionForKeypad(DeviceID deviceID, uint8_t buttonID, uint8_t cmd);
 	bool					createKeypad(DeviceID deviceID);
 	bool					createKeypadButton(DeviceID deviceID, uint8_t buttonID);
 	bool					removeKeypadButton(DeviceID deviceID, uint8_t buttonID);
-	bool  					setActionForKeyPadButton(DeviceID deviceID, uint8_t buttonID, uint8_t cmd, Action action);
-	bool  					setNameForKeyPadButton(DeviceID deviceID, uint8_t buttonID, string name);
-	bool  					setKeypadButtonCount(DeviceID deviceID, uint8_t buttonCount );
+	bool  				setActionForKeyPadButton(DeviceID deviceID, uint8_t buttonID, uint8_t cmd, Action action);
+	bool  				setNameForKeyPadButton(DeviceID deviceID, uint8_t buttonID, string name);
+	bool  				setKeypadButtonCount(DeviceID deviceID, uint8_t buttonCount );
 	bool					invokeKeyPadButton(DeviceID deviceID, uint8_t buttonID, uint8_t cmd);
 	uint8_t 				LEDMaskForKeyPad(keypad_dbEntry_t* keypad);
 
@@ -293,7 +293,8 @@ public:
 private:
  
 	string  default_filePath();
-	
+	string  _db_filePath;
+
 	// config info
 	string 	_plmPath;
 	double		_longitude;

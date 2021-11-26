@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="19455" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="19454"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <customFonts key="customFonts">
+        <array key="Quicksand-Bold.otf">
+            <string>Quicksand-Bold</string>
+        </array>
+    </customFonts>
+    <scenes>
+        <!--Groups Detail View Controller-->
+        <scene sceneID="s0d-6b-0kx">
+            <objects>
+                <viewController storyboardIdentifier="GroupsDetailViewController" id="Y6W-OH-hqX" customClass="GroupsDetailViewController" customModule="homecontrol_app" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="5EZ-qb-Rvc">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="50" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="owX-No-IDJ">
+                                <rect key="frame" x="0.0" y="112" width="414" height="750"/>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                <connections>
+                                    <outlet property="dataSource" destination="Y6W-OH-hqX" id="k9y-S7-7iH"/>
+                                    <outlet property="delegate" destination="Y6W-OH-hqX" id="VTJ-uf-4LK"/>
+                                </connections>
+                            </tableView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Group Name" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4RF-mp-hke" customClass="EditableUILabel" customModule="homecontrol_app" customModuleProvider="target">
+                                <rect key="frame" x="10" y="64" width="153" height="28"/>
+                                <fontDescription key="fontDescription" name="Quicksand-Bold" family="Quicksand" pointSize="24"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="owX-No-IDJ" firstAttribute="top" secondItem="4RF-mp-hke" secondAttribute="bottom" constant="20" id="Af5-my-8HU"/>
+                            <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="owX-No-IDJ" secondAttribute="trailing" id="KxP-9z-My3"/>
+                            <constraint firstItem="owX-No-IDJ" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="OX1-Cv-hKE"/>
+                            <constraint firstItem="4RF-mp-hke" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="10" id="fbA-yl-1K8"/>
+                            <constraint firstItem="vDu-zF-Fre" firstAttribute="bottom" secondItem="owX-No-IDJ" secondAttribute="bottom" id="gkT-Qa-Xlh"/>
+                            <constraint firstItem="4RF-mp-hke" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" constant="20" id="ka0-6h-fGF"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="lblTitle" destination="4RF-mp-hke" id="4Zq-t6-f7U"/>
+                        <outlet property="tableView" destination="owX-No-IDJ" id="gOz-tE-CXK"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Ief-a0-LHa" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="19" y="85"/>
+        </scene>
+    </scenes>
+    <resources>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+    </resources>
+</document>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="19455" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="19454"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Groups View Controller-->
+        <scene sceneID="s0d-6b-0kx">
+            <objects>
+                <viewController storyboardIdentifier="GroupsViewController" id="Y6W-OH-hqX" customClass="GroupsViewController" customModule="homecontrol_app" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="5EZ-qb-Rvc">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Groups" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="W4C-GC-TOD">
+                                <rect key="frame" x="179" y="437.5" width="56" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="50" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="CdQ-wp-Buz">
+                                <rect key="frame" x="20" y="44" width="394" height="818"/>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                <prototypes>
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="GroupsCell" rowHeight="60" id="dmZ-eq-nUq" customClass="GroupsCell" customModule="homecontrol_app" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="44.5" width="394" height="60"/>
+                                        <autoresizingMask key="autoresizingMask"/>
+                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="dmZ-eq-nUq" id="A2L-Hw-KiI">
+                                            <rect key="frame" x="0.0" y="0.0" width="394" height="60"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                            <subviews>
+                                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumScaleFactor="0.5" translatesAutoresizingMaskIntoConstraints="NO" id="sjz-KW-XDi">
+                                                    <rect key="frame" x="20" y="21.5" width="336" height="17"/>
+                                                    <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
+                                                    <nil key="textColor"/>
+                                                    <nil key="highlightedColor"/>
+                                                </label>
+                                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="99" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="d8N-Uj-XNv">
+                                                    <rect key="frame" x="364" y="17.5" width="30" height="25"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="width" constant="30" id="Bjy-Ix-Epk"/>
+                                                        <constraint firstAttribute="height" constant="25" id="Nmi-fw-e5A"/>
+                                                    </constraints>
+                                                    <fontDescription key="fontDescription" style="UICTFontTextStyleSubhead"/>
+                                                    <nil key="textColor"/>
+                                                    <nil key="highlightedColor"/>
+                                                    <userDefinedRuntimeAttributes>
+                                                        <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                            <real key="value" value="12"/>
+                                                        </userDefinedRuntimeAttribute>
+                                                        <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
+                                                            <real key="value" value="1"/>
+                                                        </userDefinedRuntimeAttribute>
+                                                        <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
+                                                            <color key="value" name="AccentColor"/>
+                                                        </userDefinedRuntimeAttribute>
+                                                    </userDefinedRuntimeAttributes>
+                                                </label>
+                                            </subviews>
+                                            <constraints>
+                                                <constraint firstItem="d8N-Uj-XNv" firstAttribute="leading" secondItem="sjz-KW-XDi" secondAttribute="trailing" constant="8" symbolic="YES" id="5BN-NX-Npl"/>
+                                                <constraint firstItem="sjz-KW-XDi" firstAttribute="leading" secondItem="A2L-Hw-KiI" secondAttribute="leadingMargin" id="9Cj-0f-qCr"/>
+                                                <constraint firstAttribute="trailing" secondItem="d8N-Uj-XNv" secondAttribute="trailing" id="NP3-og-jB7"/>
+                                                <constraint firstItem="sjz-KW-XDi" firstAttribute="centerY" secondItem="A2L-Hw-KiI" secondAttribute="centerY" id="XwJ-ft-UrH"/>
+                                                <constraint firstItem="d8N-Uj-XNv" firstAttribute="centerY" secondItem="sjz-KW-XDi" secondAttribute="centerY" id="rgG-Jg-xk1"/>
+                                            </constraints>
+                                        </tableViewCellContentView>
+                                        <connections>
+                                            <outlet property="lblCount" destination="d8N-Uj-XNv" id="iUH-Zo-7WV"/>
+                                            <outlet property="lblName" destination="sjz-KW-XDi" id="h3V-FA-cuE"/>
+                                        </connections>
+                                    </tableViewCell>
+                                </prototypes>
+                                <connections>
+                                    <outlet property="dataSource" destination="Y6W-OH-hqX" id="rMW-qx-Vln"/>
+                                    <outlet property="delegate" destination="Y6W-OH-hqX" id="Ewj-lD-OMd"/>
+                                </connections>
+                            </tableView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="CdQ-wp-Buz" secondAttribute="trailing" id="102-Tk-tC2"/>
+                            <constraint firstItem="CdQ-wp-Buz" firstAttribute="leading" secondItem="5EZ-qb-Rvc" secondAttribute="leadingMargin" id="3k4-Qj-VVq"/>
+                            <constraint firstItem="CdQ-wp-Buz" firstAttribute="top" secondItem="5EZ-qb-Rvc" secondAttribute="topMargin" id="53H-YK-8bw"/>
+                            <constraint firstItem="W4C-GC-TOD" firstAttribute="centerY" secondItem="5EZ-qb-Rvc" secondAttribute="centerY" id="Yfd-7h-zyZ"/>
+                            <constraint firstItem="vDu-zF-Fre" firstAttribute="bottom" secondItem="CdQ-wp-Buz" secondAttribute="bottom" id="aER-2s-bZV"/>
+                            <constraint firstItem="W4C-GC-TOD" firstAttribute="centerX" secondItem="5EZ-qb-Rvc" secondAttribute="centerX" id="bKc-Wa-EN4"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="tableView" destination="CdQ-wp-Buz" id="BNx-df-d57"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Ief-a0-LHa" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="5.7971014492753632" y="93.75"/>
+        </scene>
+    </scenes>
+    <resources>
+        <namedColor name="AccentColor">
+            <color red="0.0" green="0.46000000000000002" blue="0.89000000000000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+    </resources>
+</document>
