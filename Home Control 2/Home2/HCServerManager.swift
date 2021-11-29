@@ -397,6 +397,133 @@ struct RESTEvent: Codable {
 	func isTimedEvent() -> Bool {
 		return (self.trigger.timeBase != nil) && (self.trigger.mins != nil)
 	}
+	
+	func isDeviceEvent() -> Bool {
+		return (self.trigger.deviceID != nil)
+			|| (self.trigger.action_group != nil)
+			||  (self.trigger.cmd != nil)
+	}
+	
+	func isAppEvent() -> Bool {
+		return (self.trigger.event != nil)
+	}
+ 
+	enum eventType: Int {
+		case unknown = 0
+		case device
+		case timed
+		case event
+	}
+	
+	enum timedEventTimeBase: Int,CaseIterable {
+		case invalid = 0
+		case midnight
+		case sunrise
+		case sunset
+		case civilSunset
+		case civilSunrise
+		
+		func description() -> String {
+			var str = "Invalid"
+			
+			switch self {
+			case .midnight:		str = "Midnight"
+			case .sunrise:  		str = "SunRise"
+			case .sunset:  		str = "SunSet"
+			case .civilSunrise:  str = "Civil SunRise"
+			case .civilSunset:  	str = "Civil SunSet"
+			default:
+				break
+			}
+			return str
+		}
+		
+		func image() -> UIImage {
+			var image:UIImage? =  nil
+			
+			switch self {
+			case .midnight:		image = UIImage(systemName: "clock")
+			case .sunrise:  		image = UIImage(systemName: "sunrise")
+			case .sunset: 		 	image = UIImage(systemName: "sunset")
+			case .civilSunrise:  image = UIImage(systemName: "sunrise.fill")
+			case .civilSunset:  	image = UIImage(systemName: "sunset.fill")
+			default:					image =   UIImage(systemName: "questionmark")
+			}
+			return image ?? UIImage()
+		}
+	}
+	
+	func eventType() ->  eventType {
+		
+		if(self.isTimedEvent()) {
+			return .timed
+		}
+		else 	if(self.isDeviceEvent()) {
+			return .device
+		}
+		else 	if(self.isAppEvent()) {
+			return .event
+		}
+		return .unknown
+	}
+	
+	
+	func stringForTrigger() ->  String {
+		
+		var str = "Invalid"
+		
+		switch self.eventType() {
+		case .timed:
+			if let timebase = self.trigger.timeBase,
+				let timedTrigger = timedEventTimeBase(rawValue: timebase)   {
+				str = timedTrigger.description()
+			}
+			
+		case .device:
+			str = "Device"
+			
+		case .event:
+			if self.trigger.event == "startup" {
+				str = "Startup"
+			}
+			break
+			
+		default:
+			break
+		}
+		
+		return str
+	}
+	
+	
+	
+	func imageForTrigger() -> UIImage {
+		
+ 		var image = UIImage(systemName: "questionmark")
+	
+		switch self.eventType() {
+		case .timed:
+			if let timebase = self.trigger.timeBase,
+				let timedTrigger = timedEventTimeBase(rawValue: timebase)   {
+				image = timedTrigger.image()
+			}
+			
+		case .device:
+	//		str = "Device"
+			break
+			
+		case .event:
+			if self.trigger.event == "startup" {
+				image = UIImage(systemName: "power")
+			}
+			break
+			
+		default:
+			break
+		}
+
+		return image ??  UIImage()
+	}
 }
 
 

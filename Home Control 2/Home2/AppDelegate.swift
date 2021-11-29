@@ -1,14 +1,15 @@
 //
 //  AppDelegate.swift
-//  homecontrol app
+//  Home2
 //
-//  Created by Vincent Moscaritolo on 11/18/21.
+//  Created by Vincent Moscaritolo on 11/27/21.
 //
 
 import UIKit
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
+
 
 
 	func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {

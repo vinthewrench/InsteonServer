@@ -68,7 +68,9 @@ class EditableUILabel: UILabel {
 	 }
 
 	 override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
-		  return (action == #selector(editMenu(sender:)))
+		  return ( ((action == #selector(editMenu(sender:))) && self.delegate != nil)
+					 || (action == #selector(copy(_:)))
+		  			)
 		 
 	 }
 }

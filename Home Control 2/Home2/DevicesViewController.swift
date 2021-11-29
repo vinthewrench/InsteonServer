@@ -17,7 +17,10 @@ class DevicesViewController:  UIViewController,
 	
 	private let refreshControl = UIRefreshControl()
 	
-	var deviceKeys: [String] = []
+//	var deviceKeys: [String] = []
+	var groupedDeviceKeys: Dictionary<String, [String]> = [:]
+	var rowKeys:[String] = []
+	
 	var timer = Timer()
 	
 	static let shared: DevicesViewController! = {
@@ -68,8 +71,9 @@ class DevicesViewController:  UIViewController,
 												repeats: true,
 												block: { timer in
 		
-			self.deviceKeys = InsteonFetcher.shared.sortedDeviceKeys()
-			self.tableView.reloadData()
+			self.refreshDevices()
+//			self.deviceKeys = InsteonFetcher.shared.sortedDeviceKeys()
+//			self.tableView.reloadData()
 	 
 		})
 	}
@@ -78,7 +82,7 @@ class DevicesViewController:  UIViewController,
 		timer.invalidate()
 	}
 
-	
+	let defaultKeyName = "_"
 	
 	func refreshDevices(completion: @escaping () -> Void = {}) {
 		
@@ -86,20 +90,54 @@ class DevicesViewController:  UIViewController,
 			completion()
 			return
 		}
-		
+			
 		InsteonFetcher.shared.getChangedDevices() {
-			self.deviceKeys = InsteonFetcher.shared.sortedDeviceKeys()
+//			self.deviceKeys = InsteonFetcher.shared.sortedDeviceKeys()
+			self.groupedDeviceKeys =  InsteonFetcher.shared.deviceKeysWithProperty( "collection",
+																											defaultKey:self.defaultKeyName)
+		
+			self.rowKeys = self.groupedDeviceKeys.keys.sorted{ (first, second) -> Bool in
+				return  first.caseInsensitiveCompare(second) == .orderedAscending
+		 }
+
+			
 			self.tableView.reloadData()
 			completion()
 		}
 	}
 
 	
-	func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-
-		return self.deviceKeys.count
+	func numberOfSections(in tableView: UITableView) -> Int {
+		return rowKeys.count
 	}
 	
+	
+	func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+		
+		return self.groupedDeviceKeys[rowKeys[section]]?.count ?? 0
+	}
+	
+	
+func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+	
+	var title: String? = nil
+	
+	if rowKeys.count  > 1 {
+		title = rowKeys[section]
+		
+		if title == defaultKeyName {
+			title = "Others…"
+		}
+	}
+	
+	return title
+}
+	
+	func deviceID( for indexPath: IndexPath ) -> String {
+		let deviceID = groupedDeviceKeys[ rowKeys[indexPath.section]]![indexPath.row]
+
+		return deviceID
+	}
 	
 	func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 		
@@ -110,23 +148,25 @@ class DevicesViewController:  UIViewController,
 			cell.accessoryType = .disclosureIndicator
 			cell.selectionStyle = .none
 			cell.delegate = self;
-			cell.deviceID = deviceKeys[indexPath.row]
 			
-			if let device =  InsteonFetcher.shared.devices[deviceKeys[indexPath.row]] {
+			let deviceID = deviceID(for: indexPath)
 				
-				cell.lblName.text = device.name
-				cell.img.image = device.deviceImage()
+			if let device =  InsteonFetcher.shared.devices[deviceID] {
 				
-				if let level = device.level {
-					cell.sw.isEnabled = true
-					cell.sw.isOn = level > 0
+					cell.deviceID = deviceID
+					cell.lblName.text = device.name
+					cell.img.image = device.deviceImage()
+					
+					if let level = device.level {
+						cell.sw.isEnabled = true
+						cell.sw.isOn = level > 0
+					}
+					else {
+						cell.sw.isEnabled = false
+						cell.sw.isOn = false
+					}
 				}
-				else {
-					cell.sw.isEnabled = false
-					cell.sw.isOn = false
-				}
-			}
-			
+	 
 			return cell
 		}
 		return UITableViewCell()
@@ -135,7 +175,7 @@ class DevicesViewController:  UIViewController,
 	
 	func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 		
-		let deviceID = deviceKeys[indexPath.row]
+		let deviceID = deviceID(for: indexPath)
 		if let detailView = DeviceDetailViewController.create(withDeviceID: deviceID) {
 			
 			self.show(detailView, sender: self)

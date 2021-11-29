@@ -8,22 +8,44 @@
 import UIKit
 import Toast
 
-class DeviceDetailViewController :UIViewController, EditableUILabelDelegate {
+final class DeviceDetailPropertyCell: UITableViewCell {
+	
+	public static let cellReuseIdentifier = "DeviceDetailPropertyCell"
+	
+	@IBOutlet var lblPropName	: UILabel!
+	@IBOutlet var lblValue	: EditableUILabel!
+	@IBOutlet var img			: UIImageView!
+	
+	override func awakeFromNib() {
+		super.awakeFromNib()
+	}
+}
+
+class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
+											 UITableViewDelegate,
+											 UITableViewDataSource {
 	
 	@IBOutlet var lblName	: EditableUILabel!
 	@IBOutlet var img	: UIImageView!
 	@IBOutlet var lblLevel	: UILabel!
-
+	
 	@IBOutlet var sw	: UISwitch!
 	@IBOutlet var slider	: UISlider!
-
-	@IBOutlet var lblDeviceID	: UILabel!
-	@IBOutlet var lblModel	: UILabel!
-	@IBOutlet var lblFirmware	: UILabel!
+	
+	struct PropTableEntry  {
+		var propName: String =  ""
+		var propValue: String = ""
+		var imageName: String = ""
+		
+	}
+	var properties:[PropTableEntry] = []
+	
+	@IBOutlet var tableView: UITableView!
+	//	@IBOutlet public var cnstTableHeight : NSLayoutConstraint!
 	
 	var timer = Timer()
-
-
+	
+	
 	var deviceID :String = ""
 	
 	class func create(withDeviceID: String) -> DeviceDetailViewController? {
@@ -40,27 +62,27 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		lblName.delegate = self
-
- 		slider.addTarget(self, action: #selector(DeviceDetailViewController.sliderBeganTracking(_:)),
+		
+		slider.addTarget(self, action: #selector(DeviceDetailViewController.sliderBeganTracking(_:)),
 							  for: .touchDown)
-	
+		
 		slider.addTarget(self, action: #selector(DeviceDetailViewController.sliderEndedTracking(_:)),
 							  for: .touchUpInside)
-	
+		
 		slider.addTarget(self, action: #selector(DeviceDetailViewController.sliderEndedTracking(_:)),
 							  for: .touchUpOutside)
-	
+		
 		slider.addTarget(self, action: #selector(DeviceDetailViewController.sliderValueChanged(_:)),
 							  for: .valueChanged)
 		
 		slider.minimumTrackTintColor = UIColor.systemGreen
-
+		
 	}
 	
 	override func viewWillAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
 		startPolling();
-		refreshDevice();
+		refreshDevice(updateProps:true);
 	}
 	
 	
@@ -68,16 +90,25 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate {
 		stopPollng();
 	}
 	
+	//	override func updateViewConstraints() {
+	//		super.updateViewConstraints()
+	//		self.cnstTableHeight.constant = tableView.contentSize.height
+	//	}
+	//
+	//	override  func viewDidLayoutSubviews() {
+	//		super.viewDidLayoutSubviews()
+	//		self.cnstTableHeight.constant = tableView.contentSize.height
+	//
+	//	}
 	
-	func refreshDevice() {
-	 
+	func refreshDevice(updateProps: Bool = false) {
+		
 		HomeControl.shared.fetchData(.device, ID: self.deviceID) { result in
 			if case .success(let device as RESTDeviceDetails) = result {
-			 
-				self.lblName.text = device.name
+				
 				self.lblLevel.text = device.level?.onLevelString()
 				self.img.image = device.deviceImage()
-		
+				
 				if(device.isDimmer){
 					self.sw.isHidden = true
 					self.slider.isHidden = false
@@ -87,18 +118,49 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate {
 				{
 					self.sw.isHidden = false
 					self.sw.isOn = device.level ?? 0 > 0
-	 
+					
 					self.slider.isHidden = true
 				}
-					
-				self.lblDeviceID.text = device.deviceID
 				
-				if let deviceModelStr = HCServerManager.shared.getDeviceDescriptionFrom(device.deviceInfo) {
-					self.lblModel.text = deviceModelStr
-				}
-				 
-				if let versStr = HCServerManager.shared.getFirmwareVersionFrom(device.deviceInfo) {
-					self.lblFirmware.text = versStr
+				if(updateProps){
+					self.properties = []
+					
+					self.properties.append( PropTableEntry(propName: "DeviceID",
+																		propValue: device.deviceID,
+																		imageName: "dot.radiowaves.right"))
+					
+					if let deviceModelStr = HCServerManager.shared.getDeviceDescriptionFrom(device.deviceInfo) {
+						
+						self.properties.append( PropTableEntry(propName: "Model Type",
+																			propValue: deviceModelStr,
+																			imageName: "m.circle"))
+					}
+					
+					if let versStr = HCServerManager.shared.getFirmwareVersionFrom(device.deviceInfo) {
+						
+						self.properties.append( PropTableEntry(propName: "Firmware Version",
+																			propValue: versStr,
+																			imageName: "f.circle"))
+					}
+					
+					if let props:Dictionary<String, String>  = device.properties {
+						
+						
+						let keys = props.keys.sorted{ (first, second) -> Bool in
+							return  first.caseInsensitiveCompare(second) == .orderedAscending
+						}
+						
+						for key  in keys {
+							
+							self.properties.append( PropTableEntry(propName: key,
+																				propValue: props[key]!,
+																				imageName: "p.circle"))
+						}
+					}
+					
+					self.tableView.reloadData()
+					self.tableView.updateConstraints()
+					
 				}
 				
 			}
@@ -110,17 +172,18 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate {
 		timer =  Timer.scheduledTimer(withTimeInterval: 1.0,
 												repeats: true,
 												block: { timer in
-		
-			self.refreshDevice()
+			
+			self.refreshDevice(updateProps:false);
+			
 		})
 	}
 	
 	func stopPollng(){
 		timer.invalidate()
 	}
-
+	
 	@objc func sliderBeganTracking(_ slider: UISlider!) {
-//	print("sliderBeganTracking")
+		//	print("sliderBeganTracking")
 		stopPollng()
 	}
 	
@@ -131,18 +194,18 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate {
 	}
 	
 	@objc func sliderValueChanged(_ slider: UISlider!) {
-
+		
 		self.lblLevel.text =  Int(slider.value).onLevelString()
 	}
-
- 	@IBAction func switchChanged(sender: UISwitch) {
-			
+	
+	@IBAction func switchChanged(sender: UISwitch) {
+		
 		stopPollng()
 		InsteonFetcher.shared.setDeviceLevel(deviceID, toLevel: sender.isOn ? 255:0) {_ in
 			self.startPolling()
 		}
- 	}
-
+	}
+	
 	func renameDevice(newName:String){
 		
 		InsteonFetcher.shared.renameDevice(deviceID, newName: newName)
@@ -187,6 +250,35 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate {
 		
 		// Present the alert to the user
 		self.present(alert, animated: true, completion: nil)
+	}
+	
+	func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+		
+		return properties.count
+	}
+	
+	func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+		
+		if let cell = tableView.dequeueReusableCell(withIdentifier:
+																	DeviceDetailPropertyCell.cellReuseIdentifier) as? DeviceDetailPropertyCell{
+			
+			cell.accessoryType = .none
+			cell.selectionStyle = .none
+			
+			let property = properties[indexPath.row]
+			cell.lblPropName.text = property.propName
+			cell.lblValue.text = property.propValue
+			
+			cell.img.image =  UIImage(systemName: property.imageName)
+			??  UIImage(systemName: "questionmark")
+			
+			return cell
+			
 		}
+		
+		return UITableViewCell()
+		
+	}
+	
 }
- 
+

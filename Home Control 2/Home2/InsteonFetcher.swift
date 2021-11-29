@@ -257,6 +257,30 @@ public class InsteonFetcher: ObservableObject {
 		}
 	}
 	
+	func deviceKeysWithProperty(_ propertyName: String, defaultKey:String = "") -> Dictionary<String, [String]>{
+		
+		var collections: 	Dictionary<String, [String]> = [:]
+		
+		for key in sortedDeviceKeys() {
+			if let device =  devices[key] {
+				
+				let name = device.properties?[propertyName] ?? defaultKey
+				
+				if var tmp = collections[name] {
+					tmp.append(key)
+					collections[name] = tmp
+				}
+				else {
+					collections[name] = [key]
+					
+				}
+			}
+		}
+		
+		return collections
+	}
+	
+	
 	func sortedDeviceKeys() -> [String]{
 
 		let filtered =  devices.filter({ !($1.isKeyPad || $1.isPLM) })

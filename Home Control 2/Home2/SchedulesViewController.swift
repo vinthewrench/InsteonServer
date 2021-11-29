@@ -250,7 +250,6 @@ class SchedulesViewController: UIViewController,
 	func eventTriggerString(_ trig: RESTEventTrigger) ->String? {
 		var result: String?
 		
-		
 		if( trig.timeBase != nil) {
 			if let st = solarTimes {
 				let date = trig.triggerDate(st)
@@ -267,41 +266,6 @@ class SchedulesViewController: UIViewController,
 		return result
 	}
 	
-	func imageForEvent(_ event: RESTEvent) -> UIImage {
-		
-		var image:UIImage?
-		
-		if let timeBase = event.trigger.timeBase {
-			
-			if timeBase == 1 {
-				image = UIImage(systemName: "clock")
-			}
-			else if timeBase == 2 {
-				image = UIImage(systemName: "sunrise")
-			}
-			else if timeBase == 3 {
-				image = UIImage(systemName: "sunset")
-			}
-			else if timeBase == 4 {
-				image = UIImage(systemName: "sunrise.fill")
-			}
-			else if timeBase == 5 {
-				image = UIImage(systemName: "sunset.fill")
-			}
-			else {
-				image = UIImage(systemName: "questionmark")
-			}
-		}
-		else if( event.trigger.event == "startup")
-		{
-			image = UIImage(systemName: "power")
-		}
-		else {
-			image = UIImage(systemName: "questionmark")
-		}
-		
-		return image ??  UIImage()
-	}
 	
 	
 	func cellForTimedEvent(_ event: RESTEvent) -> UITableViewCell{
@@ -319,8 +283,7 @@ class SchedulesViewController: UIViewController,
 			}
 
 			
-			cell.img.image = imageForEvent(event)
-			
+			cell.img.image = event.imageForTrigger()
 			return cell
 			
 		}
@@ -340,7 +303,7 @@ class SchedulesViewController: UIViewController,
 			
 			cell.lblName?.text = event.name
 			
-			cell.img.image = imageForEvent(event)
+			cell.img.image = event.imageForTrigger()
 			
 			return cell
 			

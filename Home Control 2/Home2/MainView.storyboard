@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="19455" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="Y6W-OH-hqX">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="18122" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="Y6W-OH-hqX">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
-        <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="19454"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="18093"/>
         <capability name="Image references" minToolsVersion="12.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
@@ -18,7 +17,7 @@
         <!--Main View Controller-->
         <scene sceneID="s0d-6b-0kx">
             <objects>
-                <viewController id="Y6W-OH-hqX" customClass="MainViewController" customModule="homecontrol_app" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="Y6W-OH-hqX" customClass="MainViewController" customModule="Home2" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="5EZ-qb-Rvc">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -45,7 +44,7 @@
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" reversesTitleShadowWhenHighlighted="YES" showsTouchWhenHighlighted="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="OPI-kb-zr4" customClass="ExtendedHitButton" customModule="homecontrol_app" customModuleProvider="target">
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" reversesTitleShadowWhenHighlighted="YES" showsTouchWhenHighlighted="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="OPI-kb-zr4" customClass="ExtendedHitButton" customModule="Home2" customModuleProvider="target">
                                         <rect key="frame" x="108" y="74" width="16" height="16"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="16" id="2sS-bo-fxE"/>
@@ -60,10 +59,9 @@
                                             <action selector="InfoClicked:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="aPY-bg-pg1"/>
                                         </connections>
                                     </button>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="zLb-66-oec">
-                                        <rect key="frame" x="355" y="60.5" width="49" height="31"/>
-                                        <state key="normal" title="Button"/>
-                                        <buttonConfiguration key="configuration" style="plain" image="gearshape" catalog="system" title=" "/>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="zLb-66-oec">
+                                        <rect key="frame" x="372" y="65" width="22" height="22"/>
+                                        <state key="normal" image="gear" catalog="system"/>
                                         <connections>
                                             <action selector="SetupUpClicked:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="5Y3-GX-AH6"/>
                                         </connections>
@@ -75,9 +73,9 @@
                                     <constraint firstItem="OPI-kb-zr4" firstAttribute="leading" secondItem="lrF-sX-HT4" secondAttribute="trailing" constant="6" id="B05-8G-lao"/>
                                     <constraint firstAttribute="height" constant="100" id="Nme-BM-QV8"/>
                                     <constraint firstItem="lrF-sX-HT4" firstAttribute="leading" secondItem="Qr7-UI-nfI" secondAttribute="leading" constant="10" id="YAu-mh-iVc"/>
-                                    <constraint firstAttribute="trailing" secondItem="zLb-66-oec" secondAttribute="trailing" constant="10" id="l3c-oP-jMB"/>
                                     <constraint firstItem="OPI-kb-zr4" firstAttribute="bottom" secondItem="lrF-sX-HT4" secondAttribute="bottom" id="qmZ-NV-jNp"/>
                                     <constraint firstItem="zLb-66-oec" firstAttribute="centerY" secondItem="lrF-sX-HT4" secondAttribute="centerY" id="vJo-Eo-0as"/>
+                                    <constraint firstAttribute="trailing" secondItem="zLb-66-oec" secondAttribute="trailing" constant="20" symbolic="YES" id="vyh-Zu-bII"/>
                                 </constraints>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
@@ -113,12 +111,12 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Ief-a0-LHa" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="6" y="94"/>
+            <point key="canvasLocation" x="5.7971014492753632" y="93.75"/>
         </scene>
     </scenes>
     <resources>
         <image name="clock" catalog="system" width="128" height="121"/>
-        <image name="gearshape" catalog="system" width="128" height="121"/>
+        <image name="gear" catalog="system" width="128" height="119"/>
         <image name="info.circle" catalog="system" width="128" height="121"/>
         <image name="keyboard" catalog="system" width="128" height="79"/>
         <image name="lightbulb" catalog="system" width="113" height="128"/>
