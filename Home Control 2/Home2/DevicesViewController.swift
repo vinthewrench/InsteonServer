@@ -39,7 +39,6 @@ class DevicesViewController:  UIViewController,
 		tableView.register(DeviceCell.nib, forCellReuseIdentifier: DeviceCell.reuseIdentifier)
 		
 		tableView.refreshControl = refreshControl
-
 		
 		// Configure Refresh Control
 		refreshControl.addTarget(self, action: #selector(refreshDeviceTable(_:)), for: .valueChanged)
@@ -70,11 +69,12 @@ class DevicesViewController:  UIViewController,
 		timer =  Timer.scheduledTimer(withTimeInterval: 1.0,
 												repeats: true,
 												block: { timer in
-		
-			self.refreshDevices()
-//			self.deviceKeys = InsteonFetcher.shared.sortedDeviceKeys()
-//			self.tableView.reloadData()
-	 
+													if(!self.tableView.isEditing){
+														
+														self.refreshDevices()
+														//			self.deviceKeys = InsteonFetcher.shared.sortedDeviceKeys()
+														//			self.tableView.reloadData()
+													}
 		})
 	}
 	

@@ -420,8 +420,8 @@ struct RESTEvent: Codable {
 		case midnight
 		case sunrise
 		case sunset
-		case civilSunset
 		case civilSunrise
+		case civilSunset
 		
 		func description() -> String {
 			var str = "Invalid"
@@ -771,7 +771,83 @@ class HCServerManager: ObservableObject {
 		}
 	}
 	
-
+	func addToGroup(_ groupID: String, deviceID: String,
+									completion: @escaping (Error?) -> Void = {_ in }){
+		
+		let urlPath = "groups/\(groupID)"
+	
+		if let requestUrl: URL = AppData.serverInfo.url ,
+			let apiKey = AppData.serverInfo.apiKey,
+			let apiSecret = AppData.serverInfo.apiSecret {
+			let unixtime = String(Int(Date().timeIntervalSince1970))
+			
+			let urlComps = NSURLComponents(string: requestUrl.appendingPathComponent(urlPath).absoluteString)!
+			var request = URLRequest(url: urlComps.url!)
+	
+			let json = ["deviceID":deviceID]
+			let jsonData = try? JSONSerialization.data(withJSONObject: json)
+			request.httpBody = jsonData
+	
+			// Specify HTTP Method to use
+			request.httpMethod = "PUT"
+			request.setValue(apiKey,forHTTPHeaderField: "X-auth-key")
+			request.setValue(String(unixtime),forHTTPHeaderField: "X-auth-date")
+			let sig =  calculateSignature(forRequest: request, apiSecret: apiSecret)
+			request.setValue(sig,forHTTPHeaderField: "Authorization")
+			
+			// Send HTTP Request
+			request.timeoutInterval = 10
+			
+			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
+			
+			let task = session.dataTask(with: request) { (data, response, urlError) in
+				
+				completion(urlError	)
+			}
+			task.resume()
+		}
+			else {
+				completion(ServerError.invalidURL)
+			}
+	}
+	
+	
+	func removeFromGroup(_ groupID: String, deviceID: String,
+									completion: @escaping (Error?) -> Void = {_ in }){
+		
+		let urlPath = "groups/\(groupID)/\(deviceID)"
+	
+		if let requestUrl: URL = AppData.serverInfo.url ,
+			let apiKey = AppData.serverInfo.apiKey,
+			let apiSecret = AppData.serverInfo.apiSecret {
+			let unixtime = String(Int(Date().timeIntervalSince1970))
+			
+			let urlComps = NSURLComponents(string: requestUrl.appendingPathComponent(urlPath).absoluteString)!
+			var request = URLRequest(url: urlComps.url!)
+	 
+			// Specify HTTP Method to use
+			request.httpMethod = "DELETE"
+			request.setValue(apiKey,forHTTPHeaderField: "X-auth-key")
+			request.setValue(String(unixtime),forHTTPHeaderField: "X-auth-date")
+			let sig =  calculateSignature(forRequest: request, apiSecret: apiSecret)
+			request.setValue(sig,forHTTPHeaderField: "Authorization")
+			
+			// Send HTTP Request
+			request.timeoutInterval = 10
+			
+			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
+			
+			let task = session.dataTask(with: request) { (data, response, urlError) in
+				
+				completion(urlError	)
+			}
+			task.resume()
+		}
+			else {
+				completion(ServerError.invalidURL)
+			}
+	}
+	
 	func renameDevice(deviceID: String, newName: String,
 					  completion: @escaping (Error?) -> Void)  {
 		
@@ -816,6 +892,50 @@ class HCServerManager: ObservableObject {
 			}
 	}
 	
+	func createGroup(name: String,
+					  completion: @escaping (Error?) -> Void)  {
+		
+		let urlPath = "groups"
+		
+		if let requestUrl: URL = AppData.serverInfo.url ,
+			let apiKey = AppData.serverInfo.apiKey,
+			let apiSecret = AppData.serverInfo.apiSecret {
+			let unixtime = String(Int(Date().timeIntervalSince1970))
+			
+			let urlComps = NSURLComponents(string: requestUrl.appendingPathComponent(urlPath).absoluteString)!
+			//			if let queries = queries {
+			//				urlComps.queryItems = queries
+			//			}
+			var request = URLRequest(url: urlComps.url!)
+			
+			
+			let json = ["name":name]
+			let jsonData = try? JSONSerialization.data(withJSONObject: json)
+			request.httpBody = jsonData
+	
+			// Specify HTTP Method to use
+			request.httpMethod = "POST"
+			request.setValue(apiKey,forHTTPHeaderField: "X-auth-key")
+			request.setValue(String(unixtime),forHTTPHeaderField: "X-auth-date")
+			let sig =  calculateSignature(forRequest: request, apiSecret: apiSecret)
+			request.setValue(sig,forHTTPHeaderField: "Authorization")
+			
+			// Send HTTP Request
+			request.timeoutInterval = 10
+			
+			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
+			
+			let task = session.dataTask(with: request) { (data, response, urlError) in
+				
+				completion(urlError	)
+			}
+			task.resume()
+		}
+			else {
+				completion(ServerError.invalidURL)
+			}
+	}
+
 	
 	func renameGroup(groupID: String, newName: String,
 					  completion: @escaping (Error?) -> Void)  {
@@ -860,6 +980,54 @@ class HCServerManager: ObservableObject {
 				completion(ServerError.invalidURL)
 			}
 	}
+	
+	
+	func deleteGroup(_ groupID: String,
+					  completion: @escaping (Error?) -> Void)  {
+		
+		let urlPath = "groups/\(groupID)"
+		
+		if let requestUrl: URL = AppData.serverInfo.url ,
+			let apiKey = AppData.serverInfo.apiKey,
+			let apiSecret = AppData.serverInfo.apiSecret {
+			let unixtime = String(Int(Date().timeIntervalSince1970))
+			
+			let urlComps = NSURLComponents(string: requestUrl.appendingPathComponent(urlPath).absoluteString)!
+			//			if let queries = queries {
+			//				urlComps.queryItems = queries
+			//			}
+			var request = URLRequest(url: urlComps.url!)
+			
+			
+//			let json = ["name":newName]
+//			let jsonData = try? JSONSerialization.data(withJSONObject: json)
+//			request.httpBody = jsonData
+//
+			// Specify HTTP Method to use
+			request.httpMethod = "DELETE"
+			request.setValue(apiKey,forHTTPHeaderField: "X-auth-key")
+			request.setValue(String(unixtime),forHTTPHeaderField: "X-auth-date")
+			let sig =  calculateSignature(forRequest: request, apiSecret: apiSecret)
+			request.setValue(sig,forHTTPHeaderField: "Authorization")
+			
+			// Send HTTP Request
+			request.timeoutInterval = 10
+			
+			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
+			
+			let task = session.dataTask(with: request) { (data, response, urlError) in
+				
+				completion(urlError	)
+			}
+			task.resume()
+		}
+			else {
+				completion(ServerError.invalidURL)
+			}
+	}
+	
+	
+	
 	
 	func renameEvent(eventID: String, newName: String,
 					  completion: @escaping (Error?) -> Void)  {
@@ -906,6 +1074,52 @@ class HCServerManager: ObservableObject {
 	}
 	
 
+	
+	
+	func SetGroupLevel(GroupID: String, toLevel: Int,
+					  completion: @escaping (Error?) -> Void)  {
+	
+		let urlPath = "groups/\(GroupID)"
+		
+		if let requestUrl: URL = AppData.serverInfo.url ,
+			let apiKey = AppData.serverInfo.apiKey,
+			let apiSecret = AppData.serverInfo.apiSecret {
+			let unixtime = String(Int(Date().timeIntervalSince1970))
+			
+			let urlComps = NSURLComponents(string: requestUrl.appendingPathComponent(urlPath).absoluteString)!
+			//			if let queries = queries {
+			//				urlComps.queryItems = queries
+			//			}
+			var request = URLRequest(url: urlComps.url!)
+			
+			
+			let json = ["level":toLevel]
+			let jsonData = try? JSONSerialization.data(withJSONObject: json)
+		request.httpBody = jsonData
+	
+			// Specify HTTP Method to use
+			request.httpMethod = "PUT"
+			request.setValue(apiKey,forHTTPHeaderField: "X-auth-key")
+			request.setValue(String(unixtime),forHTTPHeaderField: "X-auth-date")
+			let sig =  calculateSignature(forRequest: request, apiSecret: apiSecret)
+			request.setValue(sig,forHTTPHeaderField: "Authorization")
+			
+			// Send HTTP Request
+			request.timeoutInterval = 10
+			
+			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
+			
+			let task = session.dataTask(with: request) { (data, response, urlError) in
+				
+				completion(urlError	)
+			}
+			task.resume()
+		}
+			else {
+				completion(ServerError.invalidURL)
+			}
+	}
+	
 	func SetDeviceLevel(deviceID: String, toLevel: Int,
 					  completion: @escaping (Error?) -> Void)  {
 	

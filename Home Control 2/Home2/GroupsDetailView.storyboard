@@ -3,6 +3,7 @@
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="18093"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -22,7 +23,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="50" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="owX-No-IDJ">
-                                <rect key="frame" x="0.0" y="112" width="414" height="750"/>
+                                <rect key="frame" x="0.0" y="165" width="414" height="697"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <connections>
                                     <outlet property="dataSource" destination="Y6W-OH-hqX" id="k9y-S7-7iH"/>
@@ -35,19 +36,90 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="MKO-8a-ZCq" customClass="BHButton" customModule="Home2" customModuleProvider="target">
+                                <rect key="frame" x="222.5" y="112" width="100" height="45"/>
+                                <color key="backgroundColor" white="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="45" id="eR8-zD-RLH"/>
+                                    <constraint firstAttribute="width" constant="100" id="fUB-v2-Jmi"/>
+                                </constraints>
+                                <color key="tintColor" white="0.33333333329999998" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <inset key="contentEdgeInsets" minX="16" minY="10" maxX="16" maxY="10"/>
+                                <state key="normal" title="Off">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                </state>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="boolean" keyPath="isRoundRectButton" value="YES"/>
+                                    <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
+                                        <color key="value" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                        <real key="value" value="4"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
+                                        <real key="value" value="2"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                                <connections>
+                                    <action selector="btnOffClicked:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="dmL-ga-UnF"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="abs-ft-hwy" customClass="BHButton" customModule="Home2" customModuleProvider="target">
+                                <rect key="frame" x="91.5" y="112" width="100" height="45"/>
+                                <color key="backgroundColor" name="AccentColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="100" id="6A0-tR-BhA"/>
+                                    <constraint firstAttribute="height" constant="45" id="VvM-V7-bEX"/>
+                                </constraints>
+                                <inset key="contentEdgeInsets" minX="16" minY="10" maxX="16" maxY="10"/>
+                                <state key="normal" title="On">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                </state>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="boolean" keyPath="isRoundRectButton" value="YES"/>
+                                    <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
+                                        <color key="value" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                        <real key="value" value="4"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
+                                        <real key="value" value="2"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                                <connections>
+                                    <action selector="btnOnClicked:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="W6t-69-eNC"/>
+                                </connections>
+                            </button>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ZPV-PP-2ju">
+                                <rect key="frame" x="206.5" y="119.5" width="1" height="30"/>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="1" id="VBh-X2-gWO"/>
+                                    <constraint firstAttribute="height" constant="30" id="bwl-8Z-kuo"/>
+                                </constraints>
+                            </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="owX-No-IDJ" firstAttribute="top" secondItem="4RF-mp-hke" secondAttribute="bottom" constant="20" id="Af5-my-8HU"/>
+                            <constraint firstItem="ZPV-PP-2ju" firstAttribute="leading" secondItem="abs-ft-hwy" secondAttribute="trailing" constant="15" id="4I3-IA-PoG"/>
+                            <constraint firstItem="ZPV-PP-2ju" firstAttribute="centerX" secondItem="5EZ-qb-Rvc" secondAttribute="centerX" id="6og-gK-Bmj"/>
+                            <constraint firstItem="MKO-8a-ZCq" firstAttribute="top" secondItem="4RF-mp-hke" secondAttribute="bottom" constant="20" id="DOL-Ux-UxA"/>
+                            <constraint firstItem="MKO-8a-ZCq" firstAttribute="centerY" secondItem="abs-ft-hwy" secondAttribute="centerY" id="Gwe-D5-ZXi"/>
                             <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="owX-No-IDJ" secondAttribute="trailing" id="KxP-9z-My3"/>
                             <constraint firstItem="owX-No-IDJ" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="OX1-Cv-hKE"/>
+                            <constraint firstItem="ZPV-PP-2ju" firstAttribute="centerY" secondItem="abs-ft-hwy" secondAttribute="centerY" id="Yg6-SD-RDD"/>
                             <constraint firstItem="4RF-mp-hke" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="10" id="fbA-yl-1K8"/>
                             <constraint firstItem="vDu-zF-Fre" firstAttribute="bottom" secondItem="owX-No-IDJ" secondAttribute="bottom" id="gkT-Qa-Xlh"/>
                             <constraint firstItem="4RF-mp-hke" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" constant="20" id="ka0-6h-fGF"/>
+                            <constraint firstItem="owX-No-IDJ" firstAttribute="top" secondItem="MKO-8a-ZCq" secondAttribute="bottom" constant="8" symbolic="YES" id="uAK-Do-WXV"/>
+                            <constraint firstItem="MKO-8a-ZCq" firstAttribute="leading" secondItem="ZPV-PP-2ju" secondAttribute="trailing" constant="15" id="wqK-Dh-n4T"/>
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="btnOff" destination="MKO-8a-ZCq" id="Qch-1Z-3xO"/>
+                        <outlet property="btnOn" destination="abs-ft-hwy" id="UMM-n4-aKv"/>
                         <outlet property="lblTitle" destination="4RF-mp-hke" id="4Zq-t6-f7U"/>
                         <outlet property="tableView" destination="owX-No-IDJ" id="gOz-tE-CXK"/>
                     </connections>
@@ -57,7 +129,18 @@
             <point key="canvasLocation" x="18.840579710144929" y="84.375"/>
         </scene>
     </scenes>
+    <designables>
+        <designable name="MKO-8a-ZCq">
+            <size key="intrinsicContentSize" width="58" height="42"/>
+        </designable>
+        <designable name="abs-ft-hwy">
+            <size key="intrinsicContentSize" width="56" height="42"/>
+        </designable>
+    </designables>
     <resources>
+        <namedColor name="AccentColor">
+            <color red="0.0" green="0.46000000000000002" blue="0.89000000000000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

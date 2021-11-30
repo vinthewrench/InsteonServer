@@ -7,7 +7,7 @@
 
 
 import UIKit
-
+import Toast
 
 final class GroupsCell: UITableViewCell {
 	
@@ -24,13 +24,18 @@ final class GroupsCell: UITableViewCell {
 }
 
 class GroupsViewController:  UIViewController,
+									  FloatingButtonDelegate,
+									  GroupsDetailViewControllerDelegate,
 									  UITableViewDelegate,
 									  UITableViewDataSource  {
 	
  
 	@IBOutlet var tableView: UITableView!
-	
+	var btnFLoat: FloatingButton = FloatingButton()
+
 	var groupKeys: [String] = []
+
+	private let refreshControl = UIRefreshControl()
 
 	static let shared: GroupsViewController! = {
 		
@@ -42,12 +47,37 @@ class GroupsViewController:  UIViewController,
 
  	override func viewDidLoad() {
 		super.viewDidLoad()
+		btnFLoat.delegate = self
+
+		tableView.refreshControl = refreshControl
+		
+		// Configure Refresh Control
+		refreshControl.addTarget(self, action: #selector(refreshGroupsTable(_:)), for: .valueChanged)
+
+	}
+	
+	@objc private func refreshGroupsTable(_ sender: Any) {
+		DispatchQueue.main.async {
+			self.refreshGroups(){
+				self.refreshControl.endRefreshing()
+			}
+		}
 	}
 	
 	override func viewWillAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
 		refreshGroups()
 		}
+	
+	override func viewDidAppear(_ animated: Bool) {
+		super.viewWillAppear(animated)
+		btnFLoat.setup(toView: view)
+	}
+	
+	override func viewWillDisappear(_ animated: Bool) {
+		super.viewWillDisappear(animated)
+		btnFLoat.remove()
+	}
 	
 	func refreshGroups(completion: @escaping () -> Void = {}) {
 		
@@ -59,11 +89,12 @@ class GroupsViewController:  UIViewController,
 		InsteonFetcher.shared.getGroups(){
 			self.groupKeys = InsteonFetcher.shared.sortedGroupKeys()
 			self.tableView.reloadData()
-	
+			completion()
 		}
 }
 
-	
+	// MARK: - table view
+
 	func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
 		return groupKeys.count
 	}
@@ -110,10 +141,125 @@ class GroupsViewController:  UIViewController,
 		let groupID = groupKeys[indexPath.row]
 		if let detailView = GroupsDetailViewController.create(withGroupID: groupID) {
 			
+			detailView.delegate = self
 			self.show(detailView, sender: self)
 		}
 		
 	}
+	
+	func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
+		return .delete
+	}
 
+	func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+		if editingStyle == .delete{
+			
+			self.verifyDelete(forRowAt: indexPath)
+	//		print("Deleted Row")
+			//				days.remove(at: indexPath.row)
+			//					tableView.deleteRows(at: [indexPath], with: .left)
+		}
+	}
+	
+	func verifyDelete(forRowAt indexPath: IndexPath) {
+		
+		if let group =  InsteonFetcher.shared.groups[groupKeys[indexPath.row]] {
+	
+			let warning = "Are you sure you want to delete the group: \"\(group.name)?"
+			let alert = UIAlertController(title: "Delete Group", message: warning, preferredStyle:.alert)
+			let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: { _ in
+			})
+			
+			let deleteAction = UIAlertAction(title: "Delete", style: .destructive, handler: { _ in
+				
+				let key = self.groupKeys[indexPath.row]
+				InsteonFetcher.shared.deleteGroup(key) { (error)  in
+					
+					if(error == nil){
+						self.refreshGroups()
+					}
+					else {
+						Toast.text(error?.localizedDescription ?? "Error",
+									  config: ToastConfiguration(
+										autoHide: true,
+										displayTime: 1.0
+										//												attachTo: self.vwError
+									  )).show()
+						
+					}
+				}
+			})
+			
+			alert.addAction(cancelAction)
+			alert.addAction(deleteAction)
+			self.present(alert, animated: true, completion: nil)
+		}
+	}
+ 
+ 
+	
+
+//	func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration?
+//		{
+//			 let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { (action, view, handler) in
+//				  print("Delete Action Tapped")
+//			 }
+//			 deleteAction.backgroundColor = .red
+//			 let configuration = UISwipeActionsConfiguration(actions: [deleteAction])
+//			configuration.performsFirstActionWithFullSwipe = false //HERE..
+//			 return configuration
+//		}
+
+	
+	// MARK: - GroupsDetailViewControllerDelegate
+	func groupDetailChanged(GroupID: String) {
+		self.refreshGroups()
+	}
+	
+	
+	// MARK: - floating button
+
+	func floatingButtonHit(sender: Any) {
+		if(tableView.isEditing) {
+			return
+		}
+
+		let alert = UIAlertController(title:  NSLocalizedString("Create Group", comment: ""),
+												message: nil,
+												cancelButtonTitle: NSLocalizedString("Cancel", comment: ""),
+												okButtonTitle:  NSLocalizedString("OK", comment: ""),
+												validate: .nonEmpty,
+												textFieldConfiguration: { textField in
+			textField.placeholder =  "Group Name"
+		}) { result in
+			
+			switch result {
+			case let .ok(String:newName):
+			 
+				InsteonFetcher.shared.createGroup(newName) { (error)  in
+					if(error == nil){
+						self.refreshGroups()
+					}
+					else {
+						Toast.text(error?.localizedDescription ?? "Error",
+									  config: ToastConfiguration(
+										autoHide: true,
+										displayTime: 1.0
+										//												attachTo: self.vwError
+									  )).show()
+						
+					}
+				}
+		 		break
+				
+			case .cancel:
+				break
+			}
+		}
+		
+		// Present the alert to the user
+		self.present(alert, animated: true, completion: nil)
+		}
+	 
 
 }

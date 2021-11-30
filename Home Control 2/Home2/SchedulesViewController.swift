@@ -22,30 +22,35 @@ final class SchedulesTriggeredCell: UITableViewCell {
 
 
 final class SchedulesTimedCell: UITableViewCell {
-
-	public static let cellReuseIdentifier = "SchedulesTimedCell"
-
-  @IBOutlet var lblName	: UILabel!
-  @IBOutlet var lblTime	: UILabel!
-  @IBOutlet var img		: UIImageView!
 	
-  override func awakeFromNib() {
-	  super.awakeFromNib()
-  }
+	public static let cellReuseIdentifier = "SchedulesTimedCell"
+	
+	@IBOutlet var lblName	: UILabel!
+	@IBOutlet var lblTime	: UILabel!
+	@IBOutlet var img		: UIImageView!
+	
+	override func awakeFromNib() {
+		super.awakeFromNib()
+	}
 }
 
 
+
 class SchedulesViewController: UIViewController,
+										 FloatingButtonDelegate,
 										 UITableViewDelegate,
 										 UITableViewDataSource  {
 	
-	@IBOutlet var tableView: UITableView!
 	
+	@IBOutlet var tableView: UITableView!
 	
 	var sortedTimedKeys:[String] = []
 	var sortedTriggerKeys:[String] = []
 	var events: Dictionary<String, RESTEvent> = [:]
 	var solarTimes : ServerDateInfo? = nil
+	
+	var btnFLoat: FloatingButton = FloatingButton()
+	private let refreshControl = UIRefreshControl()
 
 	
 	var solarTimeFormat: DateFormatter {
@@ -54,7 +59,7 @@ class SchedulesViewController: UIViewController,
 		formatter.timeZone = TimeZone(abbreviation: "UTC")
 		return formatter
 	}
-
+	
 	static let shared: SchedulesViewController! = {
 		
 		let storyboard = UIStoryboard(name: "SchedulesView", bundle: nil)
@@ -62,6 +67,10 @@ class SchedulesViewController: UIViewController,
 		
 		return vc
 	}()
+	
+	
+	
+	// MARK: - view lifetime
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
@@ -72,24 +81,46 @@ class SchedulesViewController: UIViewController,
 		tableView.delegate = self
 		tableView.dataSource = self
 		
+		tableView.refreshControl = refreshControl
+		
+		// Configure Refresh Control
+		refreshControl.addTarget(self, action: #selector(refreshTable(_:)), for: .valueChanged)
+
 		tableView.register(
 			ScheduleTableHeaderView.nib,
 			forHeaderFooterViewReuseIdentifier:
 				ScheduleTableHeaderView.reuseIdentifier)
-		
+
+		btnFLoat.delegate = self
 	}
 	
+	@objc private func refreshTable(_ sender: Any) {
+		DispatchQueue.main.async {
+			self.refreshSchedules(){
+				self.refreshControl.endRefreshing()
+			}
+		}
+	}
+
 	override func viewWillAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
-		
 		self.refreshSchedules()
 	}
 	
+	override func viewDidAppear(_ animated: Bool) {
+		super.viewWillAppear(animated)
+		btnFLoat.setup(toView: view)
+	}
 	
+	override func viewWillDisappear(_ animated: Bool) {
+		super.viewWillDisappear(animated)
+		btnFLoat.remove()
+	}
 	
-	func refreshSchedules() {
+	func refreshSchedules(completion: @escaping () -> Void = {}) {
 		
 		guard AppData.serverInfo.validated  else {
+			completion()
 			return
 		}
 		
@@ -138,11 +169,12 @@ class SchedulesViewController: UIViewController,
 			
 			dp.notify(queue: .main) {
 				self.tableView.reloadData()
+				completion()
 			}
 		}
 	}
 	
- 
+	
 	// MARK: - table view
 	
 	func numberOfSections(in tableView: UITableView) -> Int {
@@ -153,17 +185,17 @@ class SchedulesViewController: UIViewController,
 	func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
 		
 		guard let headerView = tableView.dequeueReusableHeaderFooterView(
-			withIdentifier: ScheduleTableHeaderView.reuseIdentifier)
+					withIdentifier: ScheduleTableHeaderView.reuseIdentifier)
 					as? ScheduleTableHeaderView
 		else {
 			return nil
 		}
 		
-//		
-//		let backgroundView = UIView(frame: headerView.bounds)
-//		backgroundView.backgroundColor = UIColor(white: 0.5, alpha: 0.5)
-//		headerView.backgroundView = backgroundView
-//		
+		//
+		//		let backgroundView = UIView(frame: headerView.bounds)
+		//		backgroundView.backgroundColor = UIColor(white: 0.5, alpha: 0.5)
+		//		headerView.backgroundView = backgroundView
+		//
 		var text = ""
 		
 		switch(section){
@@ -191,12 +223,6 @@ class SchedulesViewController: UIViewController,
 		return 50.0
 	}
 	
-	
-	//	func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-	//		return 60.0
-	//	}
-	//
-	//
 	// number of rows in table view
 	func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
 		
@@ -217,55 +243,17 @@ class SchedulesViewController: UIViewController,
 		return count
 	}
 	
-	func deviceEventString(_ trig: RESTEventTrigger)  ->String? {
- 		var result: String?
-	
-		// NOTE: -  VINNIE WRITE ME
-		
-//		if  let ig = trig.insteon_group,
-//			 let cmd = trig.cmd,
-//			 let deviceID = trig.deviceID,
-//				let device = fetcher.devices[deviceID],
-//				(device.isKeyPad) {
-//
-//			if let ig = ig.hex?.value {
-//				let keyName = 	String(UnicodeScalar(ig + 64)!)
-//				var command: String = ""
-//				switch cmd {
-//				case "0x11":
-//					command = "On"
-//
-//				case "0x13":
-//					command = "Off"
-//
-//				default:
-//					break
-//				}
-//				result = "\(device.name) [\(keyName)] \(command)"
-//			}
-//		}
-		return result
-	}
-
-	func eventTriggerString(_ trig: RESTEventTrigger) ->String? {
-		var result: String?
-		
-		if( trig.timeBase != nil) {
-			if let st = solarTimes {
-				let date = trig.triggerDate(st)
-				result = solarTimeFormat.string(from: date)
-			}
- 		}
-		else if( trig.event != nil) {
-	//		result =  trig.event
-		}
-		else {
- 			result =  deviceEventString(trig)
-		}
-		
-		return result
+	func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
+		return .delete
 	}
 	
+	func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+		if editingStyle == .delete{
+			print("Deleted Row")
+			//				days.remove(at: indexPath.row)
+			//					tableView.deleteRows(at: [indexPath], with: .left)
+		}
+	}
 	
 	
 	func cellForTimedEvent(_ event: RESTEvent) -> UITableViewCell{
@@ -281,7 +269,7 @@ class SchedulesViewController: UIViewController,
 			if let str = eventTriggerString(event.trigger) {
 				cell.lblTime?.text = str
 			}
-
+			
 			
 			cell.img.image = event.imageForTrigger()
 			return cell
@@ -314,11 +302,10 @@ class SchedulesViewController: UIViewController,
 	}
 	
 	
-	
 	func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 		
 		switch(indexPath.section){
-			
+		
 		case 0:
 			if indexPath.row <= sortedTimedKeys.count,
 				let event =  events[sortedTimedKeys[indexPath.row]] {
@@ -343,14 +330,14 @@ class SchedulesViewController: UIViewController,
 	
 	func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 		
-	 	var eventKey:String? = nil
+		var eventKey:String? = nil
 		
 		switch(indexPath.section){
-			
+		
 		case 0:
 			if indexPath.row <= sortedTimedKeys.count{
 				eventKey = sortedTimedKeys[indexPath.row];
- 			}
+			}
 			
 		case 1:
 			if indexPath.row <= sortedTriggerKeys.count {
@@ -365,8 +352,73 @@ class SchedulesViewController: UIViewController,
 			if let detailView = ScheduleDetailViewController.create(withEventID: eventKey) {
 				
 				self.show(detailView, sender: self)
-				}
- 
+			}
+			
 		}
 	}
+	// MARK: -
+	
+	
+	func deviceEventString(_ trig: RESTEventTrigger)  ->String? {
+		var result: String?
+		
+		// NOTE: -  VINNIE WRITE ME
+		
+		//		if  let ig = trig.insteon_group,
+		//			 let cmd = trig.cmd,
+		//			 let deviceID = trig.deviceID,
+		//				let device = fetcher.devices[deviceID],
+		//				(device.isKeyPad) {
+		//
+		//			if let ig = ig.hex?.value {
+		//				let keyName = 	String(UnicodeScalar(ig + 64)!)
+		//				var command: String = ""
+		//				switch cmd {
+		//				case "0x11":
+		//					command = "On"
+		//
+		//				case "0x13":
+		//					command = "Off"
+		//
+		//				default:
+		//					break
+		//				}
+		//				result = "\(device.name) [\(keyName)] \(command)"
+		//			}
+		//		}
+		return result
+	}
+	
+	func eventTriggerString(_ trig: RESTEventTrigger) ->String? {
+		var result: String?
+		
+		if( trig.timeBase != nil) {
+			if let st = solarTimes {
+				let date = trig.triggerDate(st)
+				result = solarTimeFormat.string(from: date)
+			}
+		}
+		else if( trig.event != nil) {
+			//		result =  trig.event
+		}
+		else {
+			result =  deviceEventString(trig)
+		}
+		
+		return result
+	}
+	
+	// MARK: - floating button
+
+	func floatingButtonHit(sender: Any) {
+		if(tableView.isEditing) {
+			return
+		}
+
+		print("floatingButtonHit")
+
+	}
+
+	 
+	
 }

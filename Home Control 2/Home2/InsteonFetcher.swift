@@ -173,11 +173,117 @@ public class InsteonFetcher: ObservableObject {
 			if(error == nil){
 				
 				self.groups[groupID]?.name = newName
+				
 			}
 			
 			completion(error)
 		}
 	}
+	
+	public func createGroup(_ newName: String,
+										completion: @escaping (Error?) -> Void = {_ in }){
+		
+		
+		HCServerManager.shared.createGroup(name: newName)
+		{ (error)  in
+			
+			if(error == nil){
+				
+				self.getGroups(){
+					completion(nil)
+					return
+	
+				}
+			}
+			else {
+				completion(error)
+
+			}
+		}
+	}
+
+	public func deleteGroup(_ groupID: String,
+									completion: @escaping (Error?) -> Void = {_ in }){
+		
+		
+		HCServerManager.shared.deleteGroup(groupID)
+		{ (error)  in
+			
+			if(error == nil){
+				
+				self.getGroups(){
+					completion(nil)
+					return
+	
+				}
+				
+			}
+			
+			completion(error)
+		}
+	}
+
+	public func addToGroup(_ groupID: String, deviceID: String,
+									completion: @escaping (Error?) -> Void = {_ in }){
+		
+		
+		HCServerManager.shared.addToGroup(groupID, deviceID:deviceID)
+		{ (error)  in
+
+			if(error == nil){
+
+				self.getGroups(){
+					completion(nil)
+					return
+	
+				}
+
+			}
+
+			completion(error)
+		}
+	}
+
+	public func removeFromGroup(_ groupID: String, deviceID: String,
+									completion: @escaping (Error?) -> Void = {_ in }){
+		
+		
+		HCServerManager.shared.removeFromGroup(groupID, deviceID:deviceID)
+		{ (error)  in
+
+			if(error == nil){
+
+				self.getGroups(){
+					completion(nil)
+					return
+				}
+
+			}
+
+			completion(error)
+		}
+	}
+
+	public func setGroupLevel(_ groupID: String, toLevel: Int,
+										completion: @escaping (Error?) -> Void = {_ in }){
+		
+		
+		HCServerManager.shared.SetGroupLevel(GroupID: groupID,
+														  toLevel: toLevel)
+		{ (error)  in
+			
+			if(error == nil){
+				completion(nil)
+
+				self.getChangedDevices( )
+				return
+		}
+			
+			completion(error)
+	
+		}
+	}
+
 
 
 	public func renameEvent(_ eventID: String, newName: String,

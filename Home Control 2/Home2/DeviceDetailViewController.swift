@@ -172,10 +172,11 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 		timer =  Timer.scheduledTimer(withTimeInterval: 1.0,
 												repeats: true,
 												block: { timer in
-			
-			self.refreshDevice(updateProps:false);
-			
-		})
+													
+													if(!self.tableView.isEditing){
+														self.refreshDevice(updateProps:false);
+													}
+												})
 	}
 	
 	func stopPollng(){
