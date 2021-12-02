@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="19455" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="18122" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
-        <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="19454"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="18093"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -17,13 +17,13 @@
         <!--Device Detail View Controller-->
         <scene sceneID="s0d-6b-0kx">
             <objects>
-                <viewController storyboardIdentifier="DeviceDetailViewController" id="Y6W-OH-hqX" customClass="DeviceDetailViewController" customModule="homecontrol_app" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="DeviceDetailViewController" id="Y6W-OH-hqX" customClass="DeviceDetailViewController" customModule="Home2" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="5EZ-qb-Rvc">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Device Name" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1Oh-z5-IWf" customClass="EditableUILabel" customModule="homecontrol_app" customModuleProvider="target">
-                                <rect key="frame" x="10" y="64" width="158" height="28"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Device Name" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1Oh-z5-IWf" customClass="EditableUILabel" customModule="Home2" customModuleProvider="target">
+                                <rect key="frame" x="10" y="64" width="143.5" height="28"/>
                                 <fontDescription key="fontDescription" name="Quicksand-Bold" family="Quicksand" pointSize="24"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
@@ -82,18 +82,18 @@
                                     </userDefinedRuntimeAttribute>
                                 </userDefinedRuntimeAttributes>
                             </view>
-                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="55" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="bWT-dW-kTf">
-                                <rect key="frame" x="30" y="190" width="354" height="672"/>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" placeholderIntrinsicWidth="354" placeholderIntrinsicHeight="88" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="55" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="bWT-dW-kTf" customClass="SelfSizedTableView" customModule="Home2">
+                                <rect key="frame" x="30" y="190" width="354" height="88"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <prototypes>
-                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="DeviceDetailPropertyCell" id="wuA-sb-t5R" customClass="DeviceDetailPropertyCell" customModule="homecontrol_app" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="44.5" width="354" height="55"/>
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="DeviceDetailPropertyCell" id="wuA-sb-t5R" customClass="DeviceDetailPropertyCell" customModule="Home2" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="24.5" width="354" height="55"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="wuA-sb-t5R" id="ap6-z5-5zt">
                                             <rect key="frame" x="0.0" y="0.0" width="354" height="55"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
-                                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="1000" text="XX.XX.XX" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="K45-cD-M5E" customClass="EditableUILabel" customModule="homecontrol_app" customModuleProvider="target">
+                                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="1000" text="XX.XX.XX" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="K45-cD-M5E" customClass="EditableUILabel" customModule="Home2" customModuleProvider="target">
                                                     <rect key="frame" x="44" y="11" width="68" height="17"/>
                                                     <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
                                                     <nil key="textColor"/>
@@ -146,6 +146,68 @@
                                     <outlet property="delegate" destination="Y6W-OH-hqX" id="Xix-au-OfH"/>
                                 </connections>
                             </tableView>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="5Oo-te-YLZ" customClass="BHButton" customModule="Home2" customModuleProvider="target">
+                                <rect key="frame" x="98.5" y="286" width="100" height="45"/>
+                                <color key="backgroundColor" name="AccentColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="100" id="ovH-sL-AW4"/>
+                                    <constraint firstAttribute="height" constant="45" id="tN3-MD-bQa"/>
+                                </constraints>
+                                <inset key="contentEdgeInsets" minX="16" minY="10" maxX="16" maxY="10"/>
+                                <state key="normal" title="Beep">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                </state>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="boolean" keyPath="isRoundRectButton" value="YES"/>
+                                    <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
+                                        <color key="value" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                        <real key="value" value="4"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
+                                        <real key="value" value="2"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                                <connections>
+                                    <action selector="btnBeepHitWithSender:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="G3r-Qi-uks"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="p0Y-z9-K7u" customClass="BHButton" customModule="Home2" customModuleProvider="target">
+                                <rect key="frame" x="215.5" y="286" width="140" height="45"/>
+                                <color key="backgroundColor" name="AccentColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="45" id="1uh-5E-a5R"/>
+                                    <constraint firstAttribute="width" constant="140" id="mQh-va-ihD"/>
+                                </constraints>
+                                <inset key="contentEdgeInsets" minX="16" minY="10" maxX="16" maxY="10"/>
+                                <state key="normal" title="ALDB Info">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                </state>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="boolean" keyPath="isRoundRectButton" value="YES"/>
+                                    <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
+                                        <color key="value" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                        <real key="value" value="4"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
+                                        <real key="value" value="2"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                                <connections>
+                                    <action selector="btnALDBHitWithSender:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="qDf-OH-46k"/>
+                                </connections>
+                            </button>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="kfB-aZ-RMr">
+                                <rect key="frame" x="206.5" y="298.5" width="1" height="20"/>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="1" id="TLi-HT-ye5"/>
+                                    <constraint firstAttribute="height" constant="20" id="wYT-KC-f0M"/>
+                                </constraints>
+                            </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -153,15 +215,22 @@
                             <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="SLX-3s-gg5" secondAttribute="trailing" constant="30" id="2h2-Xp-Llf"/>
                             <constraint firstItem="SLX-3s-gg5" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="30" id="E7y-7Z-dTN"/>
                             <constraint firstItem="bWT-dW-kTf" firstAttribute="leading" secondItem="SLX-3s-gg5" secondAttribute="leading" id="FdH-xo-ILD"/>
+                            <constraint firstItem="p0Y-z9-K7u" firstAttribute="leading" secondItem="kfB-aZ-RMr" secondAttribute="trailing" constant="8" symbolic="YES" id="JFr-fv-8mm"/>
+                            <constraint firstItem="p0Y-z9-K7u" firstAttribute="centerY" secondItem="5Oo-te-YLZ" secondAttribute="centerY" id="L92-Rj-acp"/>
                             <constraint firstItem="bWT-dW-kTf" firstAttribute="trailing" secondItem="SLX-3s-gg5" secondAttribute="trailing" id="LVy-bZ-K30"/>
-                            <constraint firstItem="vDu-zF-Fre" firstAttribute="bottom" secondItem="bWT-dW-kTf" secondAttribute="bottom" id="QkU-HN-XjR"/>
-                            <constraint firstItem="bWT-dW-kTf" firstAttribute="top" secondItem="SLX-3s-gg5" secondAttribute="bottom" constant="8" symbolic="YES" id="TAU-Vz-wEd"/>
+                            <constraint firstItem="kfB-aZ-RMr" firstAttribute="centerX" secondItem="5EZ-qb-Rvc" secondAttribute="centerX" id="Mod-if-PTD"/>
+                            <constraint firstItem="5Oo-te-YLZ" firstAttribute="top" secondItem="bWT-dW-kTf" secondAttribute="bottom" constant="8" symbolic="YES" id="cqf-BV-InV"/>
                             <constraint firstItem="1Oh-z5-IWf" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" constant="20" id="fuv-ml-bWp"/>
+                            <constraint firstItem="kfB-aZ-RMr" firstAttribute="centerY" secondItem="p0Y-z9-K7u" secondAttribute="centerY" id="i9x-9e-tXR"/>
+                            <constraint firstItem="kfB-aZ-RMr" firstAttribute="leading" secondItem="5Oo-te-YLZ" secondAttribute="trailing" constant="8" symbolic="YES" id="nde-9m-TRn"/>
                             <constraint firstItem="SLX-3s-gg5" firstAttribute="top" secondItem="1Oh-z5-IWf" secondAttribute="bottom" constant="40" id="qMh-2F-81l"/>
                             <constraint firstItem="1Oh-z5-IWf" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="10" id="yEu-B0-ZBS"/>
+                            <constraint firstItem="bWT-dW-kTf" firstAttribute="top" secondItem="SLX-3s-gg5" secondAttribute="bottom" constant="8" symbolic="YES" id="yoF-Il-xyn"/>
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="btnALDB" destination="p0Y-z9-K7u" id="7yw-2E-ThI"/>
+                        <outlet property="btnBeep" destination="5Oo-te-YLZ" id="V8w-lP-GI9"/>
                         <outlet property="img" destination="aeS-9K-AmB" id="Qhr-aD-m5G"/>
                         <outlet property="lblLevel" destination="ia4-X8-2Pf" id="caf-9u-s1D"/>
                         <outlet property="lblName" destination="1Oh-z5-IWf" id="A0Z-NJ-2jy"/>
@@ -175,9 +244,20 @@
             <point key="canvasLocation" x="28.985507246376812" y="47.544642857142854"/>
         </scene>
     </scenes>
+    <designables>
+        <designable name="5Oo-te-YLZ">
+            <size key="intrinsicContentSize" width="74" height="42"/>
+        </designable>
+        <designable name="p0Y-z9-K7u">
+            <size key="intrinsicContentSize" width="113" height="42"/>
+        </designable>
+    </designables>
     <resources>
-        <image name="dot.radiowaves.right" catalog="system" width="117" height="128"/>
+        <image name="dot.radiowaves.right" catalog="system" width="110" height="128"/>
         <image name="lightbulb" catalog="system" width="113" height="128"/>
+        <namedColor name="AccentColor">
+            <color red="0.0" green="0.46000000000000002" blue="0.89000000000000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

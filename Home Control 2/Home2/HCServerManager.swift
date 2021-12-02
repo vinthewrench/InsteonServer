@@ -268,6 +268,21 @@ struct RESTDeviceLevel: Codable {
 	var ETag: Int?
 }
  
+struct RESTaldbEntry: Codable {
+
+	var aldb_address: String
+	var deviceID: String
+	var aldb_group: String
+	var aldb_flag: String
+ 
+	enum CodingKeys: String, CodingKey {
+		case deviceID
+		case aldb_group = "aldb.group"
+		case aldb_flag = "aldb.flag"
+ 		case aldb_address = "aldb.address"
+ 	}
+}
+
 struct RESTDeviceDetails: Codable {
 	var deviceID: String
 	var deviceInfo: String
@@ -281,6 +296,7 @@ struct RESTDeviceDetails: Codable {
 	var ETag: Int?
 	var level: Int?
  	var properties: Dictionary<String, String>?
+	var aldb: Dictionary<String, RESTaldbEntry>?
 	
 	func deviceImage() ->UIImage {
 		
@@ -848,6 +864,44 @@ class HCServerManager: ObservableObject {
 			}
 	}
 	
+	public func removeALDBfromDevice( _ deviceID: String, aldbAddr: String,
+												 completion: @escaping (Error?) -> Void = {_ in }){
+		
+		let urlPath = "link/\(deviceID)/\(aldbAddr)"
+		
+		if let requestUrl: URL = AppData.serverInfo.url ,
+			let apiKey = AppData.serverInfo.apiKey,
+			let apiSecret = AppData.serverInfo.apiSecret {
+			let unixtime = String(Int(Date().timeIntervalSince1970))
+			
+			let urlComps = NSURLComponents(string: requestUrl.appendingPathComponent(urlPath).absoluteString)!
+			var request = URLRequest(url: urlComps.url!)
+			
+			
+			// Specify HTTP Method to use
+			request.httpMethod = "DELETE"
+			request.setValue(apiKey,forHTTPHeaderField: "X-auth-key")
+			request.setValue(String(unixtime),forHTTPHeaderField: "X-auth-date")
+			let sig =  calculateSignature(forRequest: request, apiSecret: apiSecret)
+			request.setValue(sig,forHTTPHeaderField: "Authorization")
+			
+			// Send HTTP Request
+			request.timeoutInterval = 10
+			
+			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
+			
+			let task = session.dataTask(with: request) { (data, response, urlError) in
+				
+				completion(urlError	)
+			}
+			task.resume()
+		}
+			else {
+				completion(ServerError.invalidURL)
+			}
+	}
+	
+
 	func renameDevice(deviceID: String, newName: String,
 					  completion: @escaping (Error?) -> Void)  {
 		
@@ -1164,6 +1218,49 @@ class HCServerManager: ObservableObject {
 			}
 	}
 	
+	func BeepDevice(deviceID: String,
+					  completion: @escaping (Error?) -> Void)  {
+	
+		let urlPath = "devices/\(deviceID)"
+		
+		if let requestUrl: URL = AppData.serverInfo.url ,
+			let apiKey = AppData.serverInfo.apiKey,
+			let apiSecret = AppData.serverInfo.apiSecret {
+			let unixtime = String(Int(Date().timeIntervalSince1970))
+			
+			let urlComps = NSURLComponents(string: requestUrl.appendingPathComponent(urlPath).absoluteString)!
+			//			if let queries = queries {
+			//				urlComps.queryItems = queries
+			//			}
+			var request = URLRequest(url: urlComps.url!)
+			
+			
+			let json = ["beep": true]
+			let jsonData = try? JSONSerialization.data(withJSONObject: json)
+		request.httpBody = jsonData
+	
+			// Specify HTTP Method to use
+			request.httpMethod = "PUT"
+			request.setValue(apiKey,forHTTPHeaderField: "X-auth-key")
+			request.setValue(String(unixtime),forHTTPHeaderField: "X-auth-date")
+			let sig =  calculateSignature(forRequest: request, apiSecret: apiSecret)
+			request.setValue(sig,forHTTPHeaderField: "Authorization")
+			
+			// Send HTTP Request
+			request.timeoutInterval = 10
+			
+			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
+			
+			let task = session.dataTask(with: request) { (data, response, urlError) in
+				
+				completion(urlError	)
+			}
+			task.resume()
+		}
+			else {
+				completion(ServerError.invalidURL)
+			}
+	}
 	func RESTCall(urlPath: String,
 					  httpMethod: String? = "GET",
 					  headers: [String : String]? = nil,

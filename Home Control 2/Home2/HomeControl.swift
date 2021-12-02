@@ -73,6 +73,7 @@ enum HomeControlRequest: Error {
 	case events
 	case event
 	case device
+	case device_aldb
 
 	case unknown
 }
@@ -136,6 +137,13 @@ public class HomeControl {
 			if let devID = ID {
 				urlPath = "devices/" + devID
 			}
+			
+ 		case .device_aldb:
+			if let devID = ID {
+				urlPath = "devices/" + devID
+				queries = [URLQueryItem(name: "aldb", value: "1")]
+			}
+
 	
 			
 		default:

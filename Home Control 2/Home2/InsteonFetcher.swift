@@ -244,6 +244,26 @@ public class InsteonFetcher: ObservableObject {
 		}
 	}
 
+	public func removeALDBfromDevice( _ deviceID: String, aldbAddr: String,
+												 completion: @escaping (Error?) -> Void = {_ in }){
+			 
+			 
+		HCServerManager.shared.removeALDBfromDevice(deviceID, aldbAddr:aldbAddr)
+			 { (error)  in
+
+				 if(error == nil){
+
+					 self.getGroups(){
+ 					 completion(nil)
+						 return
+					 }
+
+				 }
+
+				 completion(error)
+			 }
+}
+	
 	public func removeFromGroup(_ groupID: String, deviceID: String,
 									completion: @escaping (Error?) -> Void = {_ in }){
 		

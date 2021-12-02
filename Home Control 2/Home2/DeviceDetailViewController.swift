@@ -28,7 +28,10 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 	@IBOutlet var lblName	: EditableUILabel!
 	@IBOutlet var img	: UIImageView!
 	@IBOutlet var lblLevel	: UILabel!
-	
+
+	@IBOutlet var btnBeep	: UIButton!
+	@IBOutlet var btnALDB	: UIButton!
+
 	@IBOutlet var sw	: UISwitch!
 	@IBOutlet var slider	: UISlider!
 	
@@ -40,7 +43,7 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 	}
 	var properties:[PropTableEntry] = []
 	
-	@IBOutlet var tableView: UITableView!
+	@IBOutlet var tableView: SelfSizedTableView!
 	//	@IBOutlet public var cnstTableHeight : NSLayoutConstraint!
 	
 	var timer = Timer()
@@ -77,6 +80,8 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 		
 		slider.minimumTrackTintColor = UIColor.systemGreen
 		
+		tableView.maxHeight = 500
+		
 	}
 	
 	override func viewWillAppear(_ animated: Bool) {
@@ -106,6 +111,7 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 		HomeControl.shared.fetchData(.device, ID: self.deviceID) { result in
 			if case .success(let device as RESTDeviceDetails) = result {
 				
+				self.lblName.text = device.name
 				self.lblLevel.text = device.level?.onLevelString()
 				self.img.image = device.deviceImage()
 				
@@ -157,9 +163,9 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 																				imageName: "p.circle"))
 						}
 					}
-					
+				
 					self.tableView.reloadData()
-					self.tableView.updateConstraints()
+//					self.tableView.updateConstraints()
 					
 				}
 				
@@ -206,6 +212,22 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 			self.startPolling()
 		}
 	}
+	
+	@IBAction func btnBeepHit(sender: UIButton) {
+		HCServerManager.shared.BeepDevice(deviceID: deviceID)
+		{ (error)  in
+					}
+		 
+	}
+
+	@IBAction func btnALDBHit(sender: UIButton) {
+ 
+		if let adlbView = DeviceALDBViewController.create(withDeviceID: deviceID) {
+			self.show(adlbView, sender: self)
+		}
+
+	}
+
 	
 	func renameDevice(newName:String){
 		
