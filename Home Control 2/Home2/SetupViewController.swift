@@ -23,6 +23,10 @@ class SetupViewController: UIViewController,
 	@IBOutlet var btnConnect		: BHButton!
 	@IBOutlet var btnSecured		: UIButton!
 	
+	@IBOutlet var lblStatus		: UILabel!
+	@IBOutlet var btnInfo		: UIButton!
+	
+	
 //	var svc : StatusViewController?
  	var timer = Timer()
 	var isSecured: Bool = true
@@ -58,11 +62,32 @@ class SetupViewController: UIViewController,
 		if(connectState == loginState.success){
 			
 			self.btnConnect.setTitle("Disconnect", for: .normal)
+			
+			HomeControl.shared.fetchData(.plmInfo) { result in
+					
+				if case .success(let plmInfo as RESTPlmInfo) = result {
+				
+					self.lblStatus.text = plmInfo.stateString
+					self.btnInfo.isEnabled = true
+
+				}
+				else {
+					self.lblStatus.text = "Failed"
+					self.btnInfo.isEnabled = false
+				}
+			}
+					
 		}
 		else {
 			
 			self.btnConnect.setTitle("Connect", for: .normal)
+			
+			lblStatus.text = "Not Connected"
+			btnInfo.isEnabled = false
 		}
+		
+
+		
 		
 	}
 	
@@ -106,6 +131,7 @@ class SetupViewController: UIViewController,
 		 refreshSecureText()
 	}
 
+	
 	func refreshSecureText() {
 		let  image = isSecured ? UIImage(named: "Eye_Closed_Template")  :UIImage(named: "Eye_Open_Template")
 		btnSecured.setImage(image, for: .normal)
@@ -114,7 +140,14 @@ class SetupViewController: UIViewController,
 
 	}
 	
-	
+	@IBAction func btnInfoClicked(_ sender: Any) {
+		if let setupView = InfoViewController.create() {
+			self.show(setupView, sender: self)
+		}
+		
+	}
+ 
+	 
 	@IBAction func btnConnectClicked(_ sender: Any) {
 
 		self.stopPollng();
@@ -126,6 +159,7 @@ class SetupViewController: UIViewController,
 			return
 		}
 		
+	
 ///		hideKeyboard()
 		
 		self.view.endEditing(true)

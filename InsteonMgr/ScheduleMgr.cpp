@@ -20,6 +20,8 @@ ScheduleMgr *ScheduleMgr::sharedInstance = NULL;
 
 ScheduleMgr::ScheduleMgr(){
 	_cachedSolar.previousMidnight = 0;
+	_latitude = numeric_limits<double>::max();
+	_longitude = numeric_limits<double>::max();
 	_startTime = time(NULL);
 }
 
@@ -32,7 +34,8 @@ void ScheduleMgr::setLatLong(double latitude, double longitude){
 
 bool  ScheduleMgr::calculateSolarEvents(){
 	
-	if(_latitude == 0 || _longitude == 0)
+	if(_latitude == numeric_limits<double>::max()
+		|| _longitude == numeric_limits<double>::max())
 		return  false;
 	
 	_cachedSolar.previousMidnight = 0;
@@ -79,3 +82,8 @@ bool ScheduleMgr::getSolarEvents(solarTimes_t& events){
 	return success;
 }
 
+
+long ScheduleMgr::upTime(){
+	time_t now = time(NULL);
+	return ( now - _startTime);
+}

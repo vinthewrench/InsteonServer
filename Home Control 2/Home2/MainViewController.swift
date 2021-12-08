@@ -7,14 +7,31 @@
 
 import UIKit
  
+
+@objc protocol MainSubviewViewControllerDelegate  {
+	func addButtonHit(_ sender: UIButton)
+}
+
+
+
+class MainSubviewViewController: UIViewController {
+ 
+	var mainView : MainViewController?
+	
+}
+ 
 class MainViewController: UIViewController, UITabBarDelegate {
 	
 	@IBOutlet var tabBar	: UITabBar!
 	@IBOutlet var lbTitle 	: UILabel!
 	@IBOutlet var vwContainer : UIView!
 
+	@IBOutlet var btnAdd 	: UIButton!
+
 	var containViewController : UIViewController? = nil
-	
+
+	var subViewDelegate: MainSubviewViewControllerDelegate? = nil
+
 	override var title: String? {
 		 get {
 			 return lbTitle.text ?? ""
@@ -23,6 +40,7 @@ class MainViewController: UIViewController, UITabBarDelegate {
 			 lbTitle.text = name
 		 }
 	}
+	
 	
 
 	override func viewDidLoad() {
@@ -56,7 +74,7 @@ class MainViewController: UIViewController, UITabBarDelegate {
 		self.title = item.title
 		AppData.serverInfo.tabSelection = item.tag
 		
-		var newVC:UIViewController? = nil;
+		var newVC:MainSubviewViewController? = nil;
  
 		switch(item.tag){
 		case 0:
@@ -78,6 +96,12 @@ class MainViewController: UIViewController, UITabBarDelegate {
 		if(newVC == containViewController){
 			return
 		}
+		
+		newVC?.mainView = self
+		subViewDelegate = newVC as? MainSubviewViewControllerDelegate
+		
+		btnAdd.isHidden = subViewDelegate == nil
+		
 		
 		if let cvc = containViewController {
 			cvc.willMove(toParent: nil)
@@ -109,16 +133,10 @@ class MainViewController: UIViewController, UITabBarDelegate {
 			self.show(setupView, sender: self)
 		}
 	}
+	
+	@IBAction func addBtnUpClicked(_ sender: UIButton) -> Void {
+		subViewDelegate?.addButtonHit(sender)
 
-	@IBAction func InfoClicked(_ sender: UIButton) -> Void {
-		self.displayInfoView()
-	}
-
-	func displayInfoView(){
-
-		if let setupView = InfoViewController.create() {
-			self.show(setupView, sender: self)
-		}
 	}
 
 }

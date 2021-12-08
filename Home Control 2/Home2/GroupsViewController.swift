@@ -23,15 +23,14 @@ final class GroupsCell: UITableViewCell {
 	
 }
 
-class GroupsViewController:  UIViewController,
-									  FloatingButtonDelegate,
+class GroupsViewController:  MainSubviewViewController,
+									  MainSubviewViewControllerDelegate,
 									  GroupsDetailViewControllerDelegate,
 									  UITableViewDelegate,
 									  UITableViewDataSource  {
 	
- 
+		
 	@IBOutlet var tableView: UITableView!
-	var btnFLoat: FloatingButton = FloatingButton()
 
 	var groupKeys: [String] = []
 
@@ -47,7 +46,6 @@ class GroupsViewController:  UIViewController,
 
  	override func viewDidLoad() {
 		super.viewDidLoad()
-		btnFLoat.delegate = self
 
 		tableView.refreshControl = refreshControl
 		
@@ -66,17 +64,18 @@ class GroupsViewController:  UIViewController,
 	
 	override func viewWillAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
+		
+//		mainView?.btnAdd.isHidden = false
+
 		refreshGroups()
 		}
 	
 	override func viewDidAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
-		btnFLoat.setup(toView: view)
 	}
 	
 	override func viewWillDisappear(_ animated: Bool) {
 		super.viewWillDisappear(animated)
-		btnFLoat.remove()
 	}
 	
 	func refreshGroups(completion: @escaping () -> Void = {}) {
@@ -217,9 +216,15 @@ class GroupsViewController:  UIViewController,
 	}
 	
 	
-	// MARK: - floating button
+	// MARK: - MainSubviewViewControllerDelegate
 
-	func floatingButtonHit(sender: Any) {
+	func addButtonHit(_ sender: UIButton){
+		createNewGroup()
+	}
+	 
+
+	func createNewGroup() {
+		
 		if(tableView.isEditing) {
 			return
 		}
@@ -250,7 +255,7 @@ class GroupsViewController:  UIViewController,
 						
 					}
 				}
-		 		break
+				break
 				
 			case .cancel:
 				break
@@ -259,7 +264,6 @@ class GroupsViewController:  UIViewController,
 		
 		// Present the alert to the user
 		self.present(alert, animated: true, completion: nil)
-		}
-	 
 
+	}
 }

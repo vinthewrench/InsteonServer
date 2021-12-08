@@ -87,6 +87,8 @@ InsteonDB::InsteonDB() {
 	_eTag = 0;
 	_telnetPort = 2020;
 	_restPort = 8080;
+	_latitude =  numeric_limits<double>::max();
+	_longitude =  numeric_limits<double>::max();
 	
 	_db_filePath = default_filePath();
 	
@@ -830,9 +832,10 @@ bool InsteonDB::setLatLong(double latitude, double longitude){
 }
 
 bool InsteonDB::getLatLong(double &latitude, double &longitude){
-	
-	if(_latitude == 0 && _longitude == 0)
-		return false;
+
+	if(_latitude == numeric_limits<double>::max()
+		|| _longitude == numeric_limits<double>::max())
+		return  false;
 	
 	latitude = _latitude;
 	longitude = _longitude;
@@ -1051,7 +1054,8 @@ bool InsteonDB::backupCacheFile(string filepath){
 			if(!_plmPath.empty())
 				ofs << KEY_CONFIG_PORT << ": " << _plmPath << "\n";
 			
-			if(_latitude != 0 && _longitude != 0) {
+			if(_latitude != numeric_limits<double>::max()
+				&& _longitude != numeric_limits<double>::max()) {
 				ofs << KEY_CONFIG_LATLONG << ": " ;
 				ofs << setprecision(11)  << _latitude << " " << _longitude << "\n";
  			}

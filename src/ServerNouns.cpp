@@ -3465,13 +3465,18 @@ static bool Config_NounHandler_GET(ServerCmdQueue* cmdQueue,
 	if(path.size() == 1){
 		
 		double latitude, longitude;
-	 
-		db->getLatLong(latitude, longitude);
-		reply[string(JSON_ARG_LATITUDE)] = latitude;
-		reply[string(JSON_ARG_LONGITUDE)] = longitude;
 		
-		makeStatusJSON(reply,STATUS_OK);
-		(completion) (reply, STATUS_OK);
+		if(db->getLatLong(latitude, longitude)) {
+			reply[string(JSON_ARG_LATITUDE)] = latitude;
+			reply[string(JSON_ARG_LONGITUDE)] = longitude;
+			makeStatusJSON(reply,STATUS_OK);
+			(completion) (reply, STATUS_OK);
+		}
+		else {
+			makeStatusJSON(reply,STATUS_NO_CONTENT);
+			(completion) (reply, STATUS_NO_CONTENT);
+		}
+		
 		return true;
 	}
 	return false;
@@ -3945,12 +3950,68 @@ static void link_nonKeypad(DeviceID	deviceID, boolCallback_t cb){
 
 	using namespace rest;
 
-	insteon.addToDeviceALDB(deviceID, false, 0x01, [=](bool didSucceed) {
+	insteon.addToDeviceALDB(deviceID, true, 0x01, [=](bool didSucceed) {
 		(cb)(didSucceed);
 	});
 
 }
 
+void linkDeviceCompletion(DeviceID	deviceID, ServerCmdQueue::cmdCallback_t completion){
+	
+	using namespace rest;
+	using namespace timestamp;
+	auto db = insteon.getDB();
+
+	// what kind of device did we link?
+	insteon_dbEntry_t info;
+	if( ! db->getDeviceInfo(deviceID,  &info)){
+		json reply;
+		makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "getDeviceInfo failed" );
+		(completion) (reply, STATUS_INTERNAL_ERROR);
+		return ;
+	}
+	// link additional ALDB entries
+	
+	if(info.deviceInfo.isKeyPad()) {
+		// is it a keypad?
+		
+		link_Keypad(deviceID, [=](bool didSucceed){
+			json reply;
+			
+			if(didSucceed){
+				DeviceDetailJSONForDeviceID(deviceID, reply, false);
+				makeStatusJSON(reply,STATUS_OK);
+				(completion) (reply, STATUS_OK);
+			}
+			else {
+				reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+				makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "addToDeviceALDB failed" );;
+				(completion) (reply, STATUS_INTERNAL_ERROR);
+			}
+			
+		});
+	}
+	else {
+		// not a keypad?
+		
+		link_nonKeypad(deviceID, [=](bool didSucceed){
+			json reply;
+			
+			if(didSucceed){
+				DeviceDetailJSONForDeviceID(deviceID, reply, false);
+				makeStatusJSON(reply,STATUS_OK);
+				(completion) (reply, STATUS_OK);
+			}
+			else {
+				reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
+				makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "addToDeviceALDB failed" );;
+				(completion) (reply, STATUS_INTERNAL_ERROR);
+			}
+			
+		});
+	}
+	
+}
 
 static bool Link_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 									  REST_URL url,
@@ -3962,7 +4023,7 @@ static bool Link_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 	json reply;
 	bool isValidURL = false;
 
-	auto db = insteon.getDB();
+//	auto db = insteon.getDB();
 
 	ServerCmdArgValidator v1;
 	
@@ -3976,10 +4037,29 @@ static bool Link_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 	if(path.size() == 1) {  // just link
 		isValidURL = true;
 		
+		bool queued =  insteon.startLinking(0xFE,
+														[=](DeviceID deviceID,
+															 bool didSucceed,
+															 string error_text){
+			
+			if(didSucceed){
+				linkDeviceCompletion(deviceID, completion);
+			}
+			else {
+				
+				json reply;
+				makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", error_text);;
+				(completion) (reply, STATUS_INTERNAL_ERROR);
+			}
+		});
 		
-		///  ViNNIE WRITE THIS CODE
-		makeStatusJSON(reply,STATUS_OK);
-		(completion) (reply, STATUS_OK);
+		if(!queued) {
+			makeStatusJSON(reply, STATUS_UNAVAILABLE, "Server is not running" );;
+			(completion) (reply, STATUS_UNAVAILABLE);
+		}
+		
+		isValidURL = true;
+		
 	}
 	else if(path.size() == 2) { // link a specific device.
 		
@@ -3993,64 +4073,16 @@ static bool Link_NounHandler_PUT(ServerCmdQueue* cmdQueue,
 														 true,
 														 0xFE,
 														 "",
-														 [=](bool didSucceed) {
+														 [=](DeviceID deviceID,
+															  bool didSucceed,
+															  string error_text) {
 				
 				if(didSucceed){
-		
-					// what kind of device did we link?
-					insteon_dbEntry_t info;
-					if( ! db->getDeviceInfo(deviceID,  &info)){
-						json reply;
-						makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "getDeviceInfo failed" );
-						(completion) (reply, STATUS_INTERNAL_ERROR);
-						return ;
-					}
-
-			
-					// link additional ALDB entries
-	
-					if(info.deviceInfo.isKeyPad()) {
-						// is it a keypad?
-			
-						link_Keypad(deviceID, [=](bool didSucceed){
-						
-							json reply;
-							reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
-			 
-						if(didSucceed){
-							makeStatusJSON(reply,STATUS_OK);
-							(completion) (reply, STATUS_OK);
-						}
-						else {
-							makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "addToDeviceALDB failed" );;
-							(completion) (reply, STATUS_INTERNAL_ERROR);
-						}
-
-						});
-					}
-					else {
-						// not a keypad?
-			
-						link_nonKeypad(deviceID, [=](bool didSucceed){
-							json reply;
-							reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
-			 
-							if(didSucceed){
-								makeStatusJSON(reply,STATUS_OK);
-								(completion) (reply, STATUS_OK);
-							}
-							else {
-								makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", "addToDeviceALDB failed" );;
-								(completion) (reply, STATUS_INTERNAL_ERROR);
-							}
-
-						});
-					}
+					linkDeviceCompletion(deviceID, completion);
 				}
 				else {
 					json reply;
-					reply[string(JSON_ARG_DEVICEID)] = deviceID.string();
-					makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed" );;
+					makeStatusJSON(reply, STATUS_INTERNAL_ERROR, "Link Failed", error_text);;
 					(completion) (reply, STATUS_INTERNAL_ERROR);
 				}
 			});
@@ -4245,18 +4277,18 @@ static bool State_NounHandler_GET(ServerCmdQueue* cmdQueue,
 
  
 		solarTimes_t solar;
-		insteon.getSolarEvents(solar);
+		if( insteon.getSolarEvents(solar)) {
+			reply["civilSunRise"] = solar.civilSunRiseMins;
+			reply["sunRise"] = solar.sunriseMins;
+			reply["sunSet"] = solar.sunSetMins;
+			reply["civilSunSet"] = solar.civilSunSetMins;
+			reply[string(JSON_ARG_LATITUDE)] = solar.latitude;
+			reply[string(JSON_ARG_LONGITUDE)] = solar.longitude;
+			reply["gmtOffset"] = solar.gmtOffset;
+			reply["timeZone"] = solar.timeZoneString;
+			reply["midnight"] = solar.previousMidnight;
+		}
 
-		reply["civilSunRise"] = solar.civilSunRiseMins;
-		reply["sunRise"] = solar.sunriseMins;
-		reply["sunSet"] = solar.sunSetMins;
-		reply["civilSunSet"] = solar.civilSunSetMins;
-		reply[string(JSON_ARG_LATITUDE)] = solar.latitude;
-		reply[string(JSON_ARG_LONGITUDE)] = solar.longitude;
-		reply["gmtOffset"] = solar.gmtOffset;
-		reply["timeZone"] = solar.timeZoneString;
-		reply["midnight"] = solar.previousMidnight;
-		
 		reply[string(JSON_ARG_UPTIME)] = solar.upTime;
 	   reply[string(JSON_ARG_DATE)] = TimeStamp().RFC1123String();
  	
@@ -4402,20 +4434,20 @@ static void Date_NounHandler(ServerCmdQueue* cmdQueue,
 	}
 	
 	reply["date"] = TimeStamp().RFC1123String();
-
+	reply["uptime"]	= insteon.upTime();
+ 
 	solarTimes_t solar;
-	insteon.getSolarEvents(solar);
-
-	reply["civilSunRise"] = solar.civilSunRiseMins;
-	reply["sunRise"] = solar.sunriseMins;
-	reply["sunSet"] = solar.sunSetMins;
-	reply["civilSunSet"] = solar.civilSunSetMins;
-	reply[string(JSON_ARG_LATITUDE)] = solar.latitude;
-	reply[string(JSON_ARG_LONGITUDE)] = solar.longitude;
-	reply["gmtOffset"] = solar.gmtOffset;
-	reply["timeZone"] = solar.timeZoneString;
-	reply["midnight"] = solar.previousMidnight;
-	reply["uptime"]	= solar.upTime;
+	if( insteon.getSolarEvents(solar)) {
+		reply["civilSunRise"] = solar.civilSunRiseMins;
+		reply["sunRise"] = solar.sunriseMins;
+		reply["sunSet"] = solar.sunSetMins;
+		reply["civilSunSet"] = solar.civilSunSetMins;
+		reply[string(JSON_ARG_LATITUDE)] = solar.latitude;
+		reply[string(JSON_ARG_LONGITUDE)] = solar.longitude;
+		reply["gmtOffset"] = solar.gmtOffset;
+		reply["timeZone"] = solar.timeZoneString;
+		reply["midnight"] = solar.previousMidnight;
+	}
 
 	makeStatusJSON(reply,STATUS_OK);
 	(completion) (reply, STATUS_OK);

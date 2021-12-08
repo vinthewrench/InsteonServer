@@ -36,12 +36,12 @@ final class SchedulesTimedCell: UITableViewCell {
 
 
 
-class SchedulesViewController: UIViewController,
-										 FloatingButtonDelegate,
+class SchedulesViewController: MainSubviewViewController,
+										 MainSubviewViewControllerDelegate,
 										 UITableViewDelegate,
 										 UITableViewDataSource  {
 	
-	
+		
 	@IBOutlet var tableView: UITableView!
 	
 	var sortedTimedKeys:[String] = []
@@ -49,13 +49,12 @@ class SchedulesViewController: UIViewController,
 	var events: Dictionary<String, RESTEvent> = [:]
 	var solarTimes : ServerDateInfo? = nil
 	
-	var btnFLoat: FloatingButton = FloatingButton()
 	private let refreshControl = UIRefreshControl()
 
 	
 	var solarTimeFormat: DateFormatter {
 		let formatter = DateFormatter()
-		formatter.dateFormat = "hh:mm a"
+		formatter.dateFormat = "h:mm a"
 		formatter.timeZone = TimeZone(abbreviation: "UTC")
 		return formatter
 	}
@@ -91,7 +90,6 @@ class SchedulesViewController: UIViewController,
 			forHeaderFooterViewReuseIdentifier:
 				ScheduleTableHeaderView.reuseIdentifier)
 
-		btnFLoat.delegate = self
 	}
 	
 	@objc private func refreshTable(_ sender: Any) {
@@ -104,17 +102,18 @@ class SchedulesViewController: UIViewController,
 
 	override func viewWillAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
+		
+	//	mainView?.btnAdd.isHidden = false
+
 		self.refreshSchedules()
 	}
 	
 	override func viewDidAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
-		btnFLoat.setup(toView: view)
 	}
 	
 	override func viewWillDisappear(_ animated: Bool) {
 		super.viewWillDisappear(animated)
-		btnFLoat.remove()
 	}
 	
 	func refreshSchedules(completion: @escaping () -> Void = {}) {
@@ -137,37 +136,45 @@ class SchedulesViewController: UIViewController,
 			}
 		}
 		
-		
 		dp.enter()
 		HomeControl.shared.fetchData(.events) { result in
 			dp.leave()
 			if case .success(let events as RESTEventList) = result {
 				
+				self.events = events.eventIDs
+				self.sortedTimedKeys = []
+				self.sortedTriggerKeys = []
+	
 				// split the keys into timed events and Trigger events
+					
+			}
+			else
+			{
+				self.events = [:]
+			}
+			
+			dp.notify(queue: .main) {
 				
-				let timedEventIDs = events.eventIDs.filter({  $1.isTimedEvent() })
-				let sortedTimedEvents = timedEventIDs.sorted { (first, second) -> Bool in
-					return  first.value.name.caseInsensitiveCompare(second.value.name) == .orderedAscending
+				
+				let timedEventIDs = self.events.filter({  $1.isTimedEvent() })
+				if let st = self.solarTimes {
+				
+					let sortedTimedEvents = timedEventIDs.sorted { (first, second) -> Bool in
+						let t1 = first.value.trigger.triggerDate(st)
+						let t2 = second.value.trigger.triggerDate(st)
+						return t1 < t2
+					}
+					self.sortedTimedKeys  = sortedTimedEvents.map{$0.key}
 				}
-				self.sortedTimedKeys  = sortedTimedEvents.map{$0.key}
 				
-				let trigerEventIDs = events.eventIDs.filter({  !$1.isTimedEvent() })
+				let trigerEventIDs = self.events.filter({  !$1.isTimedEvent() })
 				let sortedTriggerEvents = trigerEventIDs.sorted { (first, second) -> Bool in
 					return  first.value.name.caseInsensitiveCompare(second.value.name) == .orderedAscending
 				}
 				self.sortedTriggerKeys = sortedTriggerEvents.map{$0.key}
 				
-				self.events = events.eventIDs
+
 				
-			}
-			else
-			{
-				self.sortedTimedKeys = []
-				self.sortedTriggerKeys = []
-				self.events = [:]
-			}
-			
-			dp.notify(queue: .main) {
 				self.tableView.reloadData()
 				completion()
 			}
@@ -408,17 +415,29 @@ class SchedulesViewController: UIViewController,
 		return result
 	}
 	
-	// MARK: - floating button
+	// MARK: - MainSubviewViewControllerDelegate
 
-	func floatingButtonHit(sender: Any) {
+	func addButtonHit(_ sender: UIButton){
+		createNewEvent()
+	}
+
+	func createNewEvent() {
 		if(tableView.isEditing) {
 			return
 		}
+		
+		// create the alert
+				 let alert = UIAlertController(title: "Lazy Programmer",
+														 message: "code not written yet..  send money.",
+														 preferredStyle: UIAlertController.Style.alert)
 
-		print("floatingButtonHit")
+				 // add an action (button)
+				 alert.addAction(UIAlertAction(title: "OK", style: UIAlertAction.Style.default, handler: nil))
 
-	}
-
+				 // show the alert
+				 self.present(alert, animated: true, completion: nil)
+		
+		}
 	 
 	
 }

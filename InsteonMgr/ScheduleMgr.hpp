@@ -53,9 +53,9 @@ typedef struct {
  	time_t 	previousMidnight;		//  according to LocalTime
 	
 	double		longitude;
-	double 	latitude;
+	double 		latitude;
 	std::string 	timeZoneString;
-	long 		upTime;
+	long 			upTime;
 	
 } solarTimes_t;
 
@@ -80,6 +80,8 @@ class ScheduleMgr {
 	bool getSolarEvents(solarTimes_t& events);
 	bool calculateSolarEvents();
  
+	long upTime();
+	
 private:
 	
 	static ScheduleMgr *sharedInstance;
@@ -88,7 +90,7 @@ private:
 	SunSet 			_sun;
 
 	solarTimes_t _cachedSolar;
-	double			 _longitude;
+	double		 _longitude;
 	double 		 _latitude;
 	time_t 		_startTime;		// to calculate uptime
 

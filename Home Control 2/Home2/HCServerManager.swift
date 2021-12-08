@@ -137,15 +137,15 @@ struct RESTStatus: Codable {
 	let os_version : String
 	let os_machine : String
 	
-	let civilSunRise: Double
-	let civilSunSet: Double
-	let sunRise: Double
-	let sunSet: Double
-	let gmtOffset: Int
-	let latitude: Double
-	let longitude: Double
-	let midnight: Double
-	let timeZone: String
+	let civilSunRise: Double?
+	let civilSunSet: Double?
+	let sunRise: Double?
+	let sunSet: Double?
+	let gmtOffset: Int?
+	let latitude: Double?
+	let longitude: Double?
+	let midnight: Double?
+	let timeZone: String?
 
 	
 	enum CodingKeys: String, CodingKey {
@@ -182,16 +182,16 @@ struct RESTVersion: Codable {
 
 
 class RESTDateInfo: Codable {
-	let civilSunRise: Double
-	let civilSunSet: Double
-	let sunRise: Double
-	let sunSet: Double
+	let civilSunRise: Double?
+	let civilSunSet: Double?
+	let sunRise: Double?
+	let sunSet: Double?
 	let date: String
-	let gmtOffset: Int
-	let latitude: Double
-	let longitude: Double
-	let midnight: Double
-	let timeZone: String
+	let gmtOffset: Int?
+	let latitude: Double?
+	let longitude: Double?
+	let midnight: Double?
+	let timeZone: String?
 	let uptime: Int
 }
 
@@ -320,6 +320,16 @@ struct RESTDeviceDetails: Codable {
 	
 }
 
+struct RESTLinkResponse: Codable {
+	var deviceID: String
+	var deviceInfo: String
+	var isDimmer: Bool
+	var isKeyPad: Bool
+	var isPLM: Bool
+	var lastUpdated: String
+	var name: String
+}
+
 struct RESTGroupDetails: Codable {
 	var deviceIDs: [String]
 	var name: String
@@ -371,27 +381,32 @@ struct RESTEventTrigger: Codable {
 		
 		var date: Date = Date.distantPast
 		
-		if let mins = self.mins {
+		if let sunSet = solarTimes.sunSet,
+			let civilSunSet = solarTimes.civilSunSet,
+			let civilSunRise = solarTimes.civilSunRise,
+			let sunRise = solarTimes.sunRise,
+			let midNight = solarTimes.midNight,
+			let mins = self.mins {
 			
 			switch  self.timeBase {
 			case 1: // TOD_ABSOLUTE
-				date = solarTimes.midNight.addingTimeInterval( Double(mins * 60))
+				date = midNight.addingTimeInterval( Double(mins * 60))
 				break
 				
 			case 2: // TOD_SUNRISE
-				date = solarTimes.sunRise.addingTimeInterval( Double(mins * 60))
+				date = sunRise.addingTimeInterval( Double(mins * 60))
 				break
 				
 			case 3: // TOD_SUNSET
-				date = solarTimes.sunSet.addingTimeInterval( Double(mins * 60))
+				date = sunSet.addingTimeInterval( Double(mins * 60))
 				break
 				
 			case 4: // TOD_CIVIL_SUNRISE
-				date = solarTimes.civilSunRise.addingTimeInterval( Double(mins * 60))
+				date = civilSunRise.addingTimeInterval( Double(mins * 60))
 				break
 				
 			case 5: // TOD_CIVIL_SUNSET
-				date = solarTimes.civilSunSet.addingTimeInterval( Double(mins * 60))
+				date = civilSunSet.addingTimeInterval( Double(mins * 60))
 				break
 				
 			default:
@@ -580,7 +595,6 @@ struct RESTPlmInfo: Codable {
 
 }
 
-
 struct RESTDeviceList: Codable {
 	var details:  Dictionary<String, RESTDeviceDetails>
 	var ETag: 	Int?
@@ -598,14 +612,16 @@ struct DeviceCatInfo {
 	let description: String
 }
 
+
+enum ServerError: Error {
+	case connectFailed
+	case invalidState
+	case invalidURL
+	case unknown
+}
+ 
 class HCServerManager: ObservableObject {
 
-	enum ServerError: Error {
-		case connectFailed
-		case invalidState
-		case invalidURL
- 		case unknown
-	}
  
 	@Published var lastUpdate = Date()
 	
@@ -902,6 +918,75 @@ class HCServerManager: ObservableObject {
 	}
 	
 
+	
+	
+	func linkDevice(deviceID: String?,
+					  completion: @escaping (Any?, Error?) -> Void)  {
+
+ 		var urlPath = "link"
+		if let deviceID = deviceID {
+			urlPath = "link/\(deviceID)"
+  		}
+	 
+		if let requestUrl: URL = AppData.serverInfo.url ,
+			let apiKey = AppData.serverInfo.apiKey,
+			let apiSecret = AppData.serverInfo.apiSecret {
+			let unixtime = String(Int(Date().timeIntervalSince1970))
+			
+			let urlComps = NSURLComponents(string: requestUrl.appendingPathComponent(urlPath).absoluteString)!
+			//			if let queries = queries {
+			//				urlComps.queryItems = queries
+			//			}
+			var request = URLRequest(url: urlComps.url!)
+			
+			
+			// Specify HTTP Method to use
+			request.httpMethod = "PUT"
+			request.setValue(apiKey,forHTTPHeaderField: "X-auth-key")
+			request.setValue(String(unixtime),forHTTPHeaderField: "X-auth-date")
+			let sig =  calculateSignature(forRequest: request, apiSecret: apiSecret)
+			request.setValue(sig,forHTTPHeaderField: "Authorization")
+			
+			// Send HTTP Request
+			request.timeoutInterval = 60*4
+			
+			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
+			
+			let task = session.dataTask(with: request) { (data, response, urlError) in
+			
+				
+				if urlError != nil {
+					completion( nil, urlError	)
+					return
+				}
+	
+// 			print ( String(decoding: (data!), as: UTF8.self))
+
+				if let data = data as Data? {
+					
+					let decoder = JSONDecoder()
+					
+					if let restErr = try? decoder.decode(RESTError.self, from: data){
+						completion(restErr.error, nil)
+					}
+					else if let restLink = try? decoder.decode(RESTLinkResponse.self, from: data){
+						completion(restLink, nil)
+					}
+					
+					else {
+						completion(nil,nil)
+					}
+				
+				}
+ 			}
+			task.resume()
+		}
+			else {
+				completion(nil, ServerError.invalidURL)
+			}
+	}
+
+		
 	func renameDevice(deviceID: String, newName: String,
 					  completion: @escaping (Error?) -> Void)  {
 		
@@ -945,6 +1030,47 @@ class HCServerManager: ObservableObject {
 				completion(ServerError.invalidURL)
 			}
 	}
+	
+	
+	func deleteDevice(_ deviceID: String,
+					  completion: @escaping (Error?) -> Void)  {
+		
+		let urlPath = "devices/\(deviceID)"
+		
+		if let requestUrl: URL = AppData.serverInfo.url ,
+			let apiKey = AppData.serverInfo.apiKey,
+			let apiSecret = AppData.serverInfo.apiSecret {
+			let unixtime = String(Int(Date().timeIntervalSince1970))
+			
+			let urlComps = NSURLComponents(string: requestUrl.appendingPathComponent(urlPath).absoluteString)!
+			//			if let queries = queries {
+			//				urlComps.queryItems = queries
+			//			}
+			var request = URLRequest(url: urlComps.url!)
+			
+ 			// Specify HTTP Method to use
+			request.httpMethod = "DELETE"
+			request.setValue(apiKey,forHTTPHeaderField: "X-auth-key")
+			request.setValue(String(unixtime),forHTTPHeaderField: "X-auth-date")
+			let sig =  calculateSignature(forRequest: request, apiSecret: apiSecret)
+			request.setValue(sig,forHTTPHeaderField: "Authorization")
+			
+			// Send HTTP Request
+			request.timeoutInterval = 10
+			
+			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
+			
+			let task = session.dataTask(with: request) { (data, response, urlError) in
+				
+				completion(urlError	)
+			}
+			task.resume()
+		}
+			else {
+				completion(ServerError.invalidURL)
+			}
+	}
+	
 	
 	func createGroup(name: String,
 					  completion: @escaping (Error?) -> Void)  {
@@ -1035,6 +1161,8 @@ class HCServerManager: ObservableObject {
 			}
 	}
 	
+	
+
 	
 	func deleteGroup(_ groupID: String,
 					  completion: @escaping (Error?) -> Void)  {

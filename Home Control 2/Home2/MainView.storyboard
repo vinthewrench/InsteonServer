@@ -44,36 +44,33 @@
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" reversesTitleShadowWhenHighlighted="YES" showsTouchWhenHighlighted="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="OPI-kb-zr4" customClass="ExtendedHitButton" customModule="Home2" customModuleProvider="target">
-                                        <rect key="frame" x="108" y="74" width="16" height="16"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="16" id="2sS-bo-fxE"/>
-                                            <constraint firstAttribute="width" constant="16" id="R83-HA-70F"/>
-                                        </constraints>
-                                        <fontDescription key="fontDescription" type="system" pointSize="32"/>
-                                        <state key="normal">
-                                            <imageReference key="image" image="info.circle" catalog="system" symbolScale="large"/>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="zLb-66-oec">
+                                        <rect key="frame" x="367" y="63" width="27" height="26"/>
+                                        <state key="normal" image="gear" catalog="system">
                                             <preferredSymbolConfiguration key="preferredSymbolConfiguration" scale="large"/>
                                         </state>
                                         <connections>
-                                            <action selector="InfoClicked:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="aPY-bg-pg1"/>
+                                            <action selector="SetupUpClicked:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="5Y3-GX-AH6"/>
                                         </connections>
                                     </button>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="zLb-66-oec">
-                                        <rect key="frame" x="372" y="65" width="22" height="22"/>
-                                        <state key="normal" image="gear" catalog="system"/>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Hcc-hg-gIB">
+                                        <rect key="frame" x="110" y="64" width="25" height="24"/>
+                                        <state key="normal">
+                                            <imageReference key="image" image="plus.circle" catalog="system" symbolScale="large"/>
+                                            <preferredSymbolConfiguration key="preferredSymbolConfiguration" scale="large" weight="light"/>
+                                        </state>
                                         <connections>
-                                            <action selector="SetupUpClicked:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="5Y3-GX-AH6"/>
+                                            <action selector="addBtnUpClicked:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="5tU-12-juu"/>
                                         </connections>
                                     </button>
                                 </subviews>
                                 <color key="backgroundColor" systemColor="systemGray6Color"/>
                                 <constraints>
                                     <constraint firstAttribute="bottom" secondItem="lrF-sX-HT4" secondAttribute="bottom" constant="10" id="7rV-lY-OrH"/>
-                                    <constraint firstItem="OPI-kb-zr4" firstAttribute="leading" secondItem="lrF-sX-HT4" secondAttribute="trailing" constant="6" id="B05-8G-lao"/>
                                     <constraint firstAttribute="height" constant="100" id="Nme-BM-QV8"/>
                                     <constraint firstItem="lrF-sX-HT4" firstAttribute="leading" secondItem="Qr7-UI-nfI" secondAttribute="leading" constant="10" id="YAu-mh-iVc"/>
-                                    <constraint firstItem="OPI-kb-zr4" firstAttribute="bottom" secondItem="lrF-sX-HT4" secondAttribute="bottom" id="qmZ-NV-jNp"/>
+                                    <constraint firstItem="Hcc-hg-gIB" firstAttribute="centerY" secondItem="lrF-sX-HT4" secondAttribute="centerY" id="iUz-cy-dxI"/>
+                                    <constraint firstItem="Hcc-hg-gIB" firstAttribute="leading" secondItem="lrF-sX-HT4" secondAttribute="trailing" constant="8" symbolic="YES" id="v8k-Pz-mSq"/>
                                     <constraint firstItem="zLb-66-oec" firstAttribute="centerY" secondItem="lrF-sX-HT4" secondAttribute="centerY" id="vJo-Eo-0as"/>
                                     <constraint firstAttribute="trailing" secondItem="zLb-66-oec" secondAttribute="trailing" constant="20" symbolic="YES" id="vyh-Zu-bII"/>
                                 </constraints>
@@ -104,6 +101,7 @@
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="btnAdd" destination="Hcc-hg-gIB" id="BsH-Jk-WSK"/>
                         <outlet property="lbTitle" destination="lrF-sX-HT4" id="gGb-Ev-Fl6"/>
                         <outlet property="tabBar" destination="bQQ-DC-Ozi" id="ECV-Af-ObJ"/>
                         <outlet property="vwContainer" destination="YyB-SB-XfW" id="RMM-c7-rvU"/>
@@ -117,9 +115,9 @@
     <resources>
         <image name="clock" catalog="system" width="128" height="121"/>
         <image name="gear" catalog="system" width="128" height="119"/>
-        <image name="info.circle" catalog="system" width="128" height="121"/>
         <image name="keyboard" catalog="system" width="128" height="79"/>
         <image name="lightbulb" catalog="system" width="113" height="128"/>
+        <image name="plus.circle" catalog="system" width="128" height="121"/>
         <image name="square.grid.3x1.folder.badge.plus" catalog="system" width="128" height="91"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>

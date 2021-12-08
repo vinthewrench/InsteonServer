@@ -111,7 +111,16 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 		HomeControl.shared.fetchData(.device, ID: self.deviceID) { result in
 			if case .success(let device as RESTDeviceDetails) = result {
 				
-				self.lblName.text = device.name
+				
+				if(device.name.isEmpty){
+					self.lblName.text = "Unnamed Device"
+					self.lblName.textColor = UIColor.darkGray
+				}
+				else {
+					self.lblName.text = device.name
+					self.lblName.textColor = UIColor.black
+				}
+		
 				self.lblLevel.text = device.level?.onLevelString()
 				self.img.image = device.deviceImage()
 				
@@ -251,28 +260,40 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 	
 	func editMenuTapped(sender: UILabel) {
 		
-		let alert = UIAlertController(title:  NSLocalizedString("Rename Device", comment: ""),
-												message: nil,
-												cancelButtonTitle: NSLocalizedString("Cancel", comment: ""),
-												okButtonTitle:  NSLocalizedString("Rename", comment: ""),
-												validate: .nonEmpty,
-												textFieldConfiguration: { textField in
-			textField.placeholder =  "Device Name"
-			textField.text = self.lblName.text
-		}) { result in
-			
-			switch result {
-			case let .ok(String:newName):
-				self.renameDevice( newName: newName);
-				break
+		
+		HomeControl.shared.fetchData(.device, ID: self.deviceID) { result in
+			if case .success(let device as RESTDeviceDetails) = result {
+	 
+			let alert = UIAlertController(title:  NSLocalizedString("Rename Device", comment: ""),
+													message: nil,
+													cancelButtonTitle: NSLocalizedString("Cancel", comment: ""),
+													okButtonTitle:  NSLocalizedString("Rename", comment: ""),
+													validate: .nonEmpty,
+													textFieldConfiguration:
+				{ textField in
+					textField.placeholder =  "Device Name"
 				
-			case .cancel:
-				break
+			 		if !device.name.isEmpty {
+						textField.text = device.name
+					}
+				 
+			}) { result in
+				
+				switch result {
+				case let .ok(String:newName):
+					self.renameDevice( newName: newName);
+					break
+					
+				case .cancel:
+					break
+				}
+			}
+			
+			// Present the alert to the user
+			self.present(alert, animated: true, completion: nil)
 			}
 		}
-		
-		// Present the alert to the user
-		self.present(alert, animated: true, completion: nil)
+			
 	}
 	
 	func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {

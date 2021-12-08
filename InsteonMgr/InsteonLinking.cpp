@@ -30,8 +30,6 @@ InsteonLinking::~InsteonLinking(){
 bool InsteonLinking::startLinking(uint8_t link_code, uint8_t groupID,
 											 linkCallback_t callback){
 	
-	bool statusOK = false;
-	
 	if(_isLinking)
 		return false;
 	
@@ -40,7 +38,7 @@ bool InsteonLinking::startLinking(uint8_t link_code, uint8_t groupID,
 	
 	_callback = callback;
 	_isLinking = true;
-	_timeout_LINKING = 4 * 60;	// 4 mins
+	_timeout_LINKING =  4 * 60;	// 4 mins
 
 //	LOG_DEBUG("\tLINKING START (%02x %02x)\n", link_code, groupID);
 
@@ -68,12 +66,11 @@ bool InsteonLinking::startLinking(uint8_t link_code, uint8_t groupID,
 	});
 	
 	
-	return statusOK;
+	return true;
 }
 
 bool InsteonLinking::cancelLinking(){
-	bool statusOK = false;
-	
+ 
 	if(_isLinking){
 		_isLinking = false;
 		
@@ -89,7 +86,7 @@ bool InsteonLinking::cancelLinking(){
 		});
 		
 	}
-	return statusOK;
+	return true;
 }
 
 
@@ -188,12 +185,15 @@ bool InsteonLinking::processPLMresponse(plm_result_t response){
 				link_result_t link_result ={0};
 				link_result.status = LINK_TIMEOUT;
 		
-				if(_callback)
-					_callback(link_result);
+				if(_callback){
+					linkCallback_t cb = _callback;
+					// dont callback again
+					_callback = NULL;
+					
+					cb(link_result);
+				}
 				
-				// dont callback again
-				_callback = NULL;
-
+			
 				//Cancel any linking in progress?
 				_cmdQueue->queueCommand(InsteonParser::IM_CANCEL_LINKING,
 												NULL, 0, [this]( auto reply, bool didSucceed) {
@@ -225,11 +225,13 @@ bool InsteonLinking::processPLMresponse(plm_result_t response){
 							 data.flag, data.group,
 							 deviceID.string().c_str());
 
-				if(_callback)
-					_callback(link_result);
-				
-				// dont callback again
-				_callback = NULL;
+				if(_callback){
+					linkCallback_t cb = _callback;
+					// dont callback again
+					_callback = NULL;
+					
+					cb(link_result);
+				}
 
 			}
 		}

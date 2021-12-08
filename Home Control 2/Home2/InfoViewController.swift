@@ -181,23 +181,34 @@ class InfoViewController: UIViewController  {
 	//	dp.enter()
 		HomeControl.shared.fetchData(.date) { result in
 //			dp.leave()
+			
+			self.lblLat.text 	= "Not Set"
+			self.lblLong.text = ""
+			self.lblSunSet.text 	= ""
+			self.lblSunSet1.text 	= ""
+			self.lblSunRise.text 	= ""
+			self.lblSunRise1.text 	= ""
+
 			if case .success(let data as ServerDateInfo) = result {
-				self.lblLat.text = String(data.latitude)
-				self.lblLong.text = String(data.longitude)
-				self.lblSunSet.text = self.solarTimeFormat.string(from: data.sunSet)
-				self.lblSunSet1.text = self.solarTimeFormat.string(from: data.civilSunSet)
-				self.lblSunRise.text = self.solarTimeFormat.string(from: data.sunRise)
-				self.lblSunRise1.text = self.solarTimeFormat.string(from: data.civilSunRise)
-			}
-			else {
-				self.lblLat.text 	= ""
-				self.lblLong.text = ""
-				self.lblSunSet.text 	= ""
-				self.lblSunSet1.text 	= ""
-				self.lblSunRise.text 	= ""
-				self.lblSunRise1.text 	= ""
 				
-			}
+				if let latitude = data.latitude ,
+					let longitude = data.longitude,
+					let sunSet = data.sunSet,
+					let civilSunSet = data.civilSunSet,
+					let civilSunRise = data.civilSunRise,
+					let sunRise = data.sunRise
+				{
+					self.lblLat.text = String(latitude)
+					self.lblLong.text = String(longitude)
+					self.lblSunSet.text = self.solarTimeFormat.string(from: sunSet)
+					self.lblSunSet1.text = self.solarTimeFormat.string(from: civilSunSet)
+					self.lblSunRise.text = self.solarTimeFormat.string(from: sunRise)
+					self.lblSunRise1.text = self.solarTimeFormat.string(from: civilSunRise)
+				}
+			 
+			
+	 		}
+		
 		}
 		
 	}

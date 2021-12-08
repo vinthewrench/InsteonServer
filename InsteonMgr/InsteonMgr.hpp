@@ -78,14 +78,21 @@ public:
 
 	bool plmInfo( DeviceID* = NULL, DeviceInfo* = NULL);
 		
-	bool startLinking(uint8_t groupID = 0xfE);
+	bool startLinking(uint8_t groupID = 0xfE,
+							std::function<void(DeviceID deviceID,
+													 bool didSucceed,
+													 string error_text)> callback = NULL);
+
 	bool cancelLinking();
 	
  	bool linkDevice(DeviceID deviceID,
 						 bool isCTRL = true,
 						 uint8_t groupID = 0xfE,
 						 string deviceName = "",
-						 boolCallback_t callback = NULL);
+						 std::function<void(DeviceID deviceID,
+												  bool didSucceed,
+												  string error_text)> callback = NULL);
+
 
 	bool importDevices(vector<plmDevicesEntry_t> devices,
 						  std::function<void(vector<DeviceID> failedDevices,  bool didSucceed)> callback = NULL);
@@ -154,6 +161,8 @@ public:
 
 	bool getSolarEvents(solarTimes_t &solar);
 	bool refreshSolarEvents();
+	long upTime();
+
 	// events
 	
 	void registerEvent( DeviceID deviceID,

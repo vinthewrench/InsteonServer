@@ -264,7 +264,10 @@ bool InsteonMgr::refreshSolarEvents(){
 	return ScheduleMgr::shared()->calculateSolarEvents();
 }
 
-
+long InsteonMgr::upTime(){
+	return ScheduleMgr::shared()->upTime();
+}
+ 
 // MARK: - ALDB and PLM setup
 
 
@@ -1480,7 +1483,9 @@ bool InsteonMgr::linkDevice(DeviceID deviceID,
 									 bool isCTRL,
 									 uint8_t groupID,
 									 string deviceName,
-									 boolCallback_t callback){
+									 std::function<void(DeviceID deviceID,
+															  bool didSucceed,
+															  string error_text)> callback){
 	
 	bool status = false;
 	
@@ -1495,73 +1500,79 @@ bool InsteonMgr::linkDevice(DeviceID deviceID,
 				deviceID.string().c_str(),
 				groupID);
 	
-	status = _linking->linkDevice(deviceID, isCTRL, groupID,
+		status = _linking->linkDevice(deviceID, isCTRL, groupID,
 											[=]( auto link) {
 		switch(link.status){
+				
+			case InsteonLinking::LINK_SUCCESS:
+			{
+					InsteonDevice(deviceID).getEngineVersion([=]( uint8_t version, bool didSucceed) {
+						
+						auto info =  DeviceInfo(link.deviceInfo);
+						
+						if(didSucceed){
+							info.SetVersion(version);
+						}
+						// add the new device to ur database.
+						_db.linkDevice(link.deviceID,
+											true,	// is Controller
+											link.groupID,
+											info,
+											deviceName,
+											true);			// is validated
+						
+						_aldb->readDeviceALDB(deviceID, [=]
+													 ( std::vector<insteon_aldb_t> aldb,  bool didSucceed) {
+							
+							if(didSucceed){
+								_db.updateDeviceALDB(deviceID, aldb);
+							}
+							
+							LOG_INFO("\tLINKING COMPLETE(%02x) %s %s rev:%02X version:%02X %s\n",
+										link.groupID,
+										deviceID.string().c_str(),
+										info.string().c_str(),
+										info.GetFirmware(),
+										info.GetVersion(),
+										!deviceName.empty()?deviceName.c_str():"<unknown>"
+										);
+			 
+							_db.saveToCacheFile();
+							callback(deviceID, true, string());
+						});
+					});
+				}
+				break;
+		 
 			case InsteonLinking::LINK_FAILED:
 				LOG_INFO("\tLINKING FAILED\n");
+				callback(DeviceID(), false , "linking failed");
 				break;
 				
 			case InsteonLinking::LINK_TIMEOUT:
 				LOG_INFO("\tLINKING LINK_TIMEOUT\n");
+				callback(DeviceID(), false , "linking timeout");
 				break;
-				
+	
 			case InsteonLinking::LINK_CANCELED:
 				LOG_INFO("\tLINKING LINK_CANCELED\n");
+				callback(DeviceID(), false , "linking canceled");
 				break;
-				
-			default:;
+	
+			default:
+				LOG_INFO("\tLINKING INVALID\n");
+				callback(DeviceID(), false , "linking invalid response");
+				break;
 		}
 		
-		if(link.status == InsteonLinking::LINK_SUCCESS){
-			
-			InsteonDevice(deviceID).getEngineVersion([=]( uint8_t version, bool didSucceed) {
-				
-				auto info =  DeviceInfo(link.deviceInfo);
-				
-				if(didSucceed){
-					info.SetVersion(version);
-				}
-				// add the new device to ur database.
-				_db.linkDevice(link.deviceID,
-									true,	// is Controller
-									link.groupID,
-									info,
-									deviceName,
-									true);			// is validated
-				
-				_aldb->readDeviceALDB(deviceID, [=]
-											 ( std::vector<insteon_aldb_t> aldb,  bool didSucceed) {
-					
-					if(didSucceed){
-						_db.updateDeviceALDB(deviceID, aldb);
-					}
-					
-					LOG_INFO("\tLINKING COMPLETE(%02x) %s %s rev:%02X version:%02X %s\n",
-								link.groupID,
-								deviceID.string().c_str(),
-								info.string().c_str(),
-								info.GetFirmware(),
-								info.GetVersion(),
-								!deviceName.empty()?deviceName.c_str():"<unknown>"
-								);
-	 
-					_db.saveToCacheFile();
-					callback(true);
-				});
-			});
-		}
-		else {
-			callback(false);
-		}
-		
+			return;
 	});
 	
 	return  status;
 }
 
 bool InsteonMgr::importDevices_Internal(vector<plmDevicesEntry_t> devices,
-								 boolCallback_t cb){
+													 boolCallback_t cb){
 	
 	bool status = false;
 	
@@ -1570,17 +1581,18 @@ bool InsteonMgr::importDevices_Internal(vector<plmDevicesEntry_t> devices,
 		if(cb) (cb)(true);
 		return true;
 	}
- 
+	
 	auto dInfo = devices.back();
 	devices.pop_back();
- 
+	
 	status = linkDevice(dInfo.deviceID,
 							  true,
 							  dInfo.cntlID,
 							  dInfo.name,
-							  [=](bool didSucceed){
+							  [=](DeviceID deviceID,
+									bool didSucceed,
+									string error_text){
 		if(didSucceed) {
-			
 			
 			// link aldb
 			addToDeviceALDB(dInfo.deviceID, dInfo.responders,
@@ -1589,15 +1601,15 @@ bool InsteonMgr::importDevices_Internal(vector<plmDevicesEntry_t> devices,
 				importDevices_Internal(devices, cb);
 			});
 		}
- 		else
+		else
 		{
 			_importDevices_failList.push_back(dInfo.deviceID);
 			
 			// do the next one.
 			importDevices_Internal(devices, cb);
- 		}
-		 
- 	});
+		}
+		
+	});
 	
 	return  status;
 }
@@ -1631,12 +1643,15 @@ bool InsteonMgr::importDevices(vector<plmDevicesEntry_t> devices,
 	return  status;
 }
 
-bool InsteonMgr::startLinking(uint8_t groupID){
+bool InsteonMgr::startLinking(uint8_t groupID,
+										std::function<void(DeviceID deviceID,
+																 bool didSucceed,
+																 string error_text)> callback){
 	bool status = false;
 	
-	if(_state != STATE_READY)
+	if( (_state != STATE_READY) && (_state != STATE_PLM_INIT))
 		return false;
-		
+
 	if(!_linking){
 		_linking = new InsteonLinking(_cmdQueue);
 	}
@@ -1646,41 +1661,66 @@ bool InsteonMgr::startLinking(uint8_t groupID){
 	_state = STATE_LINKING;
  	status = _linking->startLinking(true,	// is Controller
 											  groupID,
-											  [this]( auto link) {
+											  [=]( auto link) {
 		
 		switch(link.status){
 				
 			case InsteonLinking::LINK_SUCCESS:
 			{
-				LOG_INFO("\tLINKING COMPLETE(%02x) %s %s rev:%02X \n",
-							link.groupID,
-							link.deviceID.string().c_str(),
-							link.deviceInfo.string().c_str(),
-							link.deviceInfo.GetFirmware());
 				
-				_db.linkDevice(link.deviceID,
-									true,	// is Controller
+				DeviceID deviceID = link.deviceID;
+		 
+				InsteonDevice(deviceID).getEngineVersion([=]( uint8_t version, bool didSucceed) {
+					
+					auto info =  DeviceInfo(link.deviceInfo);
+					
+					if(didSucceed){
+						info.SetVersion(version);
+					}
+					// add the new device to ur database.
+					_db.linkDevice(link.deviceID,
+										true,	// is Controller
+										link.groupID,
+										info,
+										"",
+										true);			// is validated
+					
+					_aldb->readDeviceALDB(deviceID, [=]
+												 ( std::vector<insteon_aldb_t> aldb,  bool didSucceed) {
+						
+						if(didSucceed){
+							_db.updateDeviceALDB(deviceID, aldb);
+						}
+						
+						LOG_INFO("\tLINKING COMPLETE(%02x) %s %s rev:%02X version:%02X %s\n",
 									link.groupID,
-									link.deviceInfo,
-									"",
-									true);			// is validated
-				
-				_db.saveToCacheFile();
-				
-	//			_db.printDB();
-			}
+									deviceID.string().c_str(),
+									info.string().c_str(),
+									info.GetFirmware(),
+									info.GetVersion(),
+									"<unknown>"
+									);
+		 
+						_db.saveToCacheFile();
+						callback(deviceID, true, string());
+					});
+				});
+		}
 				break;
 				
 			case InsteonLinking::LINK_FAILED:
 				LOG_INFO("\tLINKING FAILED\n");
+				callback(DeviceID(), false , "linking failed");
 				break;
 				
 			case InsteonLinking::LINK_TIMEOUT:
 				LOG_INFO("\tLINKING LINK_TIMEOUT\n");
+				callback(DeviceID(), false , "linking timeout");
 				break;
 				
 			case InsteonLinking::LINK_CANCELED:
 				LOG_INFO("\tLINKING LINK_CANCELED\n");
+				callback(DeviceID(), false , "linking canceled");
 				break;
 				
 			default:;
@@ -1691,7 +1731,6 @@ bool InsteonMgr::startLinking(uint8_t groupID){
 		// can we free it up from a callback?
 		delete _linking;
 		_linking = NULL;
-		
 	});
 	
 	if(status	){
@@ -2123,159 +2162,6 @@ plm_result_t InsteonMgr::handleResponse(uint64_t timeout){
 	return result;
 }
  
-
-//bool  InsteonMgr::handleLinking(	deviceID_t devID, uint8_t groupID ){
-//	
-//
-//	bool status = true;
-//	
-//	LOG_INFO("\t LINKING: Assign to Group %02X <%02X.%02X.%02X>\n",
-//			 groupID, devID[2],devID[1],devID[0]);
-//	
-////		{
-//// InsteonDeviceInfo* catDB = InsteonDeviceInfo::shared();
-////			printf("Get Last Link ...");
-////			insteon_linking_t lastLink;;
-////			status =  _plm.getLastLink(&lastLink); CHK_STATUS;
-////			printf("OK\n");
-////			printf("\t LINKED (%s) : Group %02X <%02X.%02X.%02X>",
-////					 (lastLink.flag & 0x40) == 0?"R":"C",
-////					 lastLink.group,
-////					 lastLink.dev_id[2],lastLink.dev_id[1],lastLink.dev_id[0]);
-////
-////			const char*	description = NULL;
-////			insteon_cat_t* item = catDB->findInfoForDeviceType(lastLink.info[0],lastLink.info[1]);
-////			if(item) description = item->description;
-////
-////			printf("  (%02X.%02X) %s rev:%02X",
-////					 lastLink.info[0],lastLink.info[1],
-////					 description?description:"Unknown",
-////					 lastLink.info[2]);
-////			printf("\n");
-////
-////		}
-//	
-//	
-// // 		_state = STATE_READY;
-// 
-//	return status;
-//}
-//
-
-
-
-
-
-//
-//		if(0){
-//
-//			DeviceID keyPad = DeviceID("29.AA.F5");
-//
-// 			InsteonDevice(_cmdQueue).setLevel(keyPad, 255);
-// 			InsteonDevice(_cmdQueue).setLevel(keyPad, 0);
-// 			InsteonDevice(_cmdQueue).setLevel(keyPad, 255);
-//
-//			InsteonDevice(_cmdQueue).setLevel(keyPad, 0);
- 
-//			{
-//				uint8_t buffer[] = {
-//					0x00,0x00,0x00,0x00,};
-//
-//				START_VERBOSE;
-// 				_cmdQueue->queueMessage(keyPad,
-//												0x09, 0x01,
-//												buffer, sizeof(buffer),
-//												[this]( auto arg, bool didSucceed) {
-//
-//
-//				});
-//			}
-//
-				
-		 
-//			for(auto dev : _db.validDevices()){
-//				InsteonDevice(_cmdQueue).setLevel(dev, 255);
-//			}
-	
-//			for(auto dev : _db.validDevices()){
-//				InsteonDevice(_cmdQueue).setLEDBrightness(dev, 11);
-//			}
-//			for(auto dev : _db.validDevices()){
-//				InsteonDevice(_cmdQueue).setLEDBrightness(dev, 127);
-//			}
-			
-		//	InsteonDevice(_cmdQueue).setLevel(DeviceID("33.4F.F6"), 0);
-	
-//			for(auto dev : _db.validDevices()){
-//				InsteonDevice(_cmdQueue).setLevel(dev, 0);
-//			}
-
-//		}
-		// DEBUG
-		
-
-/*
- 
-		if(0){
-			
-			bool status = false;
-			
-			if(!_linking){
-				_linking = new InsteonLinking(_cmdQueue);
-			}
-			
-			DeviceID device = DeviceID("57.2F.FA");
-
-			LOG_INFO("\tLINKING %s %s\n",
-						device.string().c_str(), 	device.nameString().c_str());
-
-			status = _linking->linkDevice(device,  [this]( auto link) {
-				
-				switch(link.status){
-						
-					case InsteonLinking::LINK_SUCCESS:
-					{
-						LOG_INFO("\tLINKING COMPLETE(%02x) %s \"%s\" %s rev:%02X \n",
-									link.groupID,
-									link.deviceID.string().c_str(),
-									link.deviceID.name_cstr(),
-									link.deviceInfo.string().c_str(),
-									link.deviceInfo.GetFirmware());
-						
-						_db.linkDevice(link.deviceID,
-											true,	// is Controller
-											link.groupID,
-											link.deviceInfo,
-											true);			// is validated
-						
-						_db.saveToCacheFile();
-						
-						_db.printDB();
-					}
-						break;
-						
-					case InsteonLinking::LINK_FAILED:
-						LOG_INFO("\tLINKING FAILED\n");
-						break;
-						
-					case InsteonLinking::LINK_TIMEOUT:
-						LOG_INFO("\tLINKING LINK_TIMEOUT\n");
-						break;
-						
-					case InsteonLinking::LINK_CANCELED:
-						LOG_INFO("\tLINKING LINK_CANCELED\n");
-						break;
-						
-					default:;
-				}
-				
-			});
-				
-
-		}
-		
-
- */
 
 void InsteonMgr::updateLevels(){
 	

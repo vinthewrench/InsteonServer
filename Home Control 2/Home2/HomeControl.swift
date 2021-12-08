@@ -12,44 +12,66 @@ import CoreLocation
 
 class ServerDateInfo {
 
-	func getCLLocationCoordinate2D() -> CLLocationCoordinate2D {
-		return  CLLocationCoordinate2DMake(latitude, longitude)
-	}
+//	func getCLLocationCoordinate2D() -> CLLocationCoordinate2D {
+//		return  CLLocationCoordinate2DMake(latitude, longitude)
+//	}
 
-	let latitude : CLLocationDegrees
-	let longitude : CLLocationDegrees
 	let uptime 	: TimeInterval
-
-	let gmtOffset: 		Int
-	let timeZone: 		String
-	let midNight: 		Date
-	let sunSet:			Date
-	let civilSunSet: 	Date
-	let civilSunRise: 	Date
-	let sunRise: 		Date
+	
+	let latitude : 	CLLocationDegrees?
+	let longitude : 	CLLocationDegrees?
+	let gmtOffset: 	Int?
+	let timeZone: 		String?
+	let midNight: 		Date?
+	let sunSet:			Date?
+	let civilSunSet: 	Date?
+	let civilSunRise: Date?
+	let sunRise: 		Date?
 
 	init(from :RESTDateInfo){
-		self.latitude 	= from.latitude
-		self.longitude 	= from.longitude
+		
 		self.uptime 		= TimeInterval(from.uptime)
-		self.gmtOffset	 = from.gmtOffset
-		self.timeZone	 = from.timeZone
 
-		var t:TimeInterval
-		self.midNight 	 = Date(timeIntervalSince1970: from.midnight)
+		if let latitude = from.latitude ,
+			let longitude = from.longitude,
+			let midnight = from.midnight,
+			let sunSet = from.sunSet,
+			let civilSunSet = from.civilSunSet,
+			let civilSunRise = from.civilSunRise,
+			let sunRise = from.sunRise
+			{
+	 
+			self.latitude 		= latitude
+			self.longitude 	= longitude
+			self.gmtOffset	 = from.gmtOffset
+			self.timeZone	 = from.timeZone
 
-		t = TimeInterval(from.midnight + (from.sunSet * 60))
-		self.sunSet 	= Date(timeIntervalSince1970: TimeInterval(t))
+			var t:TimeInterval
+			self.midNight 	 = Date(timeIntervalSince1970: midnight)
 
-		t = TimeInterval(from.midnight + (from.civilSunSet * 60))
-		self.civilSunSet 	= Date(timeIntervalSince1970: TimeInterval(t))
+			t = TimeInterval(midnight + (sunSet * 60))
+			self.sunSet 	= Date(timeIntervalSince1970: TimeInterval(t))
 
-		t = TimeInterval(from.midnight + (from.civilSunRise * 60))
-		self.civilSunRise 	= Date(timeIntervalSince1970: TimeInterval(t))
+			t = TimeInterval(midnight + (civilSunSet * 60))
+			self.civilSunSet 	= Date(timeIntervalSince1970: TimeInterval(t))
 
-		t = TimeInterval(from.midnight + (from.sunRise * 60))
-		self.sunRise 	= Date(timeIntervalSince1970: TimeInterval(t))
+			t = TimeInterval(midnight + (civilSunRise * 60))
+			self.civilSunRise 	= Date(timeIntervalSince1970: TimeInterval(t))
 
+			t = TimeInterval(midnight + (sunRise * 60))
+			self.sunRise 	= Date(timeIntervalSince1970: TimeInterval(t))
+		}
+		else {
+			self.latitude = nil
+			self.longitude = nil
+			self.midNight = nil
+			self.sunSet = nil
+			self.sunRise = nil
+			self.civilSunSet = nil
+			self.civilSunRise = nil
+			self.gmtOffset = nil
+			self.timeZone  = nil
+		}
 	}
 }
 
@@ -108,6 +130,7 @@ public class HomeControl {
 		var queries: [URLQueryItem]? = nil
 		
 		switch(requestType){
+		
 		case .status:
 			urlPath = "state"
 			

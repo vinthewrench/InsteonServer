@@ -354,8 +354,8 @@ class KeypadViewController: UIViewController, EditableUILabelDelegate {
 }
  
 
-class KeypadsViewController: UIViewController {
-	
+class KeypadsViewController: MainSubviewViewController{
+		
 	private var pageController: UIPageViewController?
 	
 	private var keypadIDs: [String] = []
@@ -408,6 +408,8 @@ class KeypadsViewController: UIViewController {
 	
 	override func viewWillAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
+		
+	//	mainView?.btnAdd.isHidden = true
 		
 		guard AppData.serverInfo.validated  else {
 			return

@@ -72,17 +72,21 @@ public class InsteonFetcher: ObservableObject {
 	
 	
 	public func getDevices(completion: @escaping () -> Void = {}) {
-		self.lastEtag = 0
-		self.getChangedDevices( ){
+		self.getChangedDevices(clearAll: true){
 			completion()
 		}
 	}
 	
 
-	public func getChangedDevices( completion: @escaping () -> Void = {}) {
+	public func getChangedDevices(clearAll: Bool = false,
+											completion: @escaping () -> Void = {}) {
 		
 		guard AppData.serverInfo.validated  else {
 			return
+		}
+		
+		if(clearAll) {
+			self.lastEtag = 0
 		}
 		
 		HCServerManager.shared.RESTCall(urlPath: "devices",
@@ -95,17 +99,15 @@ public class InsteonFetcher: ObservableObject {
 					self.lastEtag = etag
 				}
 				
-//				DispatchQueue.main.async{
-					
+				if(clearAll){
+					self.devices = obj.details
+				}
+				else
+				{
 					self.devices = self.devices.merging(obj.details) { $1 }
+
+				}
 					
-					
-					//							if let newdevices = obj.details?.filter({ !($1.isKeyPad || $1.isPLM) }) {
-					//								self.devices = self.devices.merging(newdevices) { $1 }
-					//							}
-					
-//				}
-				//				self.updateDeviceLevels()
 			}
 			completion()
 
@@ -145,6 +147,8 @@ public class InsteonFetcher: ObservableObject {
 	}
 	
 	
+
+	
 	public func renameDevice(_ deviceID: String, newName: String,
 										completion: @escaping (Error?) -> Void = {_ in }){
 		
@@ -161,6 +165,30 @@ public class InsteonFetcher: ObservableObject {
 			completion(error)
 		}
 	}
+	
+	public func deleteDevice(_ deviceID: String,
+									completion: @escaping (Error?) -> Void = {_ in }){
+		
+		
+		devices.removeValue(forKey: deviceID)
+		
+		HCServerManager.shared.deleteDevice(deviceID)
+		{ (error)  in
+			
+			if(error == nil){
+				
+				self.getChangedDevices(clearAll: true){
+					completion(nil)
+					return
+	
+				}
+				
+			}
+			
+			completion(error)
+		}
+	}
+
 
 	public func renameGroup(_ groupID: String, newName: String,
 										completion: @escaping (Error?) -> Void = {_ in }){

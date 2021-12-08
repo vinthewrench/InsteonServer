@@ -179,7 +179,7 @@ class DeviceALDBViewController :UIViewController,
 					
 					cell.lblAddr.font = font
 					cell.lblGroup.font = font
-					cell.lblDeviceID.font = font
+					cell.lblDeviceID.font = font.withSize(UIFont.smallSystemFontSize)
 					cell.imgDot.image = img
 					cell.imgDot.tintColor = isCTNL ? UIColor.systemBlue : UIColor.systemGray
 					
@@ -201,7 +201,7 @@ class DeviceALDBViewController :UIViewController,
 					
 					cell.lblAddr.font = font
 					cell.lblGroup.font = font
-					cell.lblDeviceID.font = font
+					cell.lblDeviceID.font = font.withSize(UIFont.smallSystemFontSize)
 					cell.imgDot.image = img
 					cell.imgDot.tintColor = isCTNL ? UIColor.systemBlue : UIColor.systemGray
 					
