@@ -17,7 +17,7 @@
 #define CHK_STATUS if(!status) goto done;
 
 
-const char* 	InsteonMgr::InsteonMgr_Version = "1.0.1";
+const char* 	InsteonMgr::InsteonMgr_Version = "1.0.2";
 
 /**
  * @brief Initialize the InsteonMgr
