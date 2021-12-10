@@ -26,14 +26,15 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 											 UITableViewDataSource {
 	
 	@IBOutlet var lblName	: EditableUILabel!
-	@IBOutlet var img	: UIImageView!
+	@IBOutlet var img			: UIImageView!
 	@IBOutlet var lblLevel	: UILabel!
-
 	@IBOutlet var btnBeep	: UIButton!
 	@IBOutlet var btnALDB	: UIButton!
 
 	@IBOutlet var sw	: UISwitch!
 	@IBOutlet var slider	: UISlider!
+	
+	var isOn: Bool = false
 	
 	struct PropTableEntry  {
 		var propName: String =  ""
@@ -47,8 +48,6 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 	//	@IBOutlet public var cnstTableHeight : NSLayoutConstraint!
 	
 	var timer = Timer()
-	
-	
 	var deviceID :String = ""
 	
 	class func create(withDeviceID: String) -> DeviceDetailViewController? {
@@ -111,7 +110,6 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 		HomeControl.shared.fetchData(.device, ID: self.deviceID) { result in
 			if case .success(let device as RESTDeviceDetails) = result {
 				
-				
 				if(device.name.isEmpty){
 					self.lblName.text = "Unnamed Device"
 					self.lblName.textColor = UIColor.darkGray
@@ -122,7 +120,8 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 				}
 		
 				self.lblLevel.text = device.level?.onLevelString()
-				self.img.image = device.deviceImage()
+				self.img.image	= device.deviceImage()
+				self.isOn = device.level ?? 0 > 0
 				
 				if(device.isDimmer){
 					self.sw.isHidden = true
@@ -133,7 +132,6 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 				{
 					self.sw.isHidden = false
 					self.sw.isOn = device.level ?? 0 > 0
-					
 					self.slider.isHidden = true
 				}
 				
@@ -214,6 +212,19 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 		self.lblLevel.text =  Int(slider.value).onLevelString()
 	}
 	
+	@IBAction func tapGesture(recognizer : UITapGestureRecognizer) {
+		 if recognizer.state == .ended{
+			stopPollng()
+			
+			let newLevel = isOn ? 0: 255
+			isOn = !isOn
+			InsteonFetcher.shared.setDeviceLevel(deviceID, toLevel: newLevel) {_ in
+				self.refreshDevice(updateProps:false);
+				self.startPolling()
+			}
+		}
+	}
+ 
 	@IBAction func switchChanged(sender: UISwitch) {
 		
 		stopPollng()
@@ -259,7 +270,6 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 	}
 	
 	func editMenuTapped(sender: UILabel) {
-		
 		
 		HomeControl.shared.fetchData(.device, ID: self.deviceID) { result in
 			if case .success(let device as RESTDeviceDetails) = result {

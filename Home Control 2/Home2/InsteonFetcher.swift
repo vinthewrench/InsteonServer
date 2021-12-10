@@ -272,25 +272,6 @@ public class InsteonFetcher: ObservableObject {
 		}
 	}
 
-	public func removeALDBfromDevice( _ deviceID: String, aldbAddr: String,
-												 completion: @escaping (Error?) -> Void = {_ in }){
-			 
-			 
-		HCServerManager.shared.removeALDBfromDevice(deviceID, aldbAddr:aldbAddr)
-			 { (error)  in
-
-				 if(error == nil){
-
-					 self.getGroups(){
- 					 completion(nil)
-						 return
-					 }
-
-				 }
-
-				 completion(error)
-			 }
-}
 	
 	public func removeFromGroup(_ groupID: String, deviceID: String,
 									completion: @escaping (Error?) -> Void = {_ in }){
@@ -333,6 +314,48 @@ public class InsteonFetcher: ObservableObject {
 	}
 
 
+	public func addALDBtoDevice( _ deviceID: String,
+										  			groupID: String = "01",
+										 		 isCNTL: Bool = false,
+												  completion: @escaping (Error?) -> Void = {_ in }){
+		
+		HCServerManager.shared.addALDBtoDevice(deviceID, groupID: groupID, isCNTL: isCNTL)
+		{ (error)  in
+			
+			if(error == nil){
+				
+				self.getChangedDevices(){
+					completion(nil)
+					return
+				}
+				
+			}
+			
+			completion(error)
+		}
+	}
+
+	public func removeALDBfromDevice( _ deviceID: String, aldbAddr: String,
+												 completion: @escaping (Error?) -> Void = {_ in }){
+			 
+			 
+		HCServerManager.shared.removeALDBfromDevice(deviceID, aldbAddr:aldbAddr)
+			 { (error)  in
+
+				 if(error == nil){
+
+					 self.getChangedDevices(){
+					 completion(nil)
+						 return
+					 }
+
+				 }
+
+				 completion(error)
+			 }
+}
+	
+	
 
 	public func renameEvent(_ eventID: String, newName: String,
 										completion: @escaping (Error?) -> Void = {_ in }){
@@ -360,9 +383,13 @@ public class InsteonFetcher: ObservableObject {
 		{ (error)  in
 			
 			if(error == nil){
-				
 				self.devices[deviceID]?.level = toLevel
+				completion(true)
 			}
+			else {
+				completion(false)
+			}
+			
 		}
 	}
 

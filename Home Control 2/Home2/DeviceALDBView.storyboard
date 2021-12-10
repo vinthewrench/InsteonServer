@@ -3,6 +3,7 @@
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="18093"/>
+        <capability name="Image references" minToolsVersion="12.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -222,16 +223,28 @@
                                     <outlet property="delegate" destination="Y6W-OH-hqX" id="nWX-jb-nk8"/>
                                 </connections>
                             </tableView>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="rwb-yX-eiE">
+                                <rect key="frame" x="275" y="228" width="25" height="24"/>
+                                <state key="normal">
+                                    <imageReference key="image" image="plus.circle" catalog="system" symbolScale="large"/>
+                                    <preferredSymbolConfiguration key="preferredSymbolConfiguration" scale="large" weight="light"/>
+                                </state>
+                                <connections>
+                                    <action selector="btnALDBHitWithSender:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="Hic-4Q-8Zk"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
                             <constraint firstItem="pKg-VK-mwa" firstAttribute="leading" secondItem="XFS-jd-97H" secondAttribute="leading" id="1EQ-V8-FwK"/>
+                            <constraint firstItem="rwb-yX-eiE" firstAttribute="leading" secondItem="RIG-Mh-Ded" secondAttribute="trailing" constant="8" symbolic="YES" id="5O2-62-46P"/>
                             <constraint firstItem="g9i-rh-gXO" firstAttribute="leading" secondItem="Fry-Nc-CRF" secondAttribute="leading" id="9fi-3h-oVY"/>
                             <constraint firstItem="pKg-VK-mwa" firstAttribute="top" secondItem="XFS-jd-97H" secondAttribute="bottom" constant="2" id="A70-yU-JF8"/>
                             <constraint firstItem="vJg-05-GHK" firstAttribute="centerY" secondItem="Fry-Nc-CRF" secondAttribute="centerY" constant="-8" id="B1a-eH-sRV"/>
                             <constraint firstItem="kEv-I1-kch" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" constant="20" id="EUT-Bd-yqC"/>
                             <constraint firstItem="vJg-05-GHK" firstAttribute="leading" secondItem="Fry-Nc-CRF" secondAttribute="trailing" constant="4" id="GIL-XD-ijc"/>
+                            <constraint firstItem="rwb-yX-eiE" firstAttribute="centerY" secondItem="RIG-Mh-Ded" secondAttribute="centerY" id="IMe-pr-Psc"/>
                             <constraint firstItem="RIG-Mh-Ded" firstAttribute="top" secondItem="pKg-VK-mwa" secondAttribute="bottom" constant="30" id="NPA-Hz-DIM"/>
                             <constraint firstItem="kEv-I1-kch" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="20" id="OIT-kx-N4O"/>
                             <constraint firstItem="vId-U7-n4w" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="30" id="Ozj-ye-5ai"/>
@@ -263,6 +276,7 @@
         <image name="c.circle.fill" catalog="system" width="128" height="121"/>
         <image name="dot.radiowaves.right" catalog="system" width="110" height="128"/>
         <image name="m.circle" catalog="system" width="128" height="121"/>
+        <image name="plus.circle" catalog="system" width="128" height="121"/>
         <image name="r.circle" catalog="system" width="128" height="121"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>

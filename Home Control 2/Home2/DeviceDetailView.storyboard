@@ -208,9 +208,17 @@
                                     <constraint firstAttribute="height" constant="20" id="wYT-KC-f0M"/>
                                 </constraints>
                             </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="2Ax-u9-0Iv">
+                                <rect key="frame" x="40" y="141" width="92" height="32"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <connections>
+                                    <outletCollection property="gestureRecognizers" destination="tnR-Md-nCL" appends="YES" id="1dO-yV-YdQ"/>
+                                </connections>
+                            </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <gestureRecognizers/>
                         <constraints>
                             <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="SLX-3s-gg5" secondAttribute="trailing" constant="30" id="2h2-Xp-Llf"/>
                             <constraint firstItem="SLX-3s-gg5" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="30" id="E7y-7Z-dTN"/>
@@ -219,12 +227,16 @@
                             <constraint firstItem="p0Y-z9-K7u" firstAttribute="centerY" secondItem="5Oo-te-YLZ" secondAttribute="centerY" id="L92-Rj-acp"/>
                             <constraint firstItem="bWT-dW-kTf" firstAttribute="trailing" secondItem="SLX-3s-gg5" secondAttribute="trailing" id="LVy-bZ-K30"/>
                             <constraint firstItem="kfB-aZ-RMr" firstAttribute="centerX" secondItem="5EZ-qb-Rvc" secondAttribute="centerX" id="Mod-if-PTD"/>
+                            <constraint firstItem="ia4-X8-2Pf" firstAttribute="trailing" secondItem="2Ax-u9-0Iv" secondAttribute="trailing" id="RB2-Gu-zPz"/>
+                            <constraint firstItem="aeS-9K-AmB" firstAttribute="leading" secondItem="2Ax-u9-0Iv" secondAttribute="leading" id="Wtm-B4-222"/>
                             <constraint firstItem="5Oo-te-YLZ" firstAttribute="top" secondItem="bWT-dW-kTf" secondAttribute="bottom" constant="8" symbolic="YES" id="cqf-BV-InV"/>
                             <constraint firstItem="1Oh-z5-IWf" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" constant="20" id="fuv-ml-bWp"/>
                             <constraint firstItem="kfB-aZ-RMr" firstAttribute="centerY" secondItem="p0Y-z9-K7u" secondAttribute="centerY" id="i9x-9e-tXR"/>
                             <constraint firstItem="kfB-aZ-RMr" firstAttribute="leading" secondItem="5Oo-te-YLZ" secondAttribute="trailing" constant="8" symbolic="YES" id="nde-9m-TRn"/>
+                            <constraint firstItem="aeS-9K-AmB" firstAttribute="top" secondItem="2Ax-u9-0Iv" secondAttribute="top" constant="2" id="opP-6i-aFh"/>
                             <constraint firstItem="SLX-3s-gg5" firstAttribute="top" secondItem="1Oh-z5-IWf" secondAttribute="bottom" constant="40" id="qMh-2F-81l"/>
                             <constraint firstItem="1Oh-z5-IWf" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="10" id="yEu-B0-ZBS"/>
+                            <constraint firstItem="aeS-9K-AmB" firstAttribute="bottom" secondItem="2Ax-u9-0Iv" secondAttribute="bottom" constant="-2" id="yUo-f9-15M"/>
                             <constraint firstItem="bWT-dW-kTf" firstAttribute="top" secondItem="SLX-3s-gg5" secondAttribute="bottom" constant="8" symbolic="YES" id="yoF-Il-xyn"/>
                         </constraints>
                     </view>
@@ -240,6 +252,11 @@
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Ief-a0-LHa" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+                <tapGestureRecognizer id="tnR-Md-nCL">
+                    <connections>
+                        <action selector="tapGestureWithRecognizer:" destination="Y6W-OH-hqX" id="UMJ-Jc-dwm"/>
+                    </connections>
+                </tapGestureRecognizer>
             </objects>
             <point key="canvasLocation" x="28.985507246376812" y="47.544642857142854"/>
         </scene>

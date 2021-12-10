@@ -880,6 +880,51 @@ class HCServerManager: ObservableObject {
 			}
 	}
 	
+	
+	public func addALDBtoDevice( _ deviceID: String,
+													groupID: String,
+												 isCNTL: Bool,
+												 completion: @escaping (Error?) -> Void = {_ in }){
+
+		let urlPath = "link/\(deviceID)/\(groupID)"
+		
+		if let requestUrl: URL = AppData.serverInfo.url ,
+			let apiKey = AppData.serverInfo.apiKey,
+			let apiSecret = AppData.serverInfo.apiSecret {
+			let unixtime = String(Int(Date().timeIntervalSince1970))
+			
+			let urlComps = NSURLComponents(string: requestUrl.appendingPathComponent(urlPath).absoluteString)!
+			var request = URLRequest(url: urlComps.url!)
+			
+			let json = ["cntrl":isCNTL]
+			let jsonData = try? JSONSerialization.data(withJSONObject: json)
+			request.httpBody = jsonData
+	 
+			// Specify HTTP Method to use
+			request.httpMethod = "PUT"
+			request.setValue(apiKey,forHTTPHeaderField: "X-auth-key")
+			request.setValue(String(unixtime),forHTTPHeaderField: "X-auth-date")
+			let sig =  calculateSignature(forRequest: request, apiSecret: apiSecret)
+			request.setValue(sig,forHTTPHeaderField: "Authorization")
+			
+			// Send HTTP Request
+			request.timeoutInterval = 30
+			
+			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
+			
+			let task = session.dataTask(with: request) { (data, response, urlError) in
+				
+				completion(urlError	)
+			}
+			task.resume()
+		}
+			else {
+				completion(ServerError.invalidURL)
+			}
+		completion(ServerError.invalidURL)
+
+	}
+	
 	public func removeALDBfromDevice( _ deviceID: String, aldbAddr: String,
 												 completion: @escaping (Error?) -> Void = {_ in }){
 		
@@ -902,7 +947,7 @@ class HCServerManager: ObservableObject {
 			request.setValue(sig,forHTTPHeaderField: "Authorization")
 			
 			// Send HTTP Request
-			request.timeoutInterval = 10
+			request.timeoutInterval = 30
 			
 			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
 			

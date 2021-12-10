@@ -43,7 +43,9 @@ final class DeviceALDBCell2: UITableViewCell {
 
 class DeviceALDBViewController :UIViewController,
 										  UITableViewDelegate,
-										  UITableViewDataSource {
+										  UITableViewDataSource,
+										  ALDBAddViewControllerDelegate{
+	
 	
 	
 	@IBOutlet var lblName		: UILabel!
@@ -271,8 +273,8 @@ class DeviceALDBViewController :UIViewController,
 						Toast.text(error?.localizedDescription ?? "Error",
 									  config: ToastConfiguration(
 										autoHide: true,
-										displayTime: 1.0
-										//												attachTo: self.vwError
+										displayTime: 1.0,
+										attachTo: self.view
 									  )).show()
 						
 					}
@@ -285,6 +287,52 @@ class DeviceALDBViewController :UIViewController,
 		}
 	}
 	
+	@IBAction func btnALDBHit(sender: UIButton) {
+ 
+		if let aldbAddView = ALDBAddViewController.create() {
+			aldbAddView.delegate = self
+			self.present(aldbAddView, animated: true, completion: nil);
+  
+	//		self.show(adlbAddView, sender: self)
+		}
+
+	}
+	
+	// MARK: - ALDBAddViewControllerDelegate
+	
+	func addALDBGroup(_ sender: UIViewController,
+							groupID: String,
+							isCNTL: Bool) {
+		
+		self.view.displayActivityIndicator(shouldDisplay: true)
+		
+		InsteonFetcher.shared.addALDBtoDevice(self.deviceID,
+														  groupID: groupID,
+														  isCNTL: isCNTL )
+		{ (error)  in
+			if(error == nil){
+				
+				self.refreshDevice(){
+					self.view.displayActivityIndicator(shouldDisplay: false)
+					
+					self.tableView.reloadData()
+				}
+			}
+			else {
+				self.view.displayActivityIndicator(shouldDisplay: false)
+				
+				
+				Toast.text(error?.localizedDescription ?? "Error",
+							  config: ToastConfiguration(
+								autoHide: true,
+								displayTime: 1.0,
+								attachTo: self.tableView
+							  )).show()
+				
+			}
+		}
+	}
+
 }
 
 
