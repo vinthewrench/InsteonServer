@@ -313,6 +313,26 @@ public class InsteonFetcher: ObservableObject {
 		}
 	}
 
+	public func setGroupBackLightLevel(_ groupID: String, toLevel: Int,
+										completion: @escaping (Error?) -> Void = {_ in }){
+		
+		
+		HCServerManager.shared.SetGroupBackLightLevel(GroupID: groupID,
+														  toLevel: toLevel)
+		{ (error)  in
+			
+			if(error == nil){
+				completion(nil)
+
+				self.getChangedDevices( )
+				return
+		}
+			
+			completion(error)
+	
+		}
+	}
+
 
 	public func addALDBtoDevice( _ deviceID: String,
 										  			groupID: String = "01",
@@ -393,6 +413,28 @@ public class InsteonFetcher: ObservableObject {
 			
 		}
 	}
+	
+	
+
+	public func setBackLightLevel(_ deviceID: String, toLevel: Int,
+										completion: @escaping (Bool) -> Void = {_ in }){
+		
+		
+		HCServerManager.shared.setBackLightLevel(deviceID: deviceID,
+														  toLevel: toLevel)
+		{ (error)  in
+			
+			if(error == nil){
+				self.devices[deviceID]?.level = toLevel
+				completion(true)
+			}
+			else {
+				completion(false)
+			}
+			
+		}
+	}
+
 
 	public func updateDevice(_ deviceID: String,
 									 completion: @escaping (Bool) -> Void = {_ in })  {

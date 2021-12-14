@@ -2372,6 +2372,12 @@ static bool KeypadDetailJSONForDeviceID( DeviceID deviceID, json &reply) {
 			}
 		}
 		
+		uint8_t ledLevel = 0;
+
+		if( db->getDBLEDBrightness(deviceID, &ledLevel )){
+			reply[string(JSON_ARG_BACKLIGHT)]  = ledLevel;
+		}
+
 		reply[string(JSON_ARG_CONFIG)] = int(keypad->buttonCount);
  
 		json keyActions;

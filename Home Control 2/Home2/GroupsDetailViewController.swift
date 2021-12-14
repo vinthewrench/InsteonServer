@@ -26,12 +26,15 @@ class GroupsDetailViewController:  UIViewController,
 	
 	@IBOutlet var btnOff: 	BHButton!
 	@IBOutlet var btnOn: 	BHButton!
+	@IBOutlet var slBackLight	: UISlider!
 
 	var btnFLoat: FloatingButton = FloatingButton()
 
 	var GroupID :String = ""
 	var delegate:GroupsDetailViewControllerDelegate? = nil
 
+	var backlight: Int = 127
+	
 	var deviceKeys: [String] = []
 	var timer = Timer()
 	private let refreshControl = UIRefreshControl()
@@ -59,6 +62,18 @@ class GroupsDetailViewController:  UIViewController,
 		
 		// Configure Refresh Control
 		refreshControl.addTarget(self, action: #selector(refreshDeviceTable(_:)), for: .valueChanged)
+		
+		slBackLight.minimumTrackTintColor = UIColor.systemYellow
+	
+		slBackLight.addTarget(self, action: #selector(DeviceDetailViewController.sliderBeganTracking(_:)),
+							  for: .touchDown)
+		
+		slBackLight.addTarget(self, action: #selector(DeviceDetailViewController.sliderEndedTracking(_:)),
+							  for: .touchUpInside)
+		
+		slBackLight.addTarget(self, action: #selector(DeviceDetailViewController.sliderEndedTracking(_:)),
+							  for: .touchUpOutside)
+
 	}
 	
 	@objc private func refreshDeviceTable(_ sender: Any) {
@@ -117,6 +132,8 @@ class GroupsDetailViewController:  UIViewController,
 			return
 		}
 		
+		self.slBackLight.value =  Float(backlight)
+
 		if let group =  InsteonFetcher.shared.groups[GroupID] {
 			lblTitle.text = group.name
 			let sorted = InsteonFetcher.shared.sortedDeviceKeys(allKeys: true)
@@ -340,4 +357,22 @@ class GroupsDetailViewController:  UIViewController,
 
 		}
 	}
+	// MARK: - Backlight
+
+	@objc func sliderBeganTracking(_ slider: UISlider!) {
+		//	print("sliderBeganTracking")
+		stopPollng()
+	}
+	
+	@objc func sliderEndedTracking(_ slider: UISlider!) {
+		
+		if(slider == slBackLight){
+			self.backlight = Int(slider.value)
+
+			InsteonFetcher.shared.setGroupBackLightLevel(GroupID, toLevel:  Int(slider.value)) {_ in
+				self.startPolling()
+			}
+		}
+	}
+
 }

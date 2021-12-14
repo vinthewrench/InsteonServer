@@ -200,14 +200,51 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="WpP-2h-vii">
+                                <rect key="frame" x="30" y="698" width="354" height="61.5"/>
+                                <subviews>
+                                    <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" minValue="0.0" maxValue="127" translatesAutoresizingMaskIntoConstraints="NO" id="lDN-SJ-jHW">
+                                        <rect key="frame" x="105.5" y="16" width="230.5" height="31"/>
+                                    </slider>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Backlight:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="os1-GL-8hO">
+                                        <rect key="frame" x="20" y="20" width="79.5" height="21.5"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="18"/>
+                                        <nil key="textColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                </subviews>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstItem="lDN-SJ-jHW" firstAttribute="leading" secondItem="os1-GL-8hO" secondAttribute="trailing" constant="8" symbolic="YES" id="7N7-g9-dbv"/>
+                                    <constraint firstItem="lDN-SJ-jHW" firstAttribute="centerY" secondItem="os1-GL-8hO" secondAttribute="centerY" id="7S6-th-nw1"/>
+                                    <constraint firstItem="os1-GL-8hO" firstAttribute="leading" secondItem="WpP-2h-vii" secondAttribute="leading" constant="20" symbolic="YES" id="SYG-3f-Fg8"/>
+                                    <constraint firstItem="os1-GL-8hO" firstAttribute="top" secondItem="WpP-2h-vii" secondAttribute="top" constant="20" id="hX7-Q7-mgN"/>
+                                    <constraint firstAttribute="trailing" secondItem="lDN-SJ-jHW" secondAttribute="trailing" constant="20" symbolic="YES" id="jfo-vK-o9w"/>
+                                    <constraint firstAttribute="bottom" secondItem="os1-GL-8hO" secondAttribute="bottom" constant="20" id="yZY-mv-UGv"/>
+                                </constraints>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                        <real key="value" value="6"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
+                                        <real key="value" value="2"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
+                                        <color key="value" systemColor="systemGray3Color"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                            </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="ww8-Xg-oMF"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
                             <constraint firstItem="rIK-uF-4rw" firstAttribute="centerY" secondItem="9ND-m0-AWq" secondAttribute="centerY" id="3rU-eX-zTo"/>
+                            <constraint firstItem="WpP-2h-vii" firstAttribute="top" secondItem="rIK-uF-4rw" secondAttribute="bottom" constant="20" id="EJ6-Wp-RRz"/>
                             <constraint firstItem="rIK-uF-4rw" firstAttribute="top" secondItem="oDU-M4-uE6" secondAttribute="bottom" constant="20" id="FHh-GH-Qtp"/>
+                            <constraint firstItem="ww8-Xg-oMF" firstAttribute="trailing" secondItem="WpP-2h-vii" secondAttribute="trailing" constant="30" id="M1h-Zd-YO9"/>
                             <constraint firstItem="oDU-M4-uE6" firstAttribute="centerX" secondItem="9ND-m0-AWq" secondAttribute="centerX" id="MlH-eL-K4f"/>
                             <constraint firstItem="rIK-uF-4rw" firstAttribute="centerX" secondItem="9ND-m0-AWq" secondAttribute="centerX" id="gM4-d1-azj"/>
+                            <constraint firstItem="WpP-2h-vii" firstAttribute="leading" secondItem="ww8-Xg-oMF" secondAttribute="leading" constant="30" id="qox-Ie-BSp"/>
                         </constraints>
                     </view>
                     <connections>
@@ -220,6 +257,7 @@
                         <outlet property="btn6" destination="4zu-DN-pNn" id="6cM-Y3-JRj"/>
                         <outlet property="btn7" destination="G7T-t4-DB8" id="IYr-k7-wOh"/>
                         <outlet property="lblID" destination="oDU-M4-uE6" id="O7Q-pH-PEv"/>
+                        <outlet property="slBackLight" destination="lDN-SJ-jHW" id="1ai-PU-EiB"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="j4F-ht-FI2" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>

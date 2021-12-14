@@ -32,10 +32,10 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 	
 	@IBOutlet var btnBeep	: UIButton!
 	@IBOutlet var btnALDB	: UIButton!
-
 	@IBOutlet var sw	: UISwitch!
-	@IBOutlet var slider	: UISlider!
-	
+	@IBOutlet var slBrightness	: UISlider!
+	@IBOutlet var slBackLight	: UISlider!
+
 	var isOn: Bool = false
 	
 	struct PropTableEntry  {
@@ -67,20 +67,31 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 		super.viewDidLoad()
 		lblName.delegate = self
 		
-		slider.addTarget(self, action: #selector(DeviceDetailViewController.sliderBeganTracking(_:)),
+		slBrightness.addTarget(self, action: #selector(DeviceDetailViewController.sliderBeganTracking(_:)),
 							  for: .touchDown)
 		
-		slider.addTarget(self, action: #selector(DeviceDetailViewController.sliderEndedTracking(_:)),
+		slBrightness.addTarget(self, action: #selector(DeviceDetailViewController.sliderEndedTracking(_:)),
 							  for: .touchUpInside)
 		
-		slider.addTarget(self, action: #selector(DeviceDetailViewController.sliderEndedTracking(_:)),
+		slBrightness.addTarget(self, action: #selector(DeviceDetailViewController.sliderEndedTracking(_:)),
 							  for: .touchUpOutside)
 		
-		slider.addTarget(self, action: #selector(DeviceDetailViewController.sliderValueChanged(_:)),
+		slBrightness.addTarget(self, action: #selector(DeviceDetailViewController.sliderValueChanged(_:)),
 							  for: .valueChanged)
 		
-		slider.minimumTrackTintColor = UIColor.systemGreen
+		slBrightness.minimumTrackTintColor = UIColor.systemGreen
+	
+		slBackLight.addTarget(self, action: #selector(DeviceDetailViewController.sliderBeganTracking(_:)),
+							  for: .touchDown)
 		
+		slBackLight.addTarget(self, action: #selector(DeviceDetailViewController.sliderEndedTracking(_:)),
+							  for: .touchUpInside)
+		
+		slBackLight.addTarget(self, action: #selector(DeviceDetailViewController.sliderEndedTracking(_:)),
+							  for: .touchUpOutside)
+		
+		slBackLight.minimumTrackTintColor = UIColor.systemYellow
+	
 		tableView.maxHeight = 500
 		
 	}
@@ -125,18 +136,27 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 				self.img.image	= device.deviceImage()
 				self.isOn = device.level ?? 0 > 0
 				
+				if let backLight = device.backlight {
+					self.slBackLight.value = Float(backLight)
+					self.slBackLight.isEnabled = true
+				}
+				else {
+					self.slBackLight.value = 0.0
+					self.slBackLight.isEnabled = false
+				}
+				
 				if(device.isDimmer){
 					self.lblLevel.isHidden = false
 					self.lblKeypad.isHidden = true
 					self.sw.isHidden = true
-					self.slider.isHidden = false
-					self.slider.value =  Float(device.level ?? 0)
+					self.slBrightness.isHidden = false
+					self.slBrightness.value =  Float(device.level ?? 0)
 					
 				}else  if(device.isKeyPad){
 					self.sw.isHidden = true
 					self.lblKeypad.isHidden = false
 					self.lblKeypad.text = "Keypad"
-					self.slider.isHidden = true
+					self.slBrightness.isHidden = true
 					self.lblLevel.isHidden = true
 				}
 				else {
@@ -144,7 +164,7 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 					self.lblKeypad.isHidden = true
 					self.sw.isHidden = false
 					self.sw.isOn = device.level ?? 0 > 0
-					self.slider.isHidden = true
+					self.slBrightness.isHidden = true
 				}
 				
 				if(updateProps){
@@ -214,14 +234,24 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 	}
 	
 	@objc func sliderEndedTracking(_ slider: UISlider!) {
-		InsteonFetcher.shared.setDeviceLevel(deviceID, toLevel:  Int(slider.value)) {_ in
-			self.startPolling()
+		if(slider == slBrightness){
+			InsteonFetcher.shared.setDeviceLevel(deviceID, toLevel:  Int(slider.value)) {_ in
+				self.startPolling()
+			}
+		}
+		else if(slider == slBackLight){
+			InsteonFetcher.shared.setBackLightLevel(deviceID, toLevel:  Int(slider.value)) {_ in
+				self.startPolling()
+			}
 		}
 	}
 	
 	@objc func sliderValueChanged(_ slider: UISlider!) {
 		
-		self.lblLevel.text =  Int(slider.value).onLevelString()
+		if(slider == slBrightness){
+			self.lblLevel.text =  Int(slider.value).onLevelString()
+		}
+		
 	}
 	
 	@IBAction func tapGesture(recognizer : UITapGestureRecognizer) {

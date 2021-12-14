@@ -98,7 +98,9 @@ class KeypadViewController: UIViewController, EditableUILabelDelegate {
 	@IBOutlet var btn5 : KeyCapButton!
 	@IBOutlet var btn6 : KeyCapButton!
 	@IBOutlet var btn7 : KeyCapButton!
-	
+
+	@IBOutlet var slBackLight	: UISlider!
+
 	var keyPadID : String? = nil
 	var keypad : RESTKeypad? = nil
 	
@@ -163,6 +165,8 @@ class KeypadViewController: UIViewController, EditableUILabelDelegate {
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
+		slBackLight.minimumTrackTintColor = UIColor.systemYellow
+	
 		lblID.delegate = self
 	}
 	

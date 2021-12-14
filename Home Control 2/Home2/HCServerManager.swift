@@ -295,6 +295,8 @@ struct RESTDeviceDetails: Codable {
 	var valid: Bool
 	var ETag: Int?
 	var level: Int?
+	var backlight: Int?
+ 
  	var properties: Dictionary<String, String>?
 	var aldb: Dictionary<String, RESTaldbEntry>?
 	
@@ -1323,7 +1325,7 @@ class HCServerManager: ObservableObject {
 			
 			let json = ["level":toLevel]
 			let jsonData = try? JSONSerialization.data(withJSONObject: json)
-		request.httpBody = jsonData
+			request.httpBody = jsonData
 	
 			// Specify HTTP Method to use
 			request.httpMethod = "PUT"
@@ -1334,6 +1336,50 @@ class HCServerManager: ObservableObject {
 			
 			// Send HTTP Request
 			request.timeoutInterval = 10
+			
+			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
+			
+			let task = session.dataTask(with: request) { (data, response, urlError) in
+				
+				completion(urlError	)
+			}
+			task.resume()
+		}
+			else {
+				completion(ServerError.invalidURL)
+			}
+	}
+	
+	func SetGroupBackLightLevel(GroupID: String, toLevel: Int,
+					  completion: @escaping (Error?) -> Void)  {
+	
+		let urlPath = "groups/\(GroupID)"
+		
+		if let requestUrl: URL = AppData.serverInfo.url ,
+			let apiKey = AppData.serverInfo.apiKey,
+			let apiSecret = AppData.serverInfo.apiSecret {
+			let unixtime = String(Int(Date().timeIntervalSince1970))
+			
+			let urlComps = NSURLComponents(string: requestUrl.appendingPathComponent(urlPath).absoluteString)!
+			//			if let queries = queries {
+			//				urlComps.queryItems = queries
+			//			}
+			var request = URLRequest(url: urlComps.url!)
+			
+			
+			let json = ["backlight":toLevel]
+			let jsonData = try? JSONSerialization.data(withJSONObject: json)
+			request.httpBody = jsonData
+	
+			// Specify HTTP Method to use
+			request.httpMethod = "PUT"
+			request.setValue(apiKey,forHTTPHeaderField: "X-auth-key")
+			request.setValue(String(unixtime),forHTTPHeaderField: "X-auth-date")
+			let sig =  calculateSignature(forRequest: request, apiSecret: apiSecret)
+			request.setValue(sig,forHTTPHeaderField: "Authorization")
+			
+			// Send HTTP Request
+			request.timeoutInterval = 60
 			
 			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
 			
@@ -1367,7 +1413,7 @@ class HCServerManager: ObservableObject {
 			
 			let json = ["level":toLevel]
 			let jsonData = try? JSONSerialization.data(withJSONObject: json)
-		request.httpBody = jsonData
+			request.httpBody = jsonData
 	
 			// Specify HTTP Method to use
 			request.httpMethod = "PUT"
@@ -1391,6 +1437,52 @@ class HCServerManager: ObservableObject {
 				completion(ServerError.invalidURL)
 			}
 	}
+	
+	func setBackLightLevel(deviceID: String, toLevel: Int,
+					  completion: @escaping (Error?) -> Void)  {
+	
+		let urlPath = "devices/\(deviceID)"
+		
+		if let requestUrl: URL = AppData.serverInfo.url ,
+			let apiKey = AppData.serverInfo.apiKey,
+			let apiSecret = AppData.serverInfo.apiSecret {
+			let unixtime = String(Int(Date().timeIntervalSince1970))
+			
+			let urlComps = NSURLComponents(string: requestUrl.appendingPathComponent(urlPath).absoluteString)!
+			//			if let queries = queries {
+			//				urlComps.queryItems = queries
+			//			}
+			var request = URLRequest(url: urlComps.url!)
+			
+			
+			let json = ["backlight":toLevel]
+			let jsonData = try? JSONSerialization.data(withJSONObject: json)
+			request.httpBody = jsonData
+	
+			// Specify HTTP Method to use
+			request.httpMethod = "PUT"
+			request.setValue(apiKey,forHTTPHeaderField: "X-auth-key")
+			request.setValue(String(unixtime),forHTTPHeaderField: "X-auth-date")
+			let sig =  calculateSignature(forRequest: request, apiSecret: apiSecret)
+			request.setValue(sig,forHTTPHeaderField: "Authorization")
+			
+			// Send HTTP Request
+			request.timeoutInterval = 10
+			
+			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
+			
+			let task = session.dataTask(with: request) { (data, response, urlError) in
+				
+				completion(urlError	)
+			}
+			task.resume()
+		}
+			else {
+				completion(ServerError.invalidURL)
+			}
+	}
+	
+	
 	
 	func BeepDevice(deviceID: String,
 					  completion: @escaping (Error?) -> Void)  {
