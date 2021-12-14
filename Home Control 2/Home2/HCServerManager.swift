@@ -221,6 +221,8 @@ struct RESTKeypad: Codable {
 	var deviceInfo: String
 	var lastUpdated: String
 	var valid: Bool
+	var backlight: Int?
+
 
 	enum CodingKeys: String, CodingKey {
 		case name
@@ -230,6 +232,7 @@ struct RESTKeypad: Codable {
 		case deviceInfo
 		case lastUpdated
 		case valid
+		case backlight
 	}
 
 }

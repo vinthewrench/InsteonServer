@@ -32,7 +32,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="rIK-uF-4rw">
-                                <rect key="frame" x="87" y="218" width="240" height="460"/>
+                                <rect key="frame" x="87" y="198" width="240" height="460"/>
                                 <subviews>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="rCb-MH-ap1" customClass="KeyCapButton" customModule="Home2" customModuleProvider="target">
                                         <rect key="frame" x="20" y="20" width="90" height="90"/>
@@ -195,16 +195,16 @@
                                 </userDefinedRuntimeAttributes>
                             </view>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="KeypadID" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="oDU-M4-uE6" customClass="EditableUILabel" customModule="Home2" customModuleProvider="target">
-                                <rect key="frame" x="166.5" y="175" width="81.5" height="23"/>
+                                <rect key="frame" x="166.5" y="155" width="81.5" height="23"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleTitle2"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="WpP-2h-vii">
-                                <rect key="frame" x="30" y="698" width="354" height="61.5"/>
+                                <rect key="frame" x="57" y="678" width="300" height="61.5"/>
                                 <subviews>
                                     <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" minValue="0.0" maxValue="127" translatesAutoresizingMaskIntoConstraints="NO" id="lDN-SJ-jHW">
-                                        <rect key="frame" x="105.5" y="16" width="230.5" height="31"/>
+                                        <rect key="frame" x="105.5" y="16" width="176.5" height="31"/>
                                     </slider>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Backlight:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="os1-GL-8hO">
                                         <rect key="frame" x="20" y="20" width="79.5" height="21.5"/>
@@ -238,13 +238,13 @@
                         <viewLayoutGuide key="safeArea" id="ww8-Xg-oMF"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="rIK-uF-4rw" firstAttribute="centerY" secondItem="9ND-m0-AWq" secondAttribute="centerY" id="3rU-eX-zTo"/>
+                            <constraint firstItem="rIK-uF-4rw" firstAttribute="centerY" secondItem="9ND-m0-AWq" secondAttribute="centerY" constant="-20" id="3rU-eX-zTo"/>
                             <constraint firstItem="WpP-2h-vii" firstAttribute="top" secondItem="rIK-uF-4rw" secondAttribute="bottom" constant="20" id="EJ6-Wp-RRz"/>
                             <constraint firstItem="rIK-uF-4rw" firstAttribute="top" secondItem="oDU-M4-uE6" secondAttribute="bottom" constant="20" id="FHh-GH-Qtp"/>
-                            <constraint firstItem="ww8-Xg-oMF" firstAttribute="trailing" secondItem="WpP-2h-vii" secondAttribute="trailing" constant="30" id="M1h-Zd-YO9"/>
                             <constraint firstItem="oDU-M4-uE6" firstAttribute="centerX" secondItem="9ND-m0-AWq" secondAttribute="centerX" id="MlH-eL-K4f"/>
+                            <constraint firstItem="WpP-2h-vii" firstAttribute="trailing" secondItem="rIK-uF-4rw" secondAttribute="trailing" constant="30" id="OXK-V5-jgb"/>
+                            <constraint firstItem="WpP-2h-vii" firstAttribute="leading" secondItem="rIK-uF-4rw" secondAttribute="leading" constant="-30" id="e8H-3g-V4f"/>
                             <constraint firstItem="rIK-uF-4rw" firstAttribute="centerX" secondItem="9ND-m0-AWq" secondAttribute="centerX" id="gM4-d1-azj"/>
-                            <constraint firstItem="WpP-2h-vii" firstAttribute="leading" secondItem="ww8-Xg-oMF" secondAttribute="leading" constant="30" id="qox-Ie-BSp"/>
                         </constraints>
                     </view>
                     <connections>

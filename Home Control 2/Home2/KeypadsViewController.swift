@@ -8,6 +8,27 @@
 import UIKit
 import Toast
 
+extension UIPageViewController {
+
+	 var scrollView: UIScrollView {
+		  for subview in view.subviews {
+				if let scrollview = subview as? UIScrollView {
+					 return scrollview
+				}
+		  }
+		  fatalError()
+	 }
+	 
+	 var isScrollEnabled: Bool {
+		  get {
+				return scrollView.isScrollEnabled
+		  }
+		  set {
+				scrollView.isScrollEnabled = newValue
+		  }
+	 }
+}
+
 class KeyCapButton: UIButton {
 
 	override init(frame: CGRect) {
@@ -165,7 +186,18 @@ class KeypadViewController: UIViewController, EditableUILabelDelegate {
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
+		
 		slBackLight.minimumTrackTintColor = UIColor.systemYellow
+		
+		slBackLight.addTarget(self, action: #selector(DeviceDetailViewController.sliderBeganTracking(_:)),
+							  for: .touchDown)
+		
+		slBackLight.addTarget(self, action: #selector(DeviceDetailViewController.sliderEndedTracking(_:)),
+							  for: .touchUpInside)
+		
+		slBackLight.addTarget(self, action: #selector(DeviceDetailViewController.sliderEndedTracking(_:)),
+							  for: .touchUpOutside)
+		
 	
 		lblID.delegate = self
 	}
@@ -212,7 +244,6 @@ class KeypadViewController: UIViewController, EditableUILabelDelegate {
 	func stopPollng(){
 		timer.invalidate()
 	}
-	
 	
 	@IBAction func btnClicked(_ sender: UIButton) -> Void {
 		
@@ -295,6 +326,15 @@ class KeypadViewController: UIViewController, EditableUILabelDelegate {
 			return
 		}
 		
+		if let backLight = self.keypad?.backlight {
+			self.slBackLight.value = Float(backLight)
+			self.slBackLight.isEnabled = true
+		}
+		else {
+			self.slBackLight.value = 0.0
+			self.slBackLight.isEnabled = false
+		}
+
 		for (key, but) in buttons {
 			
 			if let button = self.button(key:key ) {
@@ -355,6 +395,23 @@ class KeypadViewController: UIViewController, EditableUILabelDelegate {
 		// Present the alert to the user
 		self.present(alert, animated: true, completion: nil)
 		}
+	
+	@objc func sliderBeganTracking(_ slider: UISlider!) {
+		//	print("sliderBeganTracking")
+		stopPollng()
+	}
+	
+	@objc func sliderEndedTracking(_ slider: UISlider!) {
+		
+		if let deviceID = keyPadID {
+			if(slider == slBackLight){
+				  InsteonFetcher.shared.setBackLightLevel(deviceID, toLevel:  Int(slider.value)) {_ in
+					  self.startPolling()
+				  }
+			  }
+		}
+	}
+	
 }
  
 
@@ -457,7 +514,9 @@ class KeypadsViewController: MainSubviewViewController{
 												 animated: false,
 												 completion: nil)
 				}
+					
 				
+					pg.isScrollEnabled = self.kpVCs.count > 1
 				
 			}
 		}
