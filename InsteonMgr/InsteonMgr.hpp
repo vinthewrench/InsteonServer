@@ -136,9 +136,16 @@ public:
 	bool setLEDBrightness(DeviceID deviceID, uint8_t level,
 									boolCallback_t callback = NULL);
 	
+	bool getLEDBrightness(DeviceID deviceID,
+						 std::function<void(uint8_t level, eTag_t eTag,  bool didSucceed)> callback = NULL);
+	
 	bool setKeypadLEDState(DeviceID deviceID, uint8_t mask,
 								  boolCallback_t callback = NULL);
 
+	
+	bool getEXTInfo(DeviceID deviceID,
+										 std::function<void( uint8_t data[14],  bool didSucceed)> callback = NULL);
+	
 	bool runActionForKeypad(DeviceID deviceID, uint8_t buttonID, uint8_t cmd,
 								  boolCallback_t callback = NULL);
  

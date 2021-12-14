@@ -22,6 +22,8 @@
 #include <string>
 #include <string.h>
 #include <map>
+#include <array>
+#include <algorithm>  // std::copy
 
 #include "Utils.hpp"
 #include "TimeStamp.hpp"
@@ -1710,6 +1712,12 @@ static bool DeviceDetailJSONForDeviceID( DeviceID deviceID, json &entry, bool sh
 			entry[string(JSON_ARG_LEVEL)]  = level;
 			entry[string(JSON_ARG_ETAG)] = info.eTag;
 		}
+	
+		uint8_t ledLevel = 0;
+
+		if( db->getDBLEDBrightness(deviceID, &ledLevel )){
+			entry[string(JSON_ARG_BACKLIGHT)]  = ledLevel;
+		}
 		
 		return true;
 	}
@@ -1732,6 +1740,8 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 	bool showALDB = false;
 	bool showLevels = false;
 	bool forceLookup = false;
+	bool getExtInfo = false;
+
 	bool onlyShowChanged = false;
 
 	json reply;
@@ -1756,8 +1766,12 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 		if( str == "true" ||  str =="1")
 			forceLookup = true;
 	}
-
-	
+	if(queries.count(string(JSON_ARG_EXTINFO))) {
+		string str = queries[string(JSON_ARG_EXTINFO)];
+		if( str == "true" ||  str =="1")
+			getExtInfo = true;
+	}
+ 
 	if(queries.count(string(JSON_VAL_LEVELS))) {
 		string str = queries[string(JSON_VAL_LEVELS)];
 		if( str == "true" ||  str =="1")
@@ -1926,6 +1940,26 @@ static bool Devices_NounHandler_GET(ServerCmdQueue* cmdQueue,
 								reply1[string(JSON_ARG_ETAG)]= eTag;
 							}
 							
+							makeStatusJSON(reply1,STATUS_OK);
+							(completion) (reply1, STATUS_OK);
+	 
+						});
+					}
+					else if(getExtInfo){
+						
+						insteon.getEXTInfo(deviceID,
+												 [=](uint8_t data[14], bool didSucceed){
+							
+							json reply1 = reply;
+							
+							
+							if(didSucceed){
+								std::array<uint, 14> dat;
+								for(int i = 0; i < 14; i++) dat[i] = (int)data[i];
+								
+								reply1[string(JSON_ARG_EXTINFO)] = dat;
+							}
+				
 							makeStatusJSON(reply1,STATUS_OK);
 							(completion) (reply1, STATUS_OK);
 	 

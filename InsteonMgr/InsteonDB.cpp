@@ -160,6 +160,7 @@ bool InsteonDB::linkDevice(DeviceID 		deviceID,
 		newEntry.isValidated = isValidated;
 		newEntry.lastUpdated = time(NULL);
 		newEntry.levelMap.clear();
+		newEntry.ledBrightness = 127;
 
 		_db.push_back(newEntry);
 	}
@@ -415,6 +416,8 @@ void InsteonDB::addALDB(insteon_aldb_t aldb){
 		newEntry.eTag = ++_eTag;
 
 		newEntry.levelMap.clear();
+		newEntry.ledBrightness = 127;
+
 		_db.push_back(newEntry);
 		
 	}
@@ -812,6 +815,61 @@ bool InsteonDB::getDBOnLevel(DeviceID deviceID, uint8_t group, uint8_t *onLevel,
 	} 	return found;
 }
 
+ 
+
+
+bool InsteonDB::setDBLEDBrightness(DeviceID deviceID, uint8_t level, eTag_t *eTag){
+	bool needsUpdate = false;
+	eTag_t lastTag = 0;
+
+	{
+		std::lock_guard<std::mutex> lock(_mutex);
+		
+		if(auto entry = findDBEntryWithDeviceID(deviceID); entry != NULL) {
+			
+			if (entry->ledBrightness != level) {
+				needsUpdate = true;
+			}
+			
+			if(needsUpdate){
+				entry->ledBrightness  = level;
+				entry->eTag = ++_eTag;
+				entry->lastLevelUpdate = time(NULL);
+			}
+			
+			lastTag = entry->eTag;
+		}
+	}
+	
+	if(eTag)
+		*eTag = lastTag;
+
+	if(needsUpdate)
+		deviceStateWasUpdated(deviceID);
+ 
+
+	return needsUpdate;
+}
+
+ bool InsteonDB::getDBLEDBrightness(DeviceID deviceID,  uint8_t *level, eTag_t *eTag)
+{
+	 
+	 bool found = false;
+	 
+	 if(auto entry = findDBEntryWithDeviceID(deviceID); entry != NULL) {
+		 std::lock_guard<std::mutex> lock(_mutex);
+		 
+		 if(level)
+			 *level = entry->ledBrightness;
+			 
+			 if(eTag)
+			 *eTag = entry->eTag;
+		 
+		 found = true;
+	 }
+	 
+ 	return found;
+ }
 
 // MARK: - Config Info
 
@@ -2573,6 +2631,8 @@ void  InsteonDB::initDBEntry(insteon_dbEntry_t *newEntry, DeviceID deviceID){
 	newEntry->levelMap.clear();
 	newEntry->deviceALDB.clear();
 	newEntry->properties.clear();
+	newEntry->ledBrightness = 127;
+
 //	newEntry->name.clear();   // Know c++ bug
 }
 

@@ -28,6 +28,8 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 	@IBOutlet var lblName	: EditableUILabel!
 	@IBOutlet var img			: UIImageView!
 	@IBOutlet var lblLevel	: UILabel!
+	@IBOutlet var lblKeypad	: UILabel!
+	
 	@IBOutlet var btnBeep	: UIButton!
 	@IBOutlet var btnALDB	: UIButton!
 
@@ -124,12 +126,22 @@ class DeviceDetailViewController :UIViewController, EditableUILabelDelegate,
 				self.isOn = device.level ?? 0 > 0
 				
 				if(device.isDimmer){
+					self.lblLevel.isHidden = false
+					self.lblKeypad.isHidden = true
 					self.sw.isHidden = true
 					self.slider.isHidden = false
 					self.slider.value =  Float(device.level ?? 0)
 					
-				} else
-				{
+				}else  if(device.isKeyPad){
+					self.sw.isHidden = true
+					self.lblKeypad.isHidden = false
+					self.lblKeypad.text = "Keypad"
+					self.slider.isHidden = true
+					self.lblLevel.isHidden = true
+				}
+				else {
+					self.lblLevel.isHidden = false
+					self.lblKeypad.isHidden = true
 					self.sw.isHidden = false
 					self.sw.isOn = device.level ?? 0 > 0
 					self.slider.isHidden = true

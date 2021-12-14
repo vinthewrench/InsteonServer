@@ -326,8 +326,9 @@ public class InsteonFetcher: ObservableObject {
 				
 				self.getChangedDevices(){
 					completion(nil)
-					return
+				
 				}
+				return
 				
 			}
 			
@@ -462,9 +463,12 @@ public class InsteonFetcher: ObservableObject {
 	}
 	
 	
-	func sortedDeviceKeys() -> [String]{
+	func sortedDeviceKeys(allKeys: Bool = false) -> [String]{
 
-		let filtered =  devices.filter({ !($1.isKeyPad || $1.isPLM) })
+		
+		let filtered =  allKeys
+			? devices
+			: devices.filter({ !($1.isKeyPad || $1.isPLM) })
 		
 		let sorted = filtered.sorted { (first, second) -> Bool in
 			return  first.value.name.caseInsensitiveCompare(second.value.name) == .orderedAscending

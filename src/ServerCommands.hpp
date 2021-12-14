@@ -87,6 +87,9 @@ constexpr string_view JSON_ARG_CPU_TEMP		= "cpuTemp";
 
 constexpr string_view JSON_ARG_ETAG			= "ETag";
 constexpr string_view JSON_ARG_FORCE			= "force";
+
+constexpr string_view JSON_ARG_EXTINFO			= "extinfo";
+
 constexpr string_view JSON_ARG_PROPERTIES	= "properties";
 constexpr string_view JSON_ARG_NAME			= "name";
 constexpr string_view JSON_ARG_GROUPIDS		= "groupIDs";

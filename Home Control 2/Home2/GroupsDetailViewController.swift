@@ -119,7 +119,7 @@ class GroupsDetailViewController:  UIViewController,
 		
 		if let group =  InsteonFetcher.shared.groups[GroupID] {
 			lblTitle.text = group.name
-			let sorted = InsteonFetcher.shared.sortedDeviceKeys()
+			let sorted = InsteonFetcher.shared.sortedDeviceKeys(allKeys: true)
 			self.deviceKeys = sorted.filter{ group.deviceIDs.contains( $0)}
 			completion()
 		}

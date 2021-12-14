@@ -23,7 +23,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Device Name" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1Oh-z5-IWf" customClass="EditableUILabel" customModule="Home2" customModuleProvider="target">
-                                <rect key="frame" x="10" y="64" width="143.5" height="28"/>
+                                <rect key="frame" x="10" y="64" width="158" height="28"/>
                                 <fontDescription key="fontDescription" name="Quicksand-Bold" family="Quicksand" pointSize="24"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
@@ -56,6 +56,12 @@
                                             <action selector="switchChangedWithSender:" destination="Y6W-OH-hqX" eventType="valueChanged" id="sPb-od-C2R"/>
                                         </connections>
                                     </switch>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Keypad" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="XuX-Un-4QA" userLabel="Keypad">
+                                        <rect key="frame" x="42" y="11" width="302" height="28"/>
+                                        <fontDescription key="fontDescription" name="Quicksand-Bold" family="Quicksand" pointSize="24"/>
+                                        <nil key="textColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
                                 </subviews>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <constraints>
@@ -64,9 +70,12 @@
                                     <constraint firstItem="ia4-X8-2Pf" firstAttribute="centerY" secondItem="aeS-9K-AmB" secondAttribute="centerY" id="MgB-tk-GEa"/>
                                     <constraint firstItem="PfG-aX-uRt" firstAttribute="leading" secondItem="ia4-X8-2Pf" secondAttribute="trailing" constant="8" id="SqB-T0-Z6w"/>
                                     <constraint firstAttribute="height" constant="50" id="TRj-MX-OKF"/>
+                                    <constraint firstItem="XuX-Un-4QA" firstAttribute="leading" secondItem="ia4-X8-2Pf" secondAttribute="leading" id="UqZ-c7-Z4z"/>
                                     <constraint firstItem="aeS-9K-AmB" firstAttribute="centerY" secondItem="SLX-3s-gg5" secondAttribute="centerY" id="Yfo-wT-ZSi"/>
                                     <constraint firstItem="aeS-9K-AmB" firstAttribute="leading" secondItem="SLX-3s-gg5" secondAttribute="leading" constant="10" id="ZdF-E5-YLM"/>
                                     <constraint firstItem="cOJ-PT-5rs" firstAttribute="trailing" secondItem="PfG-aX-uRt" secondAttribute="trailing" id="ccb-Uc-8xb"/>
+                                    <constraint firstItem="cOJ-PT-5rs" firstAttribute="trailing" secondItem="XuX-Un-4QA" secondAttribute="trailing" id="flq-2w-DqI"/>
+                                    <constraint firstItem="XuX-Un-4QA" firstAttribute="centerY" secondItem="ia4-X8-2Pf" secondAttribute="centerY" id="lqD-PK-NPx"/>
                                     <constraint firstItem="PfG-aX-uRt" firstAttribute="centerY" secondItem="aeS-9K-AmB" secondAttribute="centerY" id="mC7-YA-bfU"/>
                                     <constraint firstItem="cOJ-PT-5rs" firstAttribute="centerY" secondItem="aeS-9K-AmB" secondAttribute="centerY" id="smO-OB-DaE"/>
                                 </constraints>
@@ -244,6 +253,7 @@
                         <outlet property="btnALDB" destination="p0Y-z9-K7u" id="7yw-2E-ThI"/>
                         <outlet property="btnBeep" destination="5Oo-te-YLZ" id="V8w-lP-GI9"/>
                         <outlet property="img" destination="aeS-9K-AmB" id="Qhr-aD-m5G"/>
+                        <outlet property="lblKeypad" destination="XuX-Un-4QA" id="jpO-dV-lrq"/>
                         <outlet property="lblLevel" destination="ia4-X8-2Pf" id="caf-9u-s1D"/>
                         <outlet property="lblName" destination="1Oh-z5-IWf" id="A0Z-NJ-2jy"/>
                         <outlet property="slider" destination="PfG-aX-uRt" id="rJP-s3-3fS"/>

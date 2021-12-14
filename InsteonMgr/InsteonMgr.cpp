@@ -954,11 +954,42 @@ bool InsteonMgr::setOnLevel(DeviceID deviceID, uint8_t onLevel,
 		return false;
 	
 	InsteonDevice(deviceID).setLEDBrightness(level, [=](bool didSucceed){
+		
+		_db.setDBLEDBrightness(deviceID,level);
+
 		if(cb) (cb)(didSucceed);
 	});
 	
 	return true;
 }
+
+
+bool InsteonMgr::getLEDBrightness(DeviceID deviceID,
+											 std::function<void(uint8_t level, eTag_t eTag,  bool didSucceed)> cb){
+	
+	uint8_t level = 0;
+	eTag_t lastTag = 0;
+
+	if(_db.getDBLEDBrightness(deviceID,  &level, &lastTag)){
+		if(cb) (cb)(level, lastTag, true);
+	}
+	
+	return false;
+}
+
+bool InsteonMgr::getEXTInfo(DeviceID deviceID,
+									 std::function<void( uint8_t data[14],  bool didSucceed)> cb){
+
+	if(_state != STATE_READY)
+		return false;
+	
+	InsteonKeypadDevice(deviceID).getEXTInfo( [=](uint8_t data[14], bool didSucceed){
+ 		if(cb) (cb)(data, didSucceed);
+	});
+
+	return true;
+}
+
 
 bool InsteonMgr::setKeypadLEDState(DeviceID deviceID, uint8_t mask,
 											boolCallback_t cb  ){
@@ -971,6 +1002,7 @@ bool InsteonMgr::setKeypadLEDState(DeviceID deviceID, uint8_t mask,
 
    return true;
 }
+
 
 bool InsteonMgr::runActionForKeypad(DeviceID deviceID, uint8_t buttonID, uint8_t cmd,
 												boolCallback_t cb){
@@ -1075,10 +1107,13 @@ bool InsteonMgr::setLEDBrightness(GroupID groupID, uint8_t level,
 		// queue up all the devices.. and then reply when we are done.
 		for(auto deviceID : devices) {
 			
+			
 			_cmdQueue->queueMessage(deviceID,
 											InsteonParser::CMD_EXT_SET_GET, 0x00,
 											buffer, sizeof(buffer),
 											[=]( auto arg, bool didSucceed) {
+				
+				_db.setDBLEDBrightness(deviceID,level);
 				
 				if(--(*taskCount) == 0) {
 					free(taskCount);

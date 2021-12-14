@@ -263,7 +263,7 @@ public:
 			}
 			else if( j.at(k).is_number()){
 				int num = j.at(k);
-				if(num >= 0 && num < 127){
+				if(num >= 0 && num <= 127){
 					result = num;
 					return true;
 				}

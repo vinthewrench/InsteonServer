@@ -369,10 +369,10 @@ bool InsteonDevice::getEXTInfo(std::function<void(uint8_t data[14], bool didSucc
 		SETUP_CMDQUEUE;
 	 
 			uint8_t buffer[] = {
-				0xFE, 0x00};
+				0x00, 0x01};
 			
 			cmdQueue->queueMessage(_deviceID,
-										  InsteonParser::CMD_EXT_SET_GET, 0x00,
+										  0x2E, 0x00,
 										  buffer, sizeof(buffer),
 										  [=]( auto arg, bool didSucceed) {
 				

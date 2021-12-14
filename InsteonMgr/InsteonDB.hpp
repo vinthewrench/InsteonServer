@@ -55,6 +55,7 @@ typedef struct  {
 
 	// dynamic
 	map<uint8_t, int> levelMap;  //  (group, level)  -1 == not set
+	uint8_t 				ledBrightness;		// last recorded background LED brightness
 }insteon_dbEntry_t;
 
 typedef struct  {
@@ -153,6 +154,12 @@ public:
 	
 	bool getDBOnLevel(DeviceID deviceID, uint8_t group = 0x01,
 							uint8_t *onLevel = NULL, eTag_t *eTag =NULL );
+
+	bool setDBLEDBrightness(DeviceID deviceID,
+									uint8_t level = 0 ,eTag_t *eTag =NULL);
+	
+	bool getDBLEDBrightness(DeviceID deviceID,
+									uint8_t *level = NULL, eTag_t *eTag =NULL) ;
 
 	vector<DeviceID> allDevices();
 	vector<DeviceID> devicesThatNeedValidation();

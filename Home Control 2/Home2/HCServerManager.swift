@@ -310,6 +310,9 @@ struct RESTDeviceDetails: Codable {
 			image = UIImage(systemName: "lightbulb")
 			
 		}
+		else if(isKeyPad) {
+			image = UIImage(named: "keypad")
+		}
 		else {
 			image = UIImage(systemName: "power")
 			//						.font(.system(size:20))
@@ -921,8 +924,6 @@ class HCServerManager: ObservableObject {
 			else {
 				completion(ServerError.invalidURL)
 			}
-		completion(ServerError.invalidURL)
-
 	}
 	
 	public func removeALDBfromDevice( _ deviceID: String, aldbAddr: String,
