@@ -831,31 +831,76 @@ static void EventGroups_NounHandler(ServerCmdQueue* cmdQueue,
 
 // MARK:  ACTION GROUPS NOUN HANDLERS
 
+
+static bool ActionGroupsDetailJSONForGroupID( actionGroupID_t agID, json &entry) {
+	using namespace rest;
+	using namespace timestamp;
+	auto db = insteon.getDB();
+ 
+ 	ActionGroup group = ActionGroup(agID);
+
+	if(!group.isValid() ||!db->actionGroupIsValid(group.groupID()))
+		return false;
+
+	entry[string(JSON_ARG_GROUPID)] = group.string();
+	entry[string(JSON_ARG_NAME)] =  db->actionGroupGetName(agID);
+	
+	json actions;
+	auto acts = db->actionGroupGetActions(agID);
+	for(auto ref :acts){
+		Action a1 = ref.get();
+		actions[a1.idString()] =  a1.JSON();
+	}
+	entry[string(JSON_ARG_ACTIONS)] = actions;
+	
+	return true;
+}
+
 static bool ActionGroups_NounHandler_GET(ServerCmdQueue* cmdQueue,
 											  REST_URL url,
 											  TCPClientInfo cInfo,
-											  ServerCmdQueue::cmdCallback_t completion) {
+													  ServerCmdQueue::cmdCallback_t completion) {
 	using namespace rest;
 	
 	auto path = url.path();
 	auto queries = url.queries();
 	auto headers = url.headers();
+	
+	bool showDetails = false;
+
 	json reply;
 	
 	auto db = insteon.getDB();
 	vector<DeviceID> deviceIDs;
 	
+	if(queries.count(string(JSON_VAL_DETAILS))) {
+		string str = queries[string(JSON_VAL_DETAILS)];
+		if( str == "true" ||  str =="1")
+			showDetails = true;
+	}
+
+
 	// GET /groups
-	if(path.size() == 1) {;
-		
+	if(path.size() == 1) {
+  
 		json groupsList;
 		auto groupIDs = db->allActionGroupsIDs();
 		for(auto groupID : groupIDs){
 			json entry;
 			
 			ActionGroup ag = ActionGroup(groupID);
-			entry[string(JSON_ARG_NAME)] =  db->actionGroupGetName(groupID);
-			groupsList[ag.string()] = entry;
+			if(showDetails){
+				
+				if(ActionGroupsDetailJSONForGroupID(ag.groupID(), entry) ){
+					groupsList[ag.string()] = entry;
+					
+				}
+			}
+			else {
+				entry[string(JSON_ARG_NAME)] =  db->actionGroupGetName(groupID);
+				groupsList[ag.string()] = entry;
+				
+			}
 		}
 		
 		reply[string(JSON_ARG_GROUPIDS)] = groupsList;
@@ -864,29 +909,45 @@ static bool ActionGroups_NounHandler_GET(ServerCmdQueue* cmdQueue,
 		return true;
 		
 	}
-		// GET /action.groups/XXXX
-		else if(path.size() == 2) {
-			ActionGroup group = ActionGroup(path.at(1));
-			
-			if(!group.isValid() ||!db->actionGroupIsValid(group.groupID()))
-				return false;
-
-			actionGroupID_t agID = group.groupID();
+	// GET /action.groups/XXXX
+	else if(path.size() == 2) {
+		
+	//	ActionGroupsDetailJSONForGroupID
+		
+	ActionGroup group = ActionGroup(path.at(1));
 	
-			reply[string(JSON_ARG_GROUPID)] = group.string();
-			reply[string(JSON_ARG_NAME)] =  db->actionGroupGetName(agID);
+	if(!group.isValid() ||!db->actionGroupIsValid(group.groupID()))
+		return false;
 
-			json actions;
-			auto acts = db->actionGroupGetActions(agID);
-			for(auto ref :acts){
-				Action a1 = ref.get();
-				actions[a1.idString()] =  a1.JSON();
-			}
-			reply[string(JSON_ARG_ACTIONS)] = actions;
+	 	if(ActionGroupsDetailJSONForGroupID(group.groupID(), reply) ){
 			
 			makeStatusJSON(reply,STATUS_OK);
 			(completion) (reply, STATUS_OK);
+			return true;
+		}
 
+//
+//		ActionGroup group = ActionGroup(path.at(1));
+//
+//		if(!group.isValid() ||!db->actionGroupIsValid(group.groupID()))
+//			return false;
+//
+//		actionGroupID_t agID = group.groupID();
+//
+//		reply[string(JSON_ARG_GROUPID)] = group.string();
+//		reply[string(JSON_ARG_NAME)] =  db->actionGroupGetName(agID);
+//
+//		json actions;
+//		auto acts = db->actionGroupGetActions(agID);
+//		for(auto ref :acts){
+//			Action a1 = ref.get();
+//			actions[a1.idString()] =  a1.JSON();
+//		}
+//		reply[string(JSON_ARG_ACTIONS)] = actions;
+//
+//		makeStatusJSON(reply,STATUS_OK);
+//		(completion) (reply, STATUS_OK);
+//
 	}
 	else {
 		
