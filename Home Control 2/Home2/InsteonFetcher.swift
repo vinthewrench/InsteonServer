@@ -208,6 +208,8 @@ public class InsteonFetcher: ObservableObject {
 		}
 	}
 	
+	
+		
 	public func createGroup(_ newName: String,
 										completion: @escaping (Error?) -> Void = {_ in }){
 		
@@ -331,6 +333,58 @@ public class InsteonFetcher: ObservableObject {
 			completion(error)
 	
 		}
+	}
+
+
+	public func deleteAction(_ actionID: String,
+									completion: @escaping (Error?) -> Void = {_ in }){
+		
+		
+//		HCServerManager.shared.deleteGroup(groupID)
+//		{ (error)  in
+//
+//			if(error == nil){
+//
+//				self.getGroups(){
+ 					completion(nil)
+//					return
+//
+//				}
+//
+//			}
+//
+//			completion(error)
+//		}
+	}
+	
+	public func renameAction(_ actionID: String, newName: String,
+										completion: @escaping (Error?) -> Void = {_ in }){
+	
+		completion(nil)
+
+//
+//		HCServerManager.shared.renameGroup(groupID: groupID,
+//														newName: newName)
+//		{ (error)  in
+//
+//			if(error == nil){
+//
+//			}
+//
+//			completion(error)
+//		}
+	}
+ 
+
+	public func runAction(_ actionID: String,
+									completion: @escaping (Error?) -> Void = {_ in }){
+		
+
+		HCServerManager.shared.runAction( actionID)
+		{ (error)  in
+ 		completion(error)
+		}
+
 	}
 
 

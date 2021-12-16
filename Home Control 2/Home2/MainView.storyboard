@@ -29,7 +29,7 @@
                                     <tabBarItem title="Keypads" image="keyboard" catalog="system" id="dNc-oF-W2w"/>
                                     <tabBarItem tag="1" title="Devices" image="lightbulb" catalog="system" id="C9T-rn-GUg"/>
                                     <tabBarItem tag="2" title="Schedules" image="clock" catalog="system" id="Vcn-Wj-TH0"/>
-                                    <tabBarItem tag="3" title="Groups" image="square.grid.3x1.folder.badge.plus" catalog="system" id="tR2-Ca-BKB"/>
+                                    <tabBarItem tag="3" title="Actions" image="square.grid.3x1.folder.badge.plus" catalog="system" id="tR2-Ca-BKB"/>
                                 </items>
                                 <connections>
                                     <outlet property="delegate" destination="Y6W-OH-hqX" id="ww5-R8-Tf6"/>

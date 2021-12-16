@@ -81,13 +81,13 @@ class MainViewController: UIViewController, UITabBarDelegate {
 			newVC = KeypadsViewController.shared
 			
 		case 1:
-			newVC = DevicesViewController.shared
-			
+			newVC = DeviceGroupViewController.shared
+				
 		case 2:
 			newVC = SchedulesViewController.shared
 			
 	 	case 3:
-			newVC = GroupsViewController.shared
+			newVC = ActionsViewController.shared
 	 
 		default:
 			break;
@@ -101,7 +101,6 @@ class MainViewController: UIViewController, UITabBarDelegate {
 		subViewDelegate = newVC as? MainSubviewViewControllerDelegate
 		
 		btnAdd.isHidden = subViewDelegate == nil
-		
 		
 		if let cvc = containViewController {
 			cvc.willMove(toParent: nil)

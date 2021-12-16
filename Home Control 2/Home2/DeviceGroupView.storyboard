@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="18122" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="18093"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Device Group View Controller-->
+        <scene sceneID="s0d-6b-0kx">
+            <objects>
+                <viewController storyboardIdentifier="DeviceGroupViewController" id="Y6W-OH-hqX" customClass="DeviceGroupViewController" customModule="Home2" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="5EZ-qb-Rvc">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <segmentedControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="196-SY-Eck">
+                                <rect key="frame" x="0.0" y="0.0" width="414" height="32"/>
+                                <segments>
+                                    <segment title="Devices"/>
+                                    <segment title="Groups"/>
+                                </segments>
+                                <color key="selectedSegmentTintColor" name="keyCapColor"/>
+                            </segmentedControl>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="fVx-17-XZi">
+                                <rect key="frame" x="0.0" y="31" width="414" height="831"/>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                            </view>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="196-SY-Eck" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="0hJ-a1-01Q"/>
+                            <constraint firstItem="fVx-17-XZi" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="C8u-Fr-7iu"/>
+                            <constraint firstItem="196-SY-Eck" firstAttribute="top" secondItem="5EZ-qb-Rvc" secondAttribute="top" id="Rod-Hf-ECM"/>
+                            <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="fVx-17-XZi" secondAttribute="trailing" id="VkC-l4-uqM"/>
+                            <constraint firstItem="fVx-17-XZi" firstAttribute="top" secondItem="196-SY-Eck" secondAttribute="bottom" id="gyk-wP-4bJ"/>
+                            <constraint firstItem="vDu-zF-Fre" firstAttribute="bottom" secondItem="fVx-17-XZi" secondAttribute="bottom" id="qnW-nd-WQZ"/>
+                            <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="196-SY-Eck" secondAttribute="trailing" id="rwy-x5-xHU"/>
+                        </constraints>
+                    </view>
+                    <size key="freeformSize" width="414" height="896"/>
+                    <connections>
+                        <outlet property="segDevGroup" destination="196-SY-Eck" id="vDH-sl-hZ9"/>
+                        <outlet property="vwSubView" destination="fVx-17-XZi" id="unY-T1-s9F"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Ief-a0-LHa" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="39" y="42"/>
+        </scene>
+    </scenes>
+    <resources>
+        <namedColor name="keyCapColor">
+            <color red="0.0" green="0.5899999737739563" blue="1" alpha="0.5" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+    </resources>
+</document>

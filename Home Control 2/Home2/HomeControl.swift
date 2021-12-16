@@ -96,7 +96,9 @@ enum HomeControlRequest: Error {
 	case event
 	case device
 	case device_aldb
-
+	case actions
+	case action
+ 
 	case unknown
 }
  
@@ -160,14 +162,22 @@ public class HomeControl {
 			if let devID = ID {
 				urlPath = "devices/" + devID
 			}
-			
- 		case .device_aldb:
+
+		case .actions:
+			urlPath = "action.groups"
+			queries = [URLQueryItem(name: "details", value: "1")]
+  
+		case .action:
+			if let actID = ID {
+				urlPath = "action.groups/" + actID
+			}
+ 
+		case .device_aldb:
 			if let devID = ID {
 				urlPath = "devices/" + devID
 				queries = [URLQueryItem(name: "aldb", value: "1")]
 			}
-
-	
+ 
 			
 		default:
 			break;
@@ -205,7 +215,17 @@ public class HomeControl {
 			else 	if let device = json as? RESTDeviceDetails {
 				completionHandler(.success(device))
 			}
-				else if let restErr = json as? RESTError {
+			else 	if let actions = json as? RESTActionList {
+				completionHandler(.success(actions))
+			}
+			else 	if let action = json as? RESTActionDetail {
+				completionHandler(.success(action))
+			}
+	 		else if let errInfo = json as? RESTErrorInfo {
+			  let restErr = RESTError(withInfo: errInfo)
+			 	completionHandler(.success(restErr))
+			}
+			else if let restErr = json as? RESTError {
 				completionHandler(.success(restErr))
 			}
 			else if let error = error{

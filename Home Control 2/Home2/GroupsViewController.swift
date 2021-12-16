@@ -48,7 +48,8 @@ class GroupsViewController:  MainSubviewViewController,
 		super.viewDidLoad()
 
 		tableView.refreshControl = refreshControl
-		
+		self.tableView.tableFooterView = UIView()
+	
 		// Configure Refresh Control
 		refreshControl.addTarget(self, action: #selector(refreshGroupsTable(_:)), for: .valueChanged)
 

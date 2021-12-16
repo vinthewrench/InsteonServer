@@ -118,10 +118,10 @@ class SchedulesViewController: MainSubviewViewController,
 	
 	func refreshSchedules(completion: @escaping () -> Void = {}) {
 		
-		guard AppData.serverInfo.validated  else {
-			completion()
-			return
-		}
+//		guard AppData.serverInfo.validated  else {
+//			completion()
+//			return
+//		}
 		
 		let dp = DispatchGroup()
 		

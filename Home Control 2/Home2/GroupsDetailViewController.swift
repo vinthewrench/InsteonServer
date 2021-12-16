@@ -28,6 +28,8 @@ class GroupsDetailViewController:  UIViewController,
 	@IBOutlet var btnOn: 	BHButton!
 	@IBOutlet var slBackLight	: UISlider!
 
+	@IBOutlet var lblGroupID: UILabel!
+
 	var btnFLoat: FloatingButton = FloatingButton()
 
 	var GroupID :String = ""
@@ -136,6 +138,7 @@ class GroupsDetailViewController:  UIViewController,
 
 		if let group =  InsteonFetcher.shared.groups[GroupID] {
 			lblTitle.text = group.name
+			lblGroupID.text = GroupID
 			let sorted = InsteonFetcher.shared.sortedDeviceKeys(allKeys: true)
 			self.deviceKeys = sorted.filter{ group.deviceIDs.contains( $0)}
 			completion()

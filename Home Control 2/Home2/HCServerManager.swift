@@ -120,6 +120,11 @@ class RESTErrorInfo: Codable {
 
 class RESTError: Codable {
 	let error: RESTErrorInfo
+	
+	init(withInfo: RESTErrorInfo) {
+		error = withInfo
+	}
+
 }
 
 struct RESTStatus: Codable {
@@ -258,10 +263,65 @@ extension Int {
 	  }
 	  else {
 		  let level = Int(( Float(self) / 255.00) * 100)
-		  str = "\(level)%"
+		  str = "Dim \(level)%"
 	  }
 	  return str
   }
+	
+	func backlightLevelString() ->String {
+		var  str:String = ""
+		
+		if(self == 0){
+			str = "Off";
+		}
+		else if(self == 127){
+			str = "On";
+		}
+		else {
+			let level = Int(( Float(self) / 128.00) * 100)
+			str = "\(level)%"
+		}
+		return str
+	}
+}
+
+extension String {
+	func onLevel() ->Int {
+		
+		var  level:Int = 0
+		
+		let str = self.lowercased()
+		if(str == "off"){
+			level = 0
+		} else if(str == "on"){
+			level = 255
+		}
+		else {
+			if let lev = Int(str){
+				level = lev
+			}
+		}
+ 		return level
+	}
+	
+	func backLightLevel() ->Int {
+		
+		var  level:Int = 0
+		
+		let str = self.lowercased()
+		if(str == "off"){
+			level = 0
+		} else if(str == "on"){
+			level = 127
+		}
+		else {
+			if let lev = Int(str){
+				level = lev
+			}
+		}
+		return level
+	}
+	
 }
 
 
@@ -343,19 +403,162 @@ struct RESTGroupDetails: Codable {
 	var name: String
 }
 
+ 
+struct RESTActionList: Codable {
+	var groupIDs: Dictionary<String,RESTActionDetail>?
+}
+
+struct RESTActionDetail: Codable {
+	var groupID: String
+	var name: String?
+	var actions: Dictionary<String,RESTEventAction>?
+ }
+
 struct RESTEventAction: Codable {
 	var cmd			 	:String?
 	var action_group 	:String?
 	var insteon_group 	:String?
 	var deviceID			:String?
+	var keypadID			:String?
+	var groupID 	:String?
 	var level 			:String?
- 
+	var value 			:String?
+
 	enum CodingKeys: String, CodingKey {
 		case cmd
 		case deviceID
+		case keypadID
+		case groupID
 		case level
+		case value
 		case action_group = "action.group"
 		case insteon_group = "insteon.groups"
+	}
+	
+	enum nounClass_t: Int {
+		case unknown = 0
+		case deviceID
+		case groupID
+		case keypadID
+		case actionGroup
+		case insteonGroup
+	}
+	
+	func nounClass() -> nounClass_t{
+		
+		var result:nounClass_t = .unknown
+		
+		if deviceID != nil {
+			result = .deviceID
+		}
+		else if groupID != nil {
+			result  = .groupID
+		}
+		else if keypadID != nil {
+			result = .keypadID
+		}
+		else if action_group != nil {
+			result  = .actionGroup
+			
+		} else if insteon_group != nil {
+			result  = .insteonGroup
+		}
+		
+		return result
+	}
+	
+	
+	
+	func noun() -> String{
+		var result:String?
+		
+		switch(self.nounClass()){
+		case .deviceID:
+			result = deviceID
+		case .groupID:
+			result = groupID
+		case .keypadID:
+			result = keypadID
+		case .actionGroup:
+			result = action_group
+		case .insteonGroup:
+			result = insteon_group
+		case .unknown:
+			result = "Unknown"
+		}
+		return result ?? ""
+	}
+	
+	func nounDescription() -> String{
+		var result:String?
+		
+		switch(self.nounClass()){
+		case .deviceID:
+			result = "DeviceID"
+		case .groupID:
+			result = "GroupID"
+		case .keypadID:
+			result = "KeyPad:"
+		case .actionGroup:
+			result = "Action Group"
+		case .insteonGroup:
+			result = "Insteon Group"
+		case .unknown:
+			result = "Unknown"
+			
+		}
+		return result ?? ""
+	}
+	
+	func image() -> UIImage {
+		var image:UIImage? =  nil
+		
+		switch(self.nounClass()){
+		case .deviceID:
+			image = UIImage(systemName: "lightbulb")
+			
+		case .groupID:
+			image = UIImage(systemName: "g.circle")
+			
+		case .keypadID:
+			image = UIImage(named: "keypad")
+			
+		case .actionGroup:
+			image = UIImage(systemName: "a.circle")
+			
+		case .insteonGroup:
+			image = UIImage(systemName: "i.circle")
+			
+		default:
+			image =   UIImage(systemName: "questionmark")
+		}
+		
+		return image ?? UIImage()
+	}
+	
+	func verb() -> String{
+		var result:String?
+		
+		if let cmd = cmd {
+			
+			if cmd == "set"  && level != nil {
+				result = level?.onLevel().onLevelString()
+	 		}
+			else if cmd == "backlight"  && level != nil {
+				
+				let levStr =   level!.backLightLevel().backlightLevelString()
+				result =  "backlight \(levStr)"
+			}
+			else if cmd == "keypad.mask"  && value != nil {
+				result = "mask = \(value!)"
+			}
+			else {
+				result = cmd
+			}
+		}
+
+		return result ?? ""
+
 	}
 }
 
@@ -1530,6 +1733,46 @@ class HCServerManager: ObservableObject {
 				completion(ServerError.invalidURL)
 			}
 	}
+	
+	func runAction(_ actionID: String,
+					  completion: @escaping (Error?) -> Void)  {
+	
+		let urlPath = "action.groups/run.actions/\(actionID)"
+		
+		if let requestUrl: URL = AppData.serverInfo.url ,
+			let apiKey = AppData.serverInfo.apiKey,
+			let apiSecret = AppData.serverInfo.apiSecret {
+			let unixtime = String(Int(Date().timeIntervalSince1970))
+			
+			let urlComps = NSURLComponents(string: requestUrl.appendingPathComponent(urlPath).absoluteString)!
+			//			if let queries = queries {
+			//				urlComps.queryItems = queries
+			//			}
+			var request = URLRequest(url: urlComps.url!)
+		 		// Specify HTTP Method to use
+			request.httpMethod = "PUT"
+			request.setValue(apiKey,forHTTPHeaderField: "X-auth-key")
+			request.setValue(String(unixtime),forHTTPHeaderField: "X-auth-date")
+			let sig =  calculateSignature(forRequest: request, apiSecret: apiSecret)
+			request.setValue(sig,forHTTPHeaderField: "Authorization")
+			
+			// Send HTTP Request
+			request.timeoutInterval = 10
+			
+			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
+			
+			let task = session.dataTask(with: request) { (data, response, urlError) in
+				
+				completion(urlError	)
+			}
+			task.resume()
+		}
+			else {
+				completion(ServerError.invalidURL)
+			}
+	}
+	
+	
 	func RESTCall(urlPath: String,
 					  httpMethod: String? = "GET",
 					  headers: [String : String]? = nil,
@@ -1625,6 +1868,13 @@ class HCServerManager: ObservableObject {
 					else if let obj = try? decoder.decode(RESTDeviceLevel.self, from: data){
 						completion(response, obj, nil)
 					}
+					else if let obj = try? decoder.decode(RESTActionDetail.self, from: data){
+						completion(response, obj, nil)
+					}
+					else if let obj = try? decoder.decode(RESTActionList.self, from: data){
+						completion(response, obj, nil)
+					}
+		
 					else if let jsonObj = try? JSONSerialization.jsonObject(with: data, options: .allowFragments) as? Dictionary<String, Any> {
 						completion(response, jsonObj, nil)
 					}

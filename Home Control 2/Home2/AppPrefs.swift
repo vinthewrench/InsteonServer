@@ -42,6 +42,11 @@ struct Storage<T: Codable> {
 	}
 }
  
+enum GroupDeviceTab: Int {
+	case unknown = 0
+	case device
+	case group
+}
 
 struct ServerPrefs: Codable {
 	var 	apiKey: 			String?
