@@ -263,7 +263,7 @@ extension Int {
 	  }
 	  else {
 		  let level = Int(( Float(self) / 255.00) * 100)
-		  str = "Dim \(level)%"
+		  str = "\(level)%"
 	  }
 	  return str
   }
@@ -405,7 +405,11 @@ struct RESTGroupDetails: Codable {
 
  
 struct RESTActionList: Codable {
-	var groupIDs: Dictionary<String,RESTActionDetail>?
+	var groupIDs: Dictionary<String,RESTActionDetail>
+	
+	enum CodingKeys: String, CodingKey {
+		case groupIDs
+	}
 }
 
 struct RESTActionDetail: Codable {
@@ -769,16 +773,52 @@ struct RESTEvent: Codable {
 }
 
 
-struct RESTEventList: Codable {
-	var eventIDs: 	Dictionary<String, RESTEvent>
-//  	var timed: 		Dictionary<String, String>
-		var future: 		[String]
+struct RESTEventTime: Decodable {
+	var eventID: String
+	var minsFromMidnight: Int
+	//var wrappedValue: (String, Int)
+	
+	//	func encode(to encoder: Encoder) throws {
+	//		var unkeyedContainer = encoder.unkeyedContainer()
+	//
+	//	}
+	
+	init(from decoder: Decoder) throws {
+		
+		eventID = ""
+		minsFromMidnight = 0
+		
+		var container = try decoder.unkeyedContainer()
+		if (container.count == 2) {
+			eventID = try container.decodeIfPresent(String.self)!
+			minsFromMidnight = try container.decodeIfPresent(Int.self)!
+		}
+	}
+}
+ 
+struct RESTEventList: Decodable {
+	var eventIDs: 			Dictionary<String, RESTEvent>
+ 	var events_timed: 	[RESTEventTime]?
+ 	var future: 			[String]?
 	
 	enum CodingKeys: String, CodingKey {
-			 case eventIDs
-// 			 case timed = "events.timed"
-			case future = "events.future"
- 		}
+		case eventIDs = "eventIDs"
+ 	 	case events_timed = "events.timed"
+ 		case future = "events.future"
+	}
+	
+//	init(from decoder: Decoder) throws {
+//
+//		let container = try decoder.container(keyedBy: CodingKeys.self)
+//		eventIDs = try container.decode([String: RESTEvent].self, forKey: CodingKeys.eventIDs)
+//		future =  try? container.decode([String].self, forKey: CodingKeys.eventIDs)
+//
+//		let arr = try container.decode(Array<Any>.self, forKey:  CodingKeys.events_timed)
+//
+//		events_timed = []
+////		events_timed  = try? container.decode([RESTEventTime].self, forKey: CodingKeys.events_timed)
+//
+//	}
 }
 
 struct RESTPlmInfo: Codable {
@@ -1772,6 +1812,134 @@ class HCServerManager: ObservableObject {
 			}
 	}
 	
+	
+	func createAction(name: String,
+					  completion: @escaping (Error?) -> Void)  {
+		
+		let urlPath = "action.groups"
+		
+		if let requestUrl: URL = AppData.serverInfo.url ,
+			let apiKey = AppData.serverInfo.apiKey,
+			let apiSecret = AppData.serverInfo.apiSecret {
+			let unixtime = String(Int(Date().timeIntervalSince1970))
+			
+			let urlComps = NSURLComponents(string: requestUrl.appendingPathComponent(urlPath).absoluteString)!
+			//			if let queries = queries {
+			//				urlComps.queryItems = queries
+			//			}
+			var request = URLRequest(url: urlComps.url!)
+			
+			
+			let json = ["name":name]
+			let jsonData = try? JSONSerialization.data(withJSONObject: json)
+			request.httpBody = jsonData
+	
+			// Specify HTTP Method to use
+			request.httpMethod = "POST"
+			request.setValue(apiKey,forHTTPHeaderField: "X-auth-key")
+			request.setValue(String(unixtime),forHTTPHeaderField: "X-auth-date")
+			let sig =  calculateSignature(forRequest: request, apiSecret: apiSecret)
+			request.setValue(sig,forHTTPHeaderField: "Authorization")
+			
+			// Send HTTP Request
+			request.timeoutInterval = 10
+			
+			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
+			
+			let task = session.dataTask(with: request) { (data, response, urlError) in
+				
+				completion(urlError	)
+			}
+			task.resume()
+		}
+			else {
+				completion(ServerError.invalidURL)
+			}
+	}
+	
+	
+	func deleteAction(_ actionID: String,
+					  completion: @escaping (Error?) -> Void)  {
+		
+		let urlPath = "action.groups/\(actionID)"
+		
+		if let requestUrl: URL = AppData.serverInfo.url ,
+			let apiKey = AppData.serverInfo.apiKey,
+			let apiSecret = AppData.serverInfo.apiSecret {
+			let unixtime = String(Int(Date().timeIntervalSince1970))
+			
+			let urlComps = NSURLComponents(string: requestUrl.appendingPathComponent(urlPath).absoluteString)!
+			//			if let queries = queries {
+			//				urlComps.queryItems = queries
+			//			}
+			var request = URLRequest(url: urlComps.url!)
+
+			// Specify HTTP Method to use
+			request.httpMethod = "DELETE"
+			request.setValue(apiKey,forHTTPHeaderField: "X-auth-key")
+			request.setValue(String(unixtime),forHTTPHeaderField: "X-auth-date")
+			let sig =  calculateSignature(forRequest: request, apiSecret: apiSecret)
+			request.setValue(sig,forHTTPHeaderField: "Authorization")
+			
+			// Send HTTP Request
+			request.timeoutInterval = 10
+			
+			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
+			
+			let task = session.dataTask(with: request) { (data, response, urlError) in
+				
+				completion(urlError	)
+			}
+			task.resume()
+		}
+			else {
+				completion(ServerError.invalidURL)
+			}
+	}
+	
+	
+	func renameAction(actionID: String, newName: String,
+					  completion: @escaping (Error?) -> Void)  {
+		
+		let urlPath = "action.groups/\(actionID)"
+		
+		if let requestUrl: URL = AppData.serverInfo.url ,
+			let apiKey = AppData.serverInfo.apiKey,
+			let apiSecret = AppData.serverInfo.apiSecret {
+			let unixtime = String(Int(Date().timeIntervalSince1970))
+			
+			let urlComps = NSURLComponents(string: requestUrl.appendingPathComponent(urlPath).absoluteString)!
+	
+			var request = URLRequest(url: urlComps.url!)
+			
+			let json = ["name":newName]
+			let jsonData = try? JSONSerialization.data(withJSONObject: json)
+			request.httpBody = jsonData
+	
+			// Specify HTTP Method to use
+			request.httpMethod = "PATCH"
+			request.setValue(apiKey,forHTTPHeaderField: "X-auth-key")
+			request.setValue(String(unixtime),forHTTPHeaderField: "X-auth-date")
+			let sig =  calculateSignature(forRequest: request, apiSecret: apiSecret)
+			request.setValue(sig,forHTTPHeaderField: "Authorization")
+			
+			// Send HTTP Request
+			request.timeoutInterval = 10
+			
+			let session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: .main)
+			
+			let task = session.dataTask(with: request) { (data, response, urlError) in
+				
+				completion(urlError	)
+			}
+			task.resume()
+		}
+			else {
+				completion(ServerError.invalidURL)
+			}
+	}
+	
+
 	
 	func RESTCall(urlPath: String,
 					  httpMethod: String? = "GET",

@@ -70,9 +70,11 @@ class ActionsViewController :MainSubviewViewController,
 	override func viewWillAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
 		
-		refreshActions()
-
-	 	}
+		InsteonFetcher.shared.getChangedDevices() {
+			self.refreshActions()
+		}
+		
+	}
 	
 	override func viewDidAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
@@ -95,16 +97,16 @@ class ActionsViewController :MainSubviewViewController,
 			self.actionsKeys = []
 			if case .success(let actions as RESTActionList) = result {
 				
-				if let groupIDs = actions.groupIDs {
-					
-					self.actions = groupIDs
-					
-					let sorted = groupIDs.sorted { (first, second) -> Bool in
-						return  first.value.name?.caseInsensitiveCompare(second.value.name ?? "") == .orderedAscending
-					}
-					
-					self.actionsKeys =  sorted.map{$0.key}
-	 				}
+				let groupIDs = actions.groupIDs
+				
+				self.actions = groupIDs
+				
+				let sorted = groupIDs.sorted { (first, second) -> Bool in
+					return  first.value.name?.caseInsensitiveCompare(second.value.name ?? "") == .orderedAscending
+				}
+				
+				self.actionsKeys =  sorted.map{$0.key}
+				
 				self.tableView.reloadData()
 				completion()
 			}
@@ -128,17 +130,15 @@ class ActionsViewController :MainSubviewViewController,
 			if let action = self.actions[actionID] {
 				
 				cell.lblName.text = action.name
+				
 				if let actions = action.actions {
 					cell.lblCount.text = String(  actions.count)
-					cell.lblCount.layer.cornerRadius = cell.lblCount.frame.height / 2
-					cell.lblCount.layer.masksToBounds = true
-					cell.lblCount.isHidden = false
-					
 				}
 				else {
-					cell.lblCount.isHidden = true
+					cell.lblCount.text  = "0"
 				}
-				
+				cell.lblCount.layer.cornerRadius = cell.lblCount.frame.height / 2
+				cell.lblCount.layer.masksToBounds = true
 			}
 			
 			return cell
@@ -216,7 +216,51 @@ class ActionsViewController :MainSubviewViewController,
 
 	func addButtonHit(_ sender: UIButton){
 		
- 
+		createNewAction()
+	}
+	
+	func createNewAction() {
+		
+		if(tableView.isEditing) {
+			return
+		}
+
+		let alert = UIAlertController(title:  NSLocalizedString("Create Action", comment: ""),
+												message: nil,
+												cancelButtonTitle: NSLocalizedString("Cancel", comment: ""),
+												okButtonTitle:  NSLocalizedString("OK", comment: ""),
+												validate: .nonEmpty,
+												textFieldConfiguration: { textField in
+			textField.placeholder =  "Action Name"
+		}) { result in
+			
+			switch result {
+			case let .ok(String:newName):
+			 
+				InsteonFetcher.shared.createAction(newName) { (error)  in
+					if(error == nil){
+						self.refreshActions()
+					}
+					else {
+						Toast.text(error?.localizedDescription ?? "Error",
+									  config: ToastConfiguration(
+										autoHide: true,
+										displayTime: 1.0
+										//												attachTo: self.vwError
+									  )).show()
+						
+					}
+				}
+				break
+				
+			case .cancel:
+				break
+			}
+		}
+		
+		// Present the alert to the user
+		self.present(alert, animated: true, completion: nil)
+
 	}
 	
 	// MARK: - ActionDetailViewControllerDelegate

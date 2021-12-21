@@ -336,43 +336,49 @@ public class InsteonFetcher: ObservableObject {
 	}
 
 
+	
+	
+	
+	public func createAction(_ newName: String,
+									 completion: @escaping (Error?) -> Void = {_ in }){
+		
+		HCServerManager.shared.createAction(name: newName)
+		{ (error)  in
+			
+			completion(error)
+			
+		}
+	}
+
+	
 	public func deleteAction(_ actionID: String,
 									completion: @escaping (Error?) -> Void = {_ in }){
 		
-		
-//		HCServerManager.shared.deleteGroup(groupID)
-//		{ (error)  in
-//
-//			if(error == nil){
-//
-//				self.getGroups(){
- 					completion(nil)
-//					return
-//
-//				}
-//
-//			}
-//
-//			completion(error)
-//		}
+		HCServerManager.shared.deleteAction(actionID)
+		{ (error)  in
+			
+			completion(error)
+			
+		}
 	}
-	
+
+
 	public func renameAction(_ actionID: String, newName: String,
 										completion: @escaping (Error?) -> Void = {_ in }){
 	
 		completion(nil)
 
-//
-//		HCServerManager.shared.renameGroup(groupID: groupID,
-//														newName: newName)
-//		{ (error)  in
-//
-//			if(error == nil){
-//
-//			}
-//
-//			completion(error)
-//		}
+
+		HCServerManager.shared.renameAction(actionID: actionID,
+														newName: newName)
+		{ (error)  in
+
+			if(error == nil){
+
+			}
+
+			completion(error)
+		}
 	}
  
 

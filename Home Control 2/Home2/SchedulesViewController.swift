@@ -47,6 +47,7 @@ class SchedulesViewController: MainSubviewViewController,
 	var sortedTimedKeys:[String] = []
 	var sortedTriggerKeys:[String] = []
 	var events: Dictionary<String, RESTEvent> = [:]
+	var futureEvents: [String] = []
 	var solarTimes : ServerDateInfo? = nil
 	
 	private let refreshControl = UIRefreshControl()
@@ -144,6 +145,7 @@ class SchedulesViewController: MainSubviewViewController,
 				self.events = events.eventIDs
 				self.sortedTimedKeys = []
 				self.sortedTriggerKeys = []
+				self.futureEvents = events.future ?? []
 	
 				// split the keys into timed events and Trigger events
 					
@@ -154,7 +156,6 @@ class SchedulesViewController: MainSubviewViewController,
 			}
 			
 			dp.notify(queue: .main) {
-				
 				
 				let timedEventIDs = self.events.filter({  $1.isTimedEvent() })
 				if let st = self.solarTimes {
@@ -263,22 +264,26 @@ class SchedulesViewController: MainSubviewViewController,
 	}
 	
 	
-	func cellForTimedEvent(_ event: RESTEvent) -> UITableViewCell{
+	func cellForTimedEvent(eventID: String, event: RESTEvent) -> UITableViewCell{
 		
 		if let cell = tableView.dequeueReusableCell(withIdentifier:
 																	SchedulesTimedCell.cellReuseIdentifier) as? SchedulesTimedCell{
+			
 			
 			cell.accessoryType = .disclosureIndicator
 			cell.selectionStyle = .none
 			
 			cell.lblName?.text = event.name
 			
+			let  isFutureEvent =  self.futureEvents.contains(eventID)
+			
 			if let str = eventTriggerString(event.trigger) {
 				cell.lblTime?.text = str
 			}
 			
-			
-			cell.img.image = event.imageForTrigger()
+	 		cell.img.image =  event.imageForTrigger()
+			cell.img.tintColor = isFutureEvent ? UIColor.systemOrange : UIColor.systemBlue
+				 
 			return cell
 			
 		}
@@ -314,17 +319,21 @@ class SchedulesViewController: MainSubviewViewController,
 		switch(indexPath.section){
 		
 		case 0:
-			if indexPath.row <= sortedTimedKeys.count,
-				let event =  events[sortedTimedKeys[indexPath.row]] {
-				return cellForTimedEvent( event)
+			if indexPath.row <= sortedTimedKeys.count{
+				let eventID = sortedTimedKeys[indexPath.row]
+				if let event =  events[eventID] {
+					return cellForTimedEvent(eventID: eventID, event: 	event)
+				}
 			}
 			
 		case 1:
-			if indexPath.row <= sortedTriggerKeys.count,
-				let event =  events[sortedTriggerKeys[indexPath.row]] {
-				return cellForTriggerEvent( event)
+			if indexPath.row <= sortedTimedKeys.count{
+				let eventID = sortedTimedKeys[indexPath.row]
+				if let event =  events[eventID] {
+					return cellForTriggerEvent( event)
+		
+				}
 			}
-			
 			
 		default:
 			break

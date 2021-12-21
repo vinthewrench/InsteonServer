@@ -14,7 +14,6 @@ final class ActionCell: UITableViewCell {
 	
 	@IBOutlet var lblID	: UILabel!
 	@IBOutlet var lblNoun	: UILabel!
-	@IBOutlet var lblDesc	: UILabel!
 	@IBOutlet var img		: UIImageView!
 	@IBOutlet var lblVerb	: UILabel!
 
@@ -194,10 +193,44 @@ class ActionDetailViewController:  UIViewController,
 			
 			if let action  = self.action?.actions?[key] {
 				cell.lblID.text = key
-				cell.lblNoun.text =  action.noun()
-				cell.lblDesc.text = action.nounDescription()
-				cell.lblVerb.text = action.verb()
+				
 				cell.img.image = action.image()
+				cell.lblNoun.text =  action.noun()
+				
+				switch action.nounClass() {
+				case .deviceID,
+					  .keypadID:
+					
+					if let device =  InsteonFetcher.shared.devices[action.noun() ] {
+						cell.lblNoun.text = device.name
+						cell.img.image = device.deviceImage()
+					}
+					break
+					
+				case .groupID:
+					if let group =  InsteonFetcher.shared.groups[action.noun() ] {
+						cell.lblNoun.text = group.name
+					}
+					break
+					
+				case .insteonGroup:
+					cell.lblNoun.text =  String("ALL-Link Group: \(action.noun())")
+					cell.img.image = action.image()
+					
+				case .actionGroup:
+					
+					HomeControl.shared.fetchData(.action, ID: action.action_group) { result in
+						if case .success(let act1 as RESTActionDetail) = result {
+							cell.lblNoun.text =  act1.name
+						}
+					}
+					break;
+					
+				default:
+					break;
+				}
+				
+				cell.lblVerb.text = action.verb()
 			}
 			
 			
