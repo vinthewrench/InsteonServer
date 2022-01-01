@@ -327,8 +327,8 @@ class SchedulesViewController: MainSubviewViewController,
 			}
 			
 		case 1:
-			if indexPath.row <= sortedTimedKeys.count{
-				let eventID = sortedTimedKeys[indexPath.row]
+			if indexPath.row <= sortedTriggerKeys.count{
+				let eventID = sortedTriggerKeys[indexPath.row]
 				if let event =  events[eventID] {
 					return cellForTriggerEvent( event)
 		
